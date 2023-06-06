@@ -54,7 +54,7 @@ fu! ActStl(isActive)
 
     let stl.="%=" " left/right separator
     " running indicators
-    let stl.="%#error#%{g:asyncCnt > 0 ? '  '.g:asyncCnt.' ':''}"
+    let stl.="%#error#%{g:asyncCnt > 0 ? '   '.g:asyncCnt.' ':''}"
     let stl.="%{gutentags#statusline() == '' ? '' : '  ﰠ '}"
     " virtual column number and byte index number
     let stl.="%#posBar#%  %v[%c] %P %#totalL#%L% "
@@ -270,7 +270,7 @@ fu! BufJumpBack()
 endf
 nn <a-o> :cal BufJumpBack()<cr>
 let g:jumpMode = 'n'
-let g:jumpModeNames = {'n':'Normal','m':'Mark','f':'Fold','s':'Scroll','q':'Quickfix','d':'Diff','w':'Window'}
+let g:jumpModeNames = {'n':'Normal','m':'Mark','f':'Fold','s':'Scroll','q':'Quickfix','d':'Diff','w':'Window','c':'Conflict'}
 fu! OmniJumpBoot(backNormFlag)
     let jumpMoves = {'nj':'gj','nk':'gk',
                 \'mj':"]'", 'mk':"['",
@@ -278,12 +278,18 @@ fu! OmniJumpBoot(backNormFlag)
                 \'fj':'zj','fk':'zk','fh':':setl fdl-=1<CR>','fl':':setl fdl+=1<CR>',
                 \'wj':'<c-w>-','wk':'<c-w>+','wh':'<c-w>>','wl':'<c-w><',
                 \'sj':'<c-d>','sk':'<c-u>','sh':'60h','sl':'60l',
+                \'cj':':let @/="======="<cr>n','ck':':let @/="======="<cr>N','ch':'V?<<<<<<<<cr>d/>>>>>>><cr>dd','cl':'V/>>>>>>><cr>d?<<<<<<<<cr>dd',
                 \'dj':'<Plug>(signify-next-hunk)','dk':'<Plug>(signify-prev-hunk)','dh':'<c-w>h','dl':'<c-w>l'}
     let modeChar = 'n'
     echoh MoreMsg | echo join(values(g:jumpModeNames), ' - ') | echoh None
     if a:backNormFlag == 0
         let modeChar = nr2char(getchar()) " wait for a mode char
     en
+    if modeChar == 'c' " Conflict
+        hi CursorLine cterm=NONE ctermbg=167
+    else
+        hi CursorLine cterm=NONE ctermbg=DarkGray
+    endif
     let g:jumpMode = has_key(g:jumpModeNames, modeChar) ? modeChar : 'n'
     for direct in split('hjkl', '\zs')
         exe printf('nn %s %s', direct, get(jumpMoves, g:jumpMode.direct, direct))
