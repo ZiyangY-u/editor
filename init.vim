@@ -278,7 +278,8 @@ fu! OmniJumpBoot(backNormFlag)
                 \'fj':'zj','fk':'zk','fh':':setl fdl-=1<CR>','fl':':setl fdl+=1<CR>',
                 \'wj':'<c-w>-','wk':'<c-w>+','wh':'<c-w>>','wl':'<c-w><',
                 \'sj':'<c-d>','sk':'<c-u>','sh':'60h','sl':'60l',
-                \'cj':':let @/="======="<cr>n','ck':':let @/="======="<cr>N','ch':'V?<<<<<<<<cr>d/>>>>>>><cr>dd','cl':'V/>>>>>>><cr>d?<<<<<<<<cr>dd',
+                \'cj':':let @/="\\m^======="<cr>n','ck':':let @/="\\m^======="<cr>N',
+                \'ch':'V?\m^<<<<<<<<cr>d/\m^>>>>>>><cr>dd','cl':'V/\m^>>>>>>><cr>d?\m^<<<<<<<<cr>dd',
                 \'dj':'<Plug>(signify-next-hunk)','dk':'<Plug>(signify-prev-hunk)','dh':'<c-w>h','dl':'<c-w>l'}
     let modeChar = 'n'
     echoh MoreMsg | echo join(values(g:jumpModeNames), ' - ') | echoh None
@@ -635,6 +636,7 @@ let g:matchup_matchparen_enabled   = 0
 let g:context_enabled = 0
 " fugitive
 let g:fugitive_no_maps = 1
+ca g Git
 ca glgg tab Git log -n 100 --graph --pretty='%h %s %d %ad' --date=short
 ca glgga tab Git log -n 100 --graph --pretty='%h %s %d %ad' --date=short --all
 ca gb tab Git branch
@@ -678,7 +680,7 @@ nn <leader>u :UndotreeToggle<cr>
 " => File type Specific -------------------- {{{
 aug filetypes
     " auto move to cursor position when last exit
-    au BufReadPost * if &ft != 'git' | sil norm! g`"
+    au BufReadPost * if &ft != 'git' && &ft != 'fugitive' | sil norm! g`"
 
     au BufRead *.la,*.gr set ft=ark
     au BufRead *.ztool set ft=ztool
