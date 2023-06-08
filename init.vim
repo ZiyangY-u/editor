@@ -50,7 +50,7 @@ fu! ActStl(isActive)
     let stl=""
     let stl.="%#error#%r%#mod#%m"
     let stl.="%#ModColor#%{(mode()=='n')?'  '.g:jumpModeNames[g:jumpMode].' ':''}%{(mode()=='t')?'  TERM ':''}"
-    let stl.="%<%#c1# %w%{RelPath(expand('%:p'),getcwd())}"
+    let stl.="%<%#c1# %w%{filereadable(expand('%p'))?RelPath(expand('%:p'),getcwd()):expand('%:p')}"
 
     let stl.="%=" " left/right separator
     " running indicators
@@ -558,8 +558,8 @@ ca jdos e ++enc=sjis ++ff=dos
 " => plugins --------------------------- {{{
 cal plug#begin('~/.vim/plugged')
 
+    " Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
     Plug 'SirVer/ultisnips'
-    Plug 'preservim/nerdtree'
     Plug 'andymass/vim-matchup'
     Plug 'ap/vim-css-color'
     Plug 'gelguy/wilder.nvim', { 'do': ':UpdateRemotePlugins' }
@@ -575,14 +575,15 @@ cal plug#begin('~/.vim/plugged')
     Plug 'mfussenegger/nvim-jdtls'
     Plug 'mhinz/vim-signify'
     Plug 'neovim/nvim-lspconfig'
-    " Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
     Plug 'pangloss/vim-javascript'
+    Plug 'preservim/nerdtree'
     Plug 'rafaqz/ranger.vim'
     Plug 'tpope/vim-characterize'
     Plug 'tpope/vim-commentary'
     Plug 'tpope/vim-fugitive'
     Plug 'tpope/vim-jdaddy'
     Plug 'tpope/vim-obsession'
+    Plug 'tpope/vim-sleuth'
     Plug 'unblevable/quick-scope'
     Plug 'wellle/context.vim'
     Plug 'wellle/targets.vim'
@@ -636,7 +637,7 @@ let g:matchup_matchparen_enabled   = 0
 let g:context_enabled = 0
 " fugitive
 let g:fugitive_no_maps = 1
-ca g Git
+ca gi Git
 ca glgg tab Git log -n 100 --graph --pretty='%h %s %d %ad' --date=short
 ca glgga tab Git log -n 100 --graph --pretty='%h %s %d %ad' --date=short --all
 ca gb tab Git branch
