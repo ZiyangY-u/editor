@@ -18,6 +18,7 @@ set maxmempattern=10000
 " Indention
 set ai et sta ts=4  " autoindent expandtab smarttab tabstop
 set sr sw=4         " shiftround shiftwidth
+ca ts setl ts=4
 " Selection
 set virtualedit=all " Very useful!!
 " }}}
@@ -279,7 +280,7 @@ fu! OmniJumpBoot(backNormFlag)
                 \'wj':'<c-w>-','wk':'<c-w>+','wh':'<c-w>>','wl':'<c-w><',
                 \'sj':'<c-d>','sk':'<c-u>','sh':'60h','sl':'60l',
                 \'cj':':let @/="\\m^======="<cr>n','ck':':let @/="\\m^======="<cr>N',
-                \'ch':'V?\m^<<<<<<<<cr>d/\m^>>>>>>><cr>dd','cl':'V/\m^>>>>>>><cr>d?\m^<<<<<<<<cr>dd',
+                \'cl':'V?\m^<<<<<<<<cr>d/\m^>>>>>>><cr>dd','ch':'V/\m^>>>>>>><cr>d?\m^<<<<<<<<cr>dd',
                 \'dj':'<Plug>(signify-next-hunk)','dk':'<Plug>(signify-prev-hunk)','dh':'<c-w>h','dl':'<c-w>l'}
     let modeChar = 'n'
     echoh MoreMsg | echo join(values(g:jumpModeNames), ' - ') | echoh None
@@ -307,8 +308,10 @@ nn <silent> <leader>Y :cal fzf#run({'source': keys(g:hda), 'sink': 'lcd','window
 nn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen("", "edit")':':Files')<CR><CR>
 vn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen(Selected(), "edit")':':Files')<CR><CR>
 let g:openExclude = ['"*.class"']
+let g:openExcludePath = ['*/target/*']
 fu! OpenByFile(fn)
     let [findCmds, e] = ['', empty(g:openExclude) ? '' : ' -not -name '.join(g:openExclude, ' -not -name ')]
+    let e .= empty(g:openExcludePath) ? '' : ' -not -ipath '.join(g:openExcludePath, ' -not -ipath ')
     for anchor in keys(extend(copy(g:hda), {getcwd():1})) " include cwd
         let findCmds .= printf('find %s %s -type f %s;', RelPath(anchor, getcwd()), ' -ipath "*'.a:fn.'*"', e)
     endfor
@@ -316,6 +319,7 @@ fu! OpenByFile(fn)
 endf
 fu! OpenByTarget(t)
     let [findCmds, e] = ['', empty(g:openExclude) ? '' : ' --ignore '.join(g:openExclude, ' --ignore ')]
+    let e .= empty(g:openExcludePath) ? '' : ' --ignore '.join(g:openExcludePath, ' --ignore ')
     for anchor in keys(extend(copy(g:hda), {getcwd():1})) " include cwd
         let findCmds .= printf('ag -l --hidden -F %s "%s" %s;', e, a:t, anchor)
     endfor
