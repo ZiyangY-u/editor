@@ -308,22 +308,26 @@ nn <silent> <leader>Y :cal fzf#run({'source': keys(g:hda), 'sink': 'lcd','window
 nn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen("", "edit")':':Files')<CR><CR>
 vn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen(Selected(), "edit")':':Files')<CR><CR>
 let g:openExclude = ['"*.class"']
-let g:openExcludePath = ['*/target/*']
+let g:openExcludePath = ['"*/target/*"']
 fu! OpenByFile(fn)
-    let [findCmds, e] = ['', empty(g:openExclude) ? '' : ' -not -name '.join(g:openExclude, ' -not -name ')]
+    let [paths, e] = ['', empty(g:openExclude) ? '' : ' -not -name '.join(g:openExclude, ' -not -name ')]
     let e .= empty(g:openExcludePath) ? '' : ' -not -ipath '.join(g:openExcludePath, ' -not -ipath ')
     for anchor in keys(extend(copy(g:hda), {getcwd():1})) " include cwd
-        let findCmds .= printf('find %s %s -type f %s;', RelPath(anchor, getcwd()), ' -ipath "*'.a:fn.'*"', e)
+        let paths .= ' '.RelPath(anchor, getcwd())
     endfor
-    retu findCmds
+    retu printf('find %s %s -type f %s', paths, ' -ipath "*'.trim(a:fn).'*"', e)
 endf
-fu! OpenByTarget(t)
-    let [findCmds, e] = ['', empty(g:openExclude) ? '' : ' --ignore '.join(g:openExclude, ' --ignore ')]
+fu! OpenByTarget(q, t)
+    let [agCmds, e] = ['', empty(g:openExclude) ? '' : ' --ignore '.join(g:openExclude, ' --ignore ')]
     let e .= empty(g:openExcludePath) ? '' : ' --ignore '.join(g:openExcludePath, ' --ignore ')
+    if trim(a:q) != ''
+        let findCmd = OpenByFile(a:q)
+        retu printf('%s | xargs ag -l --hidden -F %s "%s"', findCmd, e, a:t)
+    endif
     for anchor in keys(extend(copy(g:hda), {getcwd():1})) " include cwd
-        let findCmds .= printf('ag -l --hidden -F %s "%s" %s;', e, a:t, anchor)
+        let agCmds .= printf('ag -l --hidden -F %s "%s" %s;', e, a:t, anchor)
     endfor
-    retu findCmds
+    retu agCmds
 endf
 fu! HiraishinOpen(query, sink) " query.target
     let queries = split(' '.a:query, '[\./@]')
@@ -331,9 +335,9 @@ fu! HiraishinOpen(query, sink) " query.target
     let t = len(queries) > 1 ? queries[1] : ''  " target for content
 
     if t != ''
-        let findCmds = OpenByTarget(t) " target orient
+        let findCmds = OpenByTarget(q, t) " target orient
         let @/ = '\<'.t.'\>'
-        let g:cmdToConsume = ["cal search('\<".t."\>')", 'setl stl=%!ActStl(1) cuc cul']
+        let g:cmdToConsume = ["norm ggn", 'setl stl=%!ActStl(1) cuc cul']
     el
         let findCmds = OpenByFile(trim(q))   " file name orient
     en
