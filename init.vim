@@ -369,7 +369,7 @@ nn ,,F yiw:QfXearch! <c-r>"
 vn ,,F y:QfXearch! <c-r>"
 com! -bang -nargs=* QfXearch :cal Xearch(<bang>0, <f-args>)
 com! -nargs=0 QfAll :cal fzf#run({'source': keys(g:qfHist), 'sink': {inst->setqflist(g:qfHist[inst])},})
-com! -nargs=1 QfSave :cal extend(g:qfHist, {<f-args>:getqflist()}) " save search result
+com! -nargs=1 QfYank :cal extend(g:qfHist, {<f-args>:getqflist()}) " save search result
 com! -nargs=0 QfRemove :cal fzf#run({'source': keys(g:qfHist), 'sink': {inst->execute('unl g:qfHist["'.inst.'"]')},})
 fun! QfMark()
     let [_, lnum, cnum, _, _] = getcurpos()
