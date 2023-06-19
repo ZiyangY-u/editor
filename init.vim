@@ -136,16 +136,37 @@ fu AttachColor(pattern, color, border)
     exe printf('syntax match pat_%s %s%s', sha256(a:pattern), pat, (&ft==''?'':' containedin=ALL'))
     exe printf('hi pat_%s ctermfg=%d', sha256(a:pattern), a:color)
 endf
-let MColors = {'red':196, 'green':118, 'blue':33, 'yellow':220, 'purple':135, 'white':255,'aqua':45}
+let g:GColorAttachs='{}'
+fu GAttachColor(pattern, color)
+    " read from global
+    exe 'let _ca = ' . g:GColorAttachs
+    let _ca[a:pattern] = a:color
+    cal AttachColor(a:pattern, a:color, 1)
+    let g:GColorAttachs = string(_ca) " save to global
+endf
+fu RecoverGAttach()
+    exe 'let _ca = ' . g:GColorAttachs
+    for [pat, col] in items(_ca)
+        cal AttachColor(pat, col, 1)
+    endfor
+endf
+fu GDelAttach(pattern)
+    exe 'let _ca = ' . g:GColorAttachs
+    unlet _ca[a:pattern]
+    let g:GColorAttachs = string(_ca) " save to global
+    exe printf('syntax clear pat_%s', sha256(a:pattern))
+endf
+au SessionLoadPost * cal RecoverGAttach()
+let MColors = {'': 196, 'red':196, 'green':118, 'blue':33, 'yellow':220, 'purple':135, 'white':255, 'aqua':45}
 for color in keys(MColors)
     exe printf('hi MVText%s cterm=bold ctermfg=%d', color, MColors[color])
     exe printf('com! -nargs=* SEMark%s :cal SetExMark(bufnr(""), line(".")-1, "MVText%s", <f-args>)', color, color)
     exe printf('com! -bang -range -nargs=0 Attach%s :cal AttachColor(Selected(), %d, <bang>0)', color, MColors[color])
+    exe printf('com! -range -nargs=0 GAttach%s : cal GAttachColor(Selected(), %d)', color, MColors[color])
 endfor
-com! -nargs=* SEMark :cal SetExMark(bufnr(''), line('.')-1, 'MVirtualTextred', <f-args>)
 com! -nargs=0 DEMarks :cal DelLineExtMark()
-com! -bang -range -nargs=0 Attach :cal AttachColor(Selected(), 'red', <bang>0)
 com! -range -nargs=0 DAttach :exe printf('syntax clear pat_%s', sha256(Selected()))
+com! -range -nargs=0 GDAttach :cal GDelAttach(Selected())
 
 " Vertical Quick Scope
 let g:vertLineMark = nvim_create_namespace('vertLineMark')
