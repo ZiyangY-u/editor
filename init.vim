@@ -131,38 +131,41 @@ fu DelLineExtMark()
         cal nvim_buf_del_extmark(bufnr(''), g:extmk, mkInfo[0])
     endfor
 endf
-fu AttachColor(pattern, color, border)
+
+let g:ColorAttachs='{}' " key: sha256(ft.pat.border); val: [pat,color,border]
+fu AttachColor(pattern, color, border, saveFlag)
     let pat = a:border ? '/\<'.a:pattern.'\>/' : '/'.a:pattern.'/'
     exe printf('syntax match pat_%s %s%s', sha256(a:pattern), pat, (&ft==''?'':' containedin=ALL'))
     exe printf('hi pat_%s ctermfg=%d', sha256(a:pattern), a:color)
-endf
-let g:GColorAttachs='{}'
-fu GAttachColor(pattern, color)
-    " read from global
-    exe 'let _ca = ' . g:GColorAttachs
-    let _ca[a:pattern] = a:color
-    cal AttachColor(a:pattern, a:color, 1)
-    let g:GColorAttachs = string(_ca) " save to global
+    if a:saveFlag " update global
+        exe 'let _ca = ' . g:ColorAttachs
+        let _ca[sha256(&ft.a:pattern.a:border)] = [a:pattern, a:color, a:border]
+        let g:ColorAttachs = string(_ca)
+    endif
 endf
 fu RecoverGAttach()
-    exe 'let _ca = ' . g:GColorAttachs
-    for [pat, col] in items(_ca)
-        cal AttachColor(pat, col, 1)
+    exe 'let _ca = ' . g:ColorAttachs
+    for [sha, pcb] in items(_ca)
+        let [pat, col, border] = pcb
+        if sha256(&ft.pat.border) == sha
+            cal AttachColor(pat, col, border, 0)
+        endif
     endfor
 endf
 fu GDelAttach(pattern)
-    exe 'let _ca = ' . g:GColorAttachs
-    unlet _ca[a:pattern]
-    let g:GColorAttachs = string(_ca) " save to global
+    exe 'let _ca = ' . g:ColorAttachs
+    if has_key(_ca, sha256(&ft.a:pattern.'0')) | unlet _ca[sha256(&ft.a:pattern.'0')] | endif
+    if has_key(_ca, sha256(&ft.a:pattern.'0')) | unlet _ca[sha256(&ft.a:pattern.'1')] | endif
+    let g:ColorAttachs = string(_ca) " save to global
     exe printf('syntax clear pat_%s', sha256(a:pattern))
 endf
-au SessionLoadPost * cal RecoverGAttach()
+au SessionLoadPost,BufWinEnter * cal RecoverGAttach()
 let MColors = {'': 196, 'red':196, 'green':118, 'blue':33, 'yellow':220, 'purple':135, 'white':255, 'aqua':45}
 for color in keys(MColors)
     exe printf('hi MVText%s cterm=bold ctermfg=%d', color, MColors[color])
     exe printf('com! -nargs=* SEMark%s :cal SetExMark(bufnr(""), line(".")-1, "MVText%s", <f-args>)', color, color)
-    exe printf('com! -bang -range -nargs=0 Attach%s :cal AttachColor(Selected(), %d, <bang>0)', color, MColors[color])
-    exe printf('com! -range -nargs=0 GAttach%s : cal GAttachColor(Selected(), %d)', color, MColors[color])
+    exe printf('com! -bang -range -nargs=0 Attach%s :cal AttachColor(Selected(), %d, <bang>0, 0)', color, MColors[color])
+    exe printf('com! -bang -range -nargs=0 GAttach%s : cal AttachColor(Selected(), %d, <bang>0, 1)', color, MColors[color])
 endfor
 com! -nargs=0 DEMarks :cal DelLineExtMark()
 com! -range -nargs=0 DAttach :exe printf('syntax clear pat_%s', sha256(Selected()))
@@ -596,7 +599,7 @@ cal plug#begin('~/.vim/plugged')
     Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
     Plug 'junegunn/fzf.vim'
     Plug 'junegunn/vim-easy-align'
-    Plug 'kevinhwang91/nvim-bqf'
+    " Plug 'kevinhwang91/nvim-bqf'
     Plug 'ludovicchabant/vim-gutentags'
     Plug 'mattn/emmet-vim'
     Plug 'maxmellon/vim-jsx-pretty'
