@@ -257,7 +257,7 @@ fun! ConsumeCmd()
     endfor
     let g:cmdToConsume = [] " clear cmd list
 endf
-au BufWinEnter * cal ConsumeCmd()|cal SignMarks()
+au BufWinEnter *.* sil cal ConsumeCmd()|cal SignMarks()
 
 " }}}
 " => Handle -------------------- {{{
@@ -712,8 +712,7 @@ nn <leader>u :UndotreeToggle<cr>
 " }}}
 " => File type Specific -------------------- {{{
 aug filetypes
-    " auto move to cursor position when last exit
-    au BufReadPost * if &ft != 'git' && &ft != 'fugitive' | sil norm! g`"
+    au BufReadPost * if line("'\"") <= line('$') | sil norm! g`"
 
     au BufRead *.la,*.gr set ft=ark
     au BufRead *.ztool set ft=ztool
