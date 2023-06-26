@@ -54,13 +54,9 @@ fu! ActStl(isActive)
     let stl.="%<%#c1# %w%{filereadable(expand('%p'))?RelPath(expand('%:p'),getcwd()):expand('%:p')}"
 
     let stl.="%=" " left/right separator
-    " running indicators
-    let stl.="%#error#%{g:asyncCnt > 0 ? '   '.g:asyncCnt.' ':''}"
-    let stl.="%{gutentags#statusline() == '' ? '' : '  ﰠ '}"
     " virtual column number and byte index number
     let stl.="%#posBar#%  %v[%c] %P %#totalL#%L% "
     let stl.=" %#fileType#% %y %{strlen(&fenc)?&fenc:'none'}/%{strlen(&ff)?&ff:''} "
-    let stl.="%#Hiraishin#%{(g:HRSmode==1)  ?'  ':''}"
     retu stl
 endf
 
@@ -461,9 +457,13 @@ fu! ActTal()
         let tal .= (tn==curr?'':'%#ct'.bg.'#%  '.tn).'%#c'.(tn==curr?'c':bg).'#%  '.join(fname,'').' '
     endfor
     let tal .= "%#TabLine#%="
+    " running indicators
+    let tal .= "%#error#%{g:asyncCnt > 0 ? '  '.g:asyncCnt.' ':''}"
+    let tal .= "%{gutentags#statusline() == '' ? '' : ' ﰠ '}"
     let tal .= "%#Git#%{FugitiveStatusline()}"
     let tal .= "%#Trans#%{g:TransMode}"
     let tal .= "%#Obss#%{ObsessionStatus()}"
+    let tal .= "%#Hiraishin#%{(g:HRSmode==1)  ?'   ':''}"
     retu tal
 endfu
 set tal=%!ActTal()
