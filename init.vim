@@ -599,7 +599,7 @@ cal plug#begin('~/.vim/plugged')
     Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
     Plug 'junegunn/fzf.vim'
     Plug 'junegunn/vim-easy-align'
-    " Plug 'kevinhwang91/nvim-bqf'
+    Plug 'kevinhwang91/nvim-bqf'
     Plug 'ludovicchabant/vim-gutentags'
     Plug 'mattn/emmet-vim'
     Plug 'maxmellon/vim-jsx-pretty'
