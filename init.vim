@@ -18,7 +18,6 @@ set maxmempattern=10000
 " Indention
 set ai et sta ts=4  " autoindent expandtab smarttab tabstop
 set sr sw=4         " shiftround shiftwidth
-ca ts setl ts=4 sw=4
 " Selection
 set virtualedit=all " Very useful!!
 " }}}
@@ -712,7 +711,7 @@ nn <leader>u :UndotreeToggle<cr>
 " }}}
 " => File type Specific -------------------- {{{
 aug filetypes
-    au BufReadPost * if line("'\"") <= line('$') | sil norm! g`"
+    " au BufReadPost * if line("'\"") <= line('$') | sil norm! g`"
 
     au BufRead *.la,*.gr set ft=ark
     au BufRead *.ztool set ft=ztool
