@@ -598,17 +598,21 @@ cal plug#begin('~/.vim/plugged')
     Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
     Plug 'junegunn/fzf.vim'
     Plug 'junegunn/vim-easy-align'
+    Plug 'kana/vim-textobj-user'
     Plug 'kevinhwang91/nvim-bqf'
     Plug 'ludovicchabant/vim-gutentags'
     Plug 'mattn/emmet-vim'
     Plug 'maxmellon/vim-jsx-pretty'
     Plug 'mbbill/undotree'
+    Plug 'mechatroner/rainbow_csv'
     Plug 'mfussenegger/nvim-jdtls'
     Plug 'mhinz/vim-signify'
     Plug 'neovim/nvim-lspconfig'
     Plug 'pangloss/vim-javascript'
     Plug 'preservim/nerdtree'
     Plug 'rafaqz/ranger.vim'
+    Plug 'rhysd/git-messenger.vim'
+    Plug 'skywind3000/asyncrun.vim'
     Plug 'tpope/vim-characterize'
     Plug 'tpope/vim-commentary'
     Plug 'tpope/vim-fugitive'
@@ -669,13 +673,13 @@ let g:context_enabled = 0
 " fugitive
 let g:fugitive_no_maps = 1
 ca gi Git
-ca glgg tab Git log -n 100 --graph --pretty='%h %s %d %ad' --date=short
-ca glgga tab Git log -n 100 --graph --pretty='%h %s %d %ad' --date=short --all
+ca glgg tab Git log -n 100 --graph --pretty='%h %s %d %ad %ae' --date=short
+ca glgga tab Git log -n 100 --graph --pretty='%h %s %d %ad %ae' --date=short --all
+ca glp tab Git log -p --
 ca gb tab Git branch
 ca gc Git commit
 ca gca Git commit --amend
 ca gco Git checkout
-ca gpl Git pull
 ca gps Git push
 ca gm Git merge
 " vim-easy-align
