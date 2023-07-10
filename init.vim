@@ -324,8 +324,8 @@ let g:HRSmode=1 " HiRaiShin mode
 let g:hda=(exists('g:hda') ? g:hda : {}) " hda for 'hiraishin directory anchors'
 nn <leader>H @=(has_key(g:hda,getcwd())==1 ? ':unlet g:hda[getcwd()]' : ':let g:hda[getcwd()]=1')<CR><CR>
 nn <silent> <leader>Y :cal fzf#run({'source': keys(g:hda), 'sink': 'lcd','window':{'width':0.9,'height':0.6}})<CR>
-nn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen("", "edit")':':Files')<CR><CR>
-vn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen(Selected(), "edit")':':Files')<CR><CR>
+nn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen("", "MEdit")':':Files')<CR><CR>
+vn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen(Selected(), "MEdit")':':Files')<CR><CR>
 let g:openExclude = ['"*.class"']
 let g:openExcludePath = ['"*/target/*"']
 fu! OpenByFile(fn)
@@ -348,6 +348,11 @@ fu! OpenByTarget(q, t)
     endfor
     retu agCmds
 endf
+fu MEdit(path)
+    let cmd = bufnr(a:path) > 0 ? ('b'.bufnr(a:path)) : ('edit'.a:path)
+    exe cmd
+endf
+com! -nargs=1 MEdit :cal MEdit(<f-args>)
 fu! HiraishinOpen(query, sink) " query.target
     let queries = split(' '.a:query, '[\./@]')
     let q = a:query=='' ? '' : queries[0]       " query for file
@@ -407,7 +412,7 @@ fu! SplitOp(sc, query) " run a split cmd first, then operate
     let op = nr2char(getchar())
     let opts = extend(copy(g:MfzfOpts), ['--query='.a:query])
     if (op == 'o') " Open File
-        cal HiraishinOpen(a:query, a:sc.'edit')
+        cal HiraishinOpen(a:query, a:sc.'MEdit')
     elseif (op == 'b') " Buffer
         cal ClearNoName()
         let sorted = fzf#vim#_buflisted_sorted()
@@ -730,7 +735,7 @@ aug filetypes
     au FileType sql setl ofu=
     au FileType python,vim,c,javascript,java setl ofu=v:lua.vim.lsp.omnifunc
     au FileType git setl fdm=syntax fdl=0
-    au BufWritePre * :sil! ClearTailBlank
+    " au BufWritePre * :sil! ClearTailBlank
     " auto save file to OneDrive
     au BufWritePost init.vim sil exe ':!cp ~/.config/nvim/init.vim ~/OneDrive'
 aug END
