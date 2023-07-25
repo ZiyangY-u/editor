@@ -371,6 +371,7 @@ endf
 
 xn <expr> <Up> { 'V':repeat('k', winheight(0)/3) }[mode()]
 xn <expr> <Down> { 'V':repeat('j', winheight(0)/3) }[mode()]
+xn <silent>x :<C-U>call cursor(line("'}")-1,col("'>"))<CR>`<1v``
 " Quick back to normal mode
 ino jk <esc>
 cno <expr> jk getcmdtype() == ':' ? '<c-u><esc>' : 'jk'
@@ -678,8 +679,8 @@ let g:context_enabled = 0
 " fugitive
 let g:fugitive_no_maps = 1
 ca gi Git
-ca glgg tab Git log -n 100 --graph --pretty='%h %s %d %ad %ae' --date=short
-ca glgga tab Git log -n 100 --graph --pretty='%h %s %d %ad %ae' --date=short --all
+ca glg tab Git log -n 100 --graph --pretty='%h %s %d %ad %ae' --date=short --author-date-order
+ca glga tab Git log -n 100 --graph --pretty='%h %s %d %ad %ae' --date=short --all --author-date-order
 ca glp tab Git log -p --
 ca gb tab Git branch
 ca gc Git commit
