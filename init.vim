@@ -877,8 +877,9 @@ fu! Wiki(word, ...)
     cal WebSearch(get(a:, 1, a:word) . g:WikiTag, 'https://en.wiktionary.org/wiki/', esMap)
 endf
 fu! Google(content, ...)
-    let esMap = {' ':'\ '} " escape blank
-    cal WebSearch(get(a:, 1, a:content), 'https://www.google.com/search\?q=', esMap)
+    let esMap = {' ':'\ '}
+    let q = len(a:000) == 0 ? a:content : join(a:000, ' ')
+    cal WebSearch(q, 'https://www.google.com/search\?q=', esMap)
 endf
 
 for site in ['Wiki', 'Google'] "  if no arg is given, then search current word
