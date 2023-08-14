@@ -27,6 +27,7 @@ set cul cuc            " highlight cursor line and column
 set linebreak nowrap   " stop breaking word when wrap long line
 set sc sm nosmd        " showcmd showmatch noshowmode
 set conceallevel=0     " do not hide anything
+set switchbuf+=usetab,newtab
 set title titlestring=%<%F titlelen=0
 set ph=15
 
@@ -92,11 +93,11 @@ fu! SignMarks()
     for mk in extend(getmarklist(), getmarklist(bufnr()))
         let [mn, pos] = [mk['mark'][1], mk['pos']] " mn for Mark Name
         if mn =~ '\C[a-z]'
-            cal sign_define('mark'.mn,{'text':''.mn,'texthl':'MarkSign'})
+            cal sign_define('mark'.mn,{'text':'󰉁'.mn,'texthl':'MarkSign'})
             cal sign_place(char2nr(mn), 'marks', 'mark'.mn, bufnr(), {'lnum':pos[1],'priority':70})
         elseif mn =~ '\C[A-Z]'
             if bufnr() == bufnr(mk['file'])
-                cal sign_define('gmark'.mn,{'text':''.mn,'texthl':'MarkSignGlobal'})
+                cal sign_define('gmark'.mn,{'text':''.mn,'texthl':'MarkSignGlobal'})
                 cal sign_place(char2nr(mn), 'marks', 'gmark'.mn, bufnr(), {'lnum':pos[1],'priority':70})
             en
         en
@@ -105,7 +106,7 @@ fu! SignMarks()
     for qfItem in getqflist()
         if qfItem['bufnr'] == bufnr()
             let mkName = 'qfmark'.qfIdx
-            cal sign_define(mkName,{'text':'ﭑ ','texthl':'QfMarkHl'})
+            cal sign_define(mkName,{'text':'󰙒 ','texthl':'QfMarkHl'})
             cal sign_place((qfIdx+1000), 'marks', mkName, bufnr(), {'lnum':qfItem['lnum'],'priority':60})
         en
         let qfIdx += 1
@@ -239,7 +240,7 @@ fu! InvokeCompletion()
         en
     en
 endf
-au InsertCharPre *.la,*.gr,*.txt sil cal InvokeCompletion()
+au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim sil cal InvokeCompletion()
 "   <tab> for select candidate
 ino <silent><expr> <tab> pumvisible() ? "\<Down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<Up>" : "\<tab>"
@@ -459,12 +460,12 @@ fu! ActTal()
         let winIds = gettabinfo(tn)[0]['windows']
         let bufnrs = uniq(map(winIds, {_,wi -> getwininfo(wi)[0]['bufnr']}))
         let fname = map(bufnrs, {_,bn -> fnamemodify(bufname(bn), ':p:t')})
-        let tal .= (tn==curr?'':'%#ct'.bg.'#%  '.tn).'%#c'.(tn==curr?'c':bg).'#%  '.join(fname,'').' '
+        let tal .= (tn==curr?'':'%#ct'.bg.'#%  '.tn).'%#c'.(tn==curr?'c':bg).'#%  '.join(fname,'|').' '
     endfor
     let tal .= "%#TabLine#%="
     " running indicators
     let tal .= "%#error#%{g:asyncCnt > 0 ? '  '.g:asyncCnt.' ':''}"
-    let tal .= "%{gutentags#statusline() == '' ? '' : ' ﰠ '}"
+    let tal .= "%{gutentags#statusline() == '' ? '' : ' 󱈢 '}"
     let tal .= "%#Git#%{FugitiveStatusline()}"
     let tal .= "%#Trans#%{g:TransMode}"
     let tal .= "%#Obss#%{ObsessionStatus()}"
@@ -582,7 +583,7 @@ fu! EnhancedMark() abort
         cal sign_unplace('marks', {'id':markId})
     en
     sil exe 'sil norm! m'.markChar
-    cal sign_define('mark'.markChar,{'text':''.markChar,'texthl':'QuickScopePrimary'})
+    cal sign_define('mark'.markChar,{'text':'󰈿'.markChar,'texthl':'QuickScopePrimary'})
     cal sign_place(markId, 'marks', 'mark'.markChar, bufnr(), {'lnum':line('.'),'priority':70})
     cal SignMarks()
 endf
@@ -679,9 +680,10 @@ let g:context_enabled = 0
 " fugitive
 let g:fugitive_no_maps = 1
 ca gi Git
-ca glg tab Git log -n 100 --graph --pretty='%h %s %d %ad %ae' --date=short --author-date-order
-ca glga tab Git log -n 100 --graph --pretty='%h %s %d %ad %ae' --date=short --all --author-date-order
-ca glp tab Git log -p --
+ca gl tab Git log -n 500 --pretty=tformat:"commit %H%d%nparent %P%nauthor %an <%ae> %ci%n%n%B" --author-date-order --abbrev=40
+ca glg tab Git log -n 100 --graph --pretty='%H %s %d %ad %ae' --date=short --author-date-order
+ca glga tab Git log -n 100 --graph --pretty='%H %s %d %ad %ae' --date=short --all --author-date-order
+ca glp tab Git log -p -- %
 ca gb tab Git branch
 ca gc Git commit
 ca gca Git commit --amend
