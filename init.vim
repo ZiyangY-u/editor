@@ -626,6 +626,8 @@ cal plug#begin('~/.vim/plugged')
     Plug 'tpope/vim-jdaddy'
     Plug 'tpope/vim-obsession'
     Plug 'tpope/vim-sleuth'
+    Plug 'tpope/vim-eunuch'
+    Plug 'tpope/vim-scriptease'
     Plug 'unblevable/quick-scope'
     Plug 'wellle/context.vim'
     Plug 'wellle/targets.vim'
