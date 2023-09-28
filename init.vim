@@ -450,6 +450,9 @@ nn ,t :cal SplitOp('tabe \|', '')<CR>
 vn ,t :cal SplitOp('tabe \|', Selected())<CR>
 nn t gt
 nn T gT
+fu! Shortf(fname)
+    retu fnamemodify(a:fname, ':p:t')
+endf
 fu! ActTal()
     let [tal, curr] = ['', tabpagenr()]
     hi cc ctermfg=black ctermbg=lightgreen
@@ -459,7 +462,7 @@ fu! ActTal()
         exe printf('hi ct%s ctermfg=lightred ctermbg=%s', bg, bg)
         let winIds = gettabinfo(tn)[0]['windows']
         let bufnrs = uniq(map(winIds, {_,wi -> getwininfo(wi)[0]['bufnr']}))
-        let fname = map(bufnrs, {_,bn -> fnamemodify(bufname(bn), ':p:t')})
+        let fname = map(bufnrs, {_,bn -> Shortf(bufname(bn))})
         let tal .= (tn==curr?'':'%#ct'.bg.'#%  '.tn).'%#c'.(tn==curr?'c':bg).'#%  '.join(fname,'|').' '
     endfor
     let tal .= "%#TabLine#%="
@@ -598,6 +601,7 @@ cal plug#begin('~/.vim/plugged')
 
     " Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
     Plug 'SirVer/ultisnips'
+    Plug 'ryanoasis/vim-devicons'
     Plug 'andymass/vim-matchup'
     Plug 'ap/vim-css-color'
     Plug 'gelguy/wilder.nvim', { 'do': ':UpdateRemotePlugins' }
@@ -721,6 +725,8 @@ fu g:Undotree_CustomMap()
     nmap <buffer> l <plug>UndotreeFocusTarget
 endf
 nn <leader>u :UndotreeToggle<cr>
+" devicons
+let g:webdevicons_enable_nerdtree = 1
 " }}}
 " => File type Specific -------------------- {{{
 aug filetypes
