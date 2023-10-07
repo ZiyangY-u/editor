@@ -232,7 +232,7 @@ set ssop+=globals
 
 "   auto completion
 fu! InvokeCompletion()
-    if !pumvisible() && (v:char =~ '[0-9A-Za-z.]')
+    if !pumvisible() && (v:char =~ '[0-9A-Za-z.\\]')
         if &omnifunc != ''
             cal nvim_feedkeys("\<C-x>\<C-o>", "i", 1)
         elseif v:char !~ '[j.]'
@@ -240,7 +240,7 @@ fu! InvokeCompletion()
         en
     en
 endf
-au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim sil cal InvokeCompletion()
+au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim,*.tex sil cal InvokeCompletion()
 "   <tab> for select candidate
 ino <silent><expr> <tab> pumvisible() ? "\<Down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<Up>" : "\<tab>"
@@ -1040,6 +1040,7 @@ endf
 
 " => LSP -------------------- {{{
 lua << EOF
+require("nvim-lsp-installer").setup {}
 local lspconfig = require('lspconfig')
 lspconfig.pyright.setup{}
 lspconfig.tsserver.setup{}
@@ -1047,5 +1048,6 @@ lspconfig.html.setup{}
 lspconfig.cssls.setup{}
 lspconfig.vimls.setup{}
 lspconfig.clangd.setup{}
+lspconfig.texlab.setup{}
 EOF
 " }}}
