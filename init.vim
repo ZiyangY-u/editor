@@ -268,8 +268,8 @@ let mapleader=" "
 
 " Moving
 "   <c-y>, <c-e>, zh, zl for scroll window
-au WinEnter,BufReadPost * sil exe 'nn <Left> ' . winwidth(0) / 6 . 'zhgm'
-au WinEnter,BufReadPost * sil exe 'nn <Right> ' . winwidth(0) / 6 . 'zlgm'
+au WinEnter,BufReadPost * sil exe 'nn <Left> ' . winwidth(0) / 6 . 'zh'
+au WinEnter,BufReadPost * sil exe 'nn <Right> ' . winwidth(0) / 6 . 'zl'
 nn ^ g^
 "   to next non-ascii char, origin from Japanese, so 'j'
 nmap ,gj /[^\x00-\x7F]\+<CR>
