@@ -734,6 +734,7 @@ aug filetypes
 
     au BufRead *.la,*.gr set ft=ark
     au BufRead *.ztool set ft=ztool
+    au BufRead *.tex set ft=tex
 
     au FileType text setl wrap noai sw=2 fdm=expr fde=getline(v:lnum)=~'^\\s*$'&&getline(v:lnum+1)=~'\\S'?'<1':1
     au FileType text,ark :let g:TransMode=GetDefault(g:TransMode, 'Latin')
