@@ -79,8 +79,22 @@ hi VertSplit cterm=bold ctermfg=white ctermbg=none
 hi CursorLine cterm=none ctermbg=DarkGray
 hi LineNrAbove ctermfg=blue
 hi CursorLineNr cterm=bold ctermfg=white
-au InsertEnter * hi CursorLine cterm=bold ctermbg=52|if v:insertmode=='r'|hi CursorLine ctermbg=54|en
 au InsertLeave * hi CursorLine cterm=NONE ctermbg=DarkGray
+au InsertLeave * cal DelLineExtMark(g:snipMk)
+au InsertEnter * cal HlInsertRow()
+hi ultiSnipsArrow cterm=bold ctermbg=22
+let g:snipMk = nvim_create_namespace('UltiSnipsMark')
+fu! HlInsertRow()
+    hi CursorLine cterm=bold ctermbg=52
+    cal DelLineExtMark(g:snipMk)
+    if UltiSnips#CanJumpBackwards()
+        cal nvim_buf_set_extmark(bufnr(""), g:snipMk, line(".")-1, 0, { "virt_text":[[' ', 'ultiSnipsArrow']], }) | endif
+    if UltiSnips#CanJumpForwards()
+        cal nvim_buf_set_extmark(bufnr(""), g:snipMk, line(".")-1, 0, { "virt_text":[[' ', 'ultiSnipsArrow']], }) | endif
+    if UltiSnips#CanJumpForwards() || UltiSnips#CanJumpBackwards() | hi CursorLine ctermbg=22
+    elseif v:insertmode == 'r' | hi CursorLine ctermbg=54
+    en
+endf
 
 " Sign
 let g:alphabet = map(range(char2nr('a'),char2nr('z')),'nr2char(v:val)')
@@ -122,9 +136,9 @@ fu SetExMark(bn, ln, hl, ...)
     let [ln, txt] = [line('.')-1, a:000]
     cal nvim_buf_set_extmark(a:bn, g:extmk, a:ln, 0, { "virt_text":[[' '.join(txt, ' '), a:hl]], })
 endf
-fu DelLineExtMark()
-    for mkInfo in nvim_buf_get_extmarks(bufnr(''), g:extmk, [line('.')-1,0], [line('.')-1,0], {})
-        cal nvim_buf_del_extmark(bufnr(''), g:extmk, mkInfo[0])
+fu DelLineExtMark(namespace)
+    for mkInfo in nvim_buf_get_extmarks(bufnr(''), a:namespace, [line('.')-1,0], [line('.')-1,0], {})
+        cal nvim_buf_del_extmark(bufnr(''), a:namespace, mkInfo[0])
     endfor
 endf
 
@@ -163,7 +177,7 @@ for color in keys(MColors)
     exe printf('com! -bang -range -nargs=0 Attach%s :cal AttachColor(Selected(), %d, <bang>0, 0)', color, MColors[color])
     exe printf('com! -bang -range -nargs=0 GAttach%s : cal AttachColor(Selected(), %d, <bang>0, 1)', color, MColors[color])
 endfor
-com! -nargs=0 DEMarks :cal DelLineExtMark()
+com! -nargs=0 DEMarks :cal DelLineExtMark(g:extmk)
 com! -range -nargs=0 DAttach :exe printf('syntax clear pat_%s', sha256(Selected()))
 com! -range -nargs=0 GDAttach :cal GDelAttach(Selected())
 
@@ -328,7 +342,7 @@ nn <silent> <leader>Y :cal fzf#run({'source': keys(g:hda), 'sink': 'lcd','window
 nn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen("", "MEdit")':':Files')<CR><CR>
 vn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen(Selected(), "MEdit")':':Files')<CR><CR>
 let g:openExclude = ['"*.class"']
-let g:openExcludePath = ['"*/target/*"']
+let g:openExcludePath = ['"*/target/*"', '"*/.git/*"']
 fu! OpenByFile(fn)
     let [paths, e] = ['', empty(g:openExclude) ? '' : ' -not -name '.join(g:openExclude, ' -not -name ')]
     let e .= empty(g:openExcludePath) ? '' : ' -not -ipath '.join(g:openExcludePath, ' -not -ipath ')
@@ -665,6 +679,8 @@ fun! UltiExpand(fromVisual)
                 \'window':{'width':0.7,'height':0.6}, 'options':['-1', '-i', '--query='.query]})
 endf
 let g:UltiSnipsExpandTrigger="<c-x><c-j>"
+let g:UltiSnipsJumpForwardTrigger="<c-k>"
+let g:UltiSnipsJumpBackwardTrigger="<c-j>"
 ino <a-j> <esc>:cal UltiExpand(0)<cr>
 let g:UltiSnipsSnippetDirectories=["UltiSnips", "mycoolsnippets"]
 let g:UltiSnipsEditSplit="context"
