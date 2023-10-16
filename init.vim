@@ -80,17 +80,9 @@ hi CursorLine cterm=none ctermbg=DarkGray
 hi LineNrAbove ctermfg=blue
 hi CursorLineNr cterm=bold ctermfg=white
 au InsertLeave * hi CursorLine cterm=NONE ctermbg=DarkGray
-au InsertLeave * cal DelLineExtMark(g:snipMk)
 au InsertEnter * cal HlInsertRow()
-hi ultiSnipsArrow cterm=bold ctermbg=22
-let g:snipMk = nvim_create_namespace('UltiSnipsMark')
 fu! HlInsertRow()
     hi CursorLine cterm=bold ctermbg=52
-    cal DelLineExtMark(g:snipMk)
-    if UltiSnips#CanJumpBackwards()
-        cal nvim_buf_set_extmark(bufnr(""), g:snipMk, line(".")-1, 0, { "virt_text":[[' ', 'ultiSnipsArrow']], }) | endif
-    if UltiSnips#CanJumpForwards()
-        cal nvim_buf_set_extmark(bufnr(""), g:snipMk, line(".")-1, 0, { "virt_text":[[' ', 'ultiSnipsArrow']], }) | endif
     if UltiSnips#CanJumpForwards() || UltiSnips#CanJumpBackwards() | hi CursorLine ctermbg=22
     elseif v:insertmode == 'r' | hi CursorLine ctermbg=54
     en
@@ -136,8 +128,8 @@ fu SetExMark(bn, ln, hl, ...)
     let [ln, txt] = [line('.')-1, a:000]
     cal nvim_buf_set_extmark(a:bn, g:extmk, a:ln, 0, { "virt_text":[[' '.join(txt, ' '), a:hl]], })
 endf
-fu DelLineExtMark(namespace)
-    for mkInfo in nvim_buf_get_extmarks(bufnr(''), a:namespace, [line('.')-1,0], [line('.')-1,0], {})
+fu DelLineExtMark(namespace, start, end)
+    for mkInfo in nvim_buf_get_extmarks(bufnr(''), a:namespace, a:start, a:end, {})
         cal nvim_buf_del_extmark(bufnr(''), a:namespace, mkInfo[0])
     endfor
 endf
@@ -177,7 +169,7 @@ for color in keys(MColors)
     exe printf('com! -bang -range -nargs=0 Attach%s :cal AttachColor(Selected(), %d, <bang>0, 0)', color, MColors[color])
     exe printf('com! -bang -range -nargs=0 GAttach%s : cal AttachColor(Selected(), %d, <bang>0, 1)', color, MColors[color])
 endfor
-com! -nargs=0 DEMarks :cal DelLineExtMark(g:extmk)
+com! -nargs=0 DEMarks :cal DelLineExtMark(g:extmk, [line('.')-1,0], [line('.')-1,0])
 com! -range -nargs=0 DAttach :exe printf('syntax clear pat_%s', sha256(Selected()))
 com! -range -nargs=0 GDAttach :cal GDelAttach(Selected())
 
@@ -256,7 +248,10 @@ fu! InvokeCompletion()
 endf
 au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim,*.tex sil cal InvokeCompletion()
 "   <tab> for select candidate
-ino <silent><expr> <tab> pumvisible() ? "\<Down>" : "\<tab>"
+im <silent><expr> <tab> pumvisible() ? "\<Down>" :
+            \ UltiSnips#CanExpandSnippet() ? "\<c-x>\<c-j>" :
+            \ UltiSnips#CanJumpForwards() ? "\<c-k>" :
+            \"\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<Up>" : "\<tab>"
 "   FZF integration
 ino <expr> <c-x><c-k> fzf#vim#complete('cat /usr/share/dict/en /usr/share/dict/esp /usr/share/dict/ngerman', {}, 0)
@@ -687,6 +682,17 @@ let g:UltiSnipsEditSplit="context"
 vn <a-j> :cal UltiSnips#SaveLastVisualSelection()<cr>:cal UltiExpand(1)<cr>
 nn <silent> <f4> :UltiSnipsEdit<cr>
 nn <silent> ,<f4> :to vsplit \|e /usr/share/nvim/runtime/mycoolsnippets/all.snippets<cr>
+let g:snipsMk = nvim_create_namespace('snippetMarks')
+hi SnipMark cterm=bold ctermfg=227 ctermbg=52
+fu! SnipScope(timer)
+    cal DelLineExtMark(g:snipsMk, 0, -1)
+    if mode() == 'i' && UltiSnips#CanExpandSnippet()
+        let snips = UltiSnips#SnippetsInCurrentScope()
+        let txt = join(values(map(snips, {_,v -> '󰧼 '.v})), ' ')
+        cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[[txt, 'SnipMark']], })
+    endif
+endf
+let g:snipScopeTimer = timer_start(200, 'SnipScope', {'repeat': -1})
 " leap.nvim
 nn ,f :lua require('leap').leap{ target_windows = { vim.fn.win_getid() } }<cr>
 " quick-scope
