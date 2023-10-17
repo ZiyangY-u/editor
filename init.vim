@@ -449,6 +449,7 @@ for direct in split('hjkl', '\zs')
 endfor
 
 " Tab (ngt to go go n-th tab)
+com! -bang -nargs=0 SetAnchor :let b:anchorLn=(<bang>0 ? 0 : line('.'))
 set stal=2
 hi TabLine cterm=none ctermfg=black ctermbg=247
 hi Title cterm=bold ctermfg=red
@@ -478,6 +479,10 @@ fu! ActTal()
     " running indicators
     let tal .= "%#error#%{g:asyncCnt > 0 ? '  '.g:asyncCnt.' ':''}"
     let tal .= "%{gutentags#statusline() == '' ? '' : ' 󱈢 '}"
+    if exists('b:anchorLn') && b:anchorLn != 0
+        let tal .= "%#LineNrAbove#%{line('.') < b:anchorLn ? ' bf:'.b:anchorLn : ''}"
+        let tal .= "%#LineNrBelow#%{line('.') > b:anchorLn ? ' af:'.b:anchorLn : ''}"
+    endif
     let tal .= "%#Git#%{FugitiveStatusline()}"
     let tal .= "%#Trans#%{g:TransMode}"
     let tal .= "%#Obss#%{ObsessionStatus()}"
