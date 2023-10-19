@@ -126,7 +126,7 @@ au WinEnter,BufReadPost <buffer> cal SignMarks()
 let g:extmk = nvim_create_namespace('MyExtMarks')
 fu SetExMark(bn, ln, hl, ...)
     let [ln, txt] = [line('.')-1, a:000]
-    let extmk_id = nvim_buf_set_extmark(a:bn, g:extmk, a:ln, 0, { "virt_text":[[' '.join(txt, ' '), a:hl]], })
+    let extmk_id = nvim_buf_set_extmark(a:bn, g:extmk, a:ln, 0, { "virt_text":[[' '.join(txt, ' '), a:hl]], "hl_mode":"combine" })
     if !exists('b:extmks') | let b:extmks = {} | endif
     let b:extmks[extmk_id] = ' '.join(txt, ' ')
 endf
@@ -316,6 +316,7 @@ au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim,*.tex sil cal InvokeCompletion()
 im <silent><expr> <tab> UltiSnips#CanExpandSnippet() ? "\<c-x>\<c-j>" :
             \ pumvisible() ? "\<Down>" :
             \ UltiSnips#CanJumpForwards() ? "\<c-k>" :
+            \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), matchstr(getline('.')[:col('.')-1], \'\\S*$\'))<cr>" :
             \ "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<Up>" : "\<tab>"
 "   FZF integration
@@ -750,19 +751,33 @@ vn <a-j> :cal UltiSnips#SaveLastVisualSelection()<cr>:cal UltiExpand(1)<cr>
 nn <silent> <f4> :UltiSnipsEdit<cr>
 nn <silent> ,<f4> :to vsplit \|e /usr/share/nvim/runtime/mycoolsnippets/all.snippets<cr>
 let g:snipsMk = nvim_create_namespace('snippetMarks')
-hi SnipMark cterm=bold ctermfg=227 ctermbg=52
+hi SnipMark cterm=bold ctermfg=227
+hi SnipAnon cterm=bold ctermfg=198
 fu! SnipScope(timer)
     cal DelLineExtMark(g:snipsMk, 0, -1)
-    if mode() == 'i' && UltiSnips#CanExpandSnippet()
+    if mode() != 'i' | retu | en
+    if UltiSnips#CanExpandSnippet()
         let snips = UltiSnips#SnippetsInCurrentScope()
         let txt = join(values(map(snips, {_,v -> '󰧼 '.v})), ' ')
-        cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[[txt, 'SnipMark']], })
+        cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[[txt, 'SnipMark']], "hl_mode":"combine" })
+    endif
+    let txt = AnonExpand()
+    if txt != ''
+        cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[['󰧻 '.txt, 'SnipAnon']], "hl_mode":"combine" })
     endif
 endf
 let g:snipScopeTimer = timer_start(100, 'SnipScope', {'repeat': -1})
 au InsertEnter * cal timer_pause(g:snipScopeTimer, 0)
 au InsertLeave * cal timer_pause(g:snipScopeTimer, 1)
 au InsertLeave * cal DelLineExtMark(g:snipsMk, 0, -1)
+fu! AnonExpand() " TODO Anon Expand: regex match and regex replace and expand!
+    let cw = trim(matchstr(getline('.')[:col('.')-1], '\S*$'))
+    if cw == '$$'
+        retu ':latex:\\$1\'
+    else
+        retu ''
+    endif
+endf
 " leap.nvim
 nn ,f :lua require('leap').leap{ target_windows = { vim.fn.win_getid() } }<cr>
 " quick-scope
