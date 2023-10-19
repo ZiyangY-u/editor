@@ -29,7 +29,7 @@ set sc sm nosmd        " showcmd showmatch noshowmode
 set conceallevel=0     " do not hide anything
 set switchbuf+=usetab,newtab
 set title titlestring=%<%F titlelen=0
-set ph=15
+set ph=15 pw=20
 
 " Statusline
 "   self-define color scheme
@@ -44,7 +44,7 @@ hi sleepWindow ctermbg=DarkGray
 
 let g:asyncCnt = 0
 fu! ActStl(isActive)
-    if &filetype == 'qf' && a:isActive == 1 | retu " QuickFix List %l/%L %P" | en
+    if &ft == 'qf' && a:isActive == 1 | retu " QuickFix List %l/%L %P" | en
     if a:isActive == 0
         retu "%#error#%r%#mod#%m%#sleepWindow# %t %y %= ln:%l/%L %P "
     en
@@ -207,6 +207,69 @@ nn V :cal RenderVerticalScope(1,1)<cr>V
 nn <c-v> :cal RenderVerticalScope(1,1)<cr><c-v>
 au CursorMoved * if index(['V','v',"\<C-V>"], mode())>=0|sil cal RenderVerticalScope(1,1)|en
 au CursorMoved,TextChanged,InsertEnter,TextYankPost * if index(['V','v',"\<C-V>"], mode())<0|sil cal ClearVirtualTxt()|en
+
+" Roadmap
+au ExitPre * if exists('g:roadmapbuf') | exe 'bd!'.g:roadmapbuf | endif
+au CursorHold * if exists('g:roadmapbuf') && index(tabpagebuflist(), g:roadmapbuf) >= 0 | cal timer_pause(g:refresh, 0) | en
+com! -nargs=0 Roadmap :cal ToggleRoadmap()
+fu! ToggleRoadmap()
+    if !exists('g:roadmapbuf') || !bufexists(g:roadmapbuf)
+        let g:roadmapbuf = bufadd('')
+        call bufload(g:roadmapbuf)
+    endif
+    if index(tabpagebuflist(), g:roadmapbuf) == -1
+        exe 'bo vsplit |b'.g:roadmapbuf.'|vert res 25'
+        cal setbufvar(g:roadmapbuf, '&rnu', 0) | cal setbufvar(g:roadmapbuf, '&nu', 0)
+        cal setbufvar(g:roadmapbuf, '&ft', 'roadmap')
+        syntax match rmap_mks /󰉁.*/ containedin=ALL | hi rmap_mks ctermfg=196
+        syntax match rmap_git /.*/ containedin=ALL | hi rmap_git ctermfg=208
+        syntax match rmap_anchor / .*/ containedin=ALL | hi rmap_anchor ctermfg=129
+        syntax match rmap_qf /󰙒 .*/ containedin=ALL | hi rmap_qf ctermfg=227
+        syntax match rmap_curr /^>/ containedin=ALL | hi rmap_curr ctermfg=82
+    endif
+endf
+fu! RefreshRoadMap(timer)
+    if !exists('g:roadmapbuf') | retu | endif
+    if index(tabpagebuflist(), g:roadmapbuf) < 0 | cal timer_pause(g:refresh, 1) | en
+    " clear buf content first
+    for i in range(1, 999) | cal setbufline(g:roadmapbuf, i, '') | endfor
+    call setbufline(g:roadmapbuf, 1, ['Aerial View:'])
+
+    let marks = {}
+    for mk in getmarklist(bufnr()) " marks
+        let [mkn, ln] = [mk['mark'], mk['pos'][1]]
+        if index(g:alphabet, mkn[1:]) >= 0 | let marks[str2nr(ln)] = '󰉁'.mkn[1:] | endif
+    endfor
+    for [id, txt] in exists('b:extmks') ? items(b:extmks) : items({}) " extmarks
+        let ln = nvim_buf_get_extmark_by_id(bufnr(), g:extmk, str2nr(id), {})[0] + 1
+        let marks[str2nr(ln)] = (has_key(marks, str2nr(ln)) ? marks[str2nr(ln)] : '').' '.txt
+    endfor
+    if FugitiveStatusline() != '' && filereadable(expand('%:p')) " git diffs
+        let path = getcwd()
+        cal chdir(expand('%:p:h'))
+        for dif in split(system('git diff --unified=0 '.expand('%').'| ag ^@@'), '\n')
+            let ln = trim(matchstr(dif, '+\d*'))[1:]
+            let marks[ln] = " git diff"
+        endfor
+        cal chdir(path)
+    endif
+    for qf in filter(copy(getqflist()), {_,i -> i['bufnr']==bufnr()}) | let marks[qf['lnum']] = '󰙒 '.trim(qf['text']) | endfor
+
+    if !has_key(marks, str2nr(line('.'))) | let marks[str2nr(line('.'))] = '>>>>>' | endif
+    if exists('b:anchorLn') && b:anchorLn != 0 | let marks[str2nr(b:anchorLn)] = ' ' | endif
+    let [sortedlist, idx] = [sort(map(keys(marks), {_,v -> str2nr(v)}), 'n'), 2]
+    for ln in sortedlist
+        if !has_key(marks, ln) | continue | endif
+        if line('.') == str2nr(ln) && marks[ln] == '>>>>>'
+            call setbufline(g:roadmapbuf, idx, ['>'])
+        else
+            let fmt = (line('.') == str2nr(ln) ? '> ' : '  '). '%'.len(line('$')).'d %s'
+            call setbufline(g:roadmapbuf, idx, [printf(fmt, ln, marks[ln])])
+        endif
+        let idx += 1
+    endfor
+endf
+let g:refresh = timer_start(1000, 'RefreshRoadMap', {'repeat': -1})
 
 " Diff
 hi DiffText ctermbg=88
@@ -481,10 +544,6 @@ fu! ActTal()
     " running indicators
     let tal .= "%#error#%{g:asyncCnt > 0 ? '  '.g:asyncCnt.' ':''}"
     let tal .= "%{gutentags#statusline() == '' ? '' : ' 󱈢 '}"
-    if exists('b:anchorLn') && b:anchorLn != 0
-        let tal .= "%#LineNrAbove#%{line('.') < b:anchorLn ? ' bf:'.b:anchorLn : ''}"
-        let tal .= "%#LineNrBelow#%{line('.') > b:anchorLn ? ' af:'.b:anchorLn : ''}"
-    endif
     let tal .= "%#Git#%{FugitiveStatusline()}"
     let tal .= "%#Trans#%{g:TransMode}"
     let tal .= "%#Obss#%{ObsessionStatus()}"
