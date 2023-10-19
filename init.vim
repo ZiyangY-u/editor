@@ -126,7 +126,9 @@ au WinEnter,BufReadPost <buffer> cal SignMarks()
 let g:extmk = nvim_create_namespace('MyExtMarks')
 fu SetExMark(bn, ln, hl, ...)
     let [ln, txt] = [line('.')-1, a:000]
-    cal nvim_buf_set_extmark(a:bn, g:extmk, a:ln, 0, { "virt_text":[[' '.join(txt, ' '), a:hl]], })
+    let extmk_id = nvim_buf_set_extmark(a:bn, g:extmk, a:ln, 0, { "virt_text":[[' '.join(txt, ' '), a:hl]], })
+    if !exists('b:extmks') | let b:extmks = {} | endif
+    let b:extmks[extmk_id] = ' '.join(txt, ' ')
 endf
 fu DelLineExtMark(namespace, start, end)
     for mkInfo in nvim_buf_get_extmarks(bufnr(''), a:namespace, a:start, a:end, {})
@@ -248,10 +250,10 @@ fu! InvokeCompletion()
 endf
 au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim,*.tex sil cal InvokeCompletion()
 "   <tab> for select candidate
-im <silent><expr> <tab> pumvisible() ? "\<Down>" :
-            \ UltiSnips#CanExpandSnippet() ? "\<c-x>\<c-j>" :
+im <silent><expr> <tab> UltiSnips#CanExpandSnippet() ? "\<c-x>\<c-j>" :
+            \ pumvisible() ? "\<Down>" :
             \ UltiSnips#CanJumpForwards() ? "\<c-k>" :
-            \"\<tab>"
+            \ "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<Up>" : "\<tab>"
 "   FZF integration
 ino <expr> <c-x><c-k> fzf#vim#complete('cat /usr/share/dict/en /usr/share/dict/esp /usr/share/dict/ngerman', {}, 0)
@@ -615,6 +617,7 @@ cal plug#begin('~/.vim/plugged')
 
     " Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
     Plug 'SirVer/ultisnips'
+    Plug 'preservim/tagbar'
     Plug 'ryanoasis/vim-devicons'
     Plug 'andymass/vim-matchup'
     Plug 'ap/vim-css-color'
@@ -697,7 +700,10 @@ fu! SnipScope(timer)
         cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[[txt, 'SnipMark']], })
     endif
 endf
-let g:snipScopeTimer = timer_start(200, 'SnipScope', {'repeat': -1})
+let g:snipScopeTimer = timer_start(100, 'SnipScope', {'repeat': -1})
+au InsertEnter * cal timer_pause(g:snipScopeTimer, 0)
+au InsertLeave * cal timer_pause(g:snipScopeTimer, 1)
+au InsertLeave * cal DelLineExtMark(g:snipsMk, 0, -1)
 " leap.nvim
 nn ,f :lua require('leap').leap{ target_windows = { vim.fn.win_getid() } }<cr>
 " quick-scope
