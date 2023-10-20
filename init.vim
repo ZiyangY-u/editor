@@ -24,7 +24,7 @@ set virtualedit=all " Very useful!!
 " => Appearance -------------------- {{{
 set nu rnu             " show line number
 set cul cuc            " highlight cursor line and column
-set linebreak nowrap   " stop breaking word when wrap long line
+set lbr nowrap         " stop breaking word when wrap long line
 set sc sm nosmd        " showcmd showmatch noshowmode
 set conceallevel=0     " do not hide anything
 set switchbuf+=usetab,newtab
@@ -50,7 +50,7 @@ fu! ActStl(isActive)
     en
     let stl=""
     let stl.="%#error#%r%#mod#%m"
-    let stl.="%#ModColor#%{(mode()=='n')?'  '.g:jumpModeNames[g:jumpMode].' ':''}%{(mode()=='t')?'  TERM ':''}"
+    let stl.="%#ModColor#%{(mode()=='n'||mode()=='c')?'  '.g:jumpModeNames[g:jumpMode].' ':''}%{(mode()=='t')?'  TERM ':''}"
     let stl.="%<%#c1# %w%{filereadable(expand('%p'))?RelPath(expand('%:p'),getcwd()):expand('%:p')}"
 
     let stl.="%=" " left/right separator
@@ -226,34 +226,17 @@ fu! ToggleRoadmap()
         syntax match rmap_anchor / .*/ containedin=ALL | hi rmap_anchor ctermfg=129
         syntax match rmap_qf /󰙒 .*/ containedin=ALL | hi rmap_qf ctermfg=227
         syntax match rmap_curr /^>/ containedin=ALL | hi rmap_curr ctermfg=82
+        wincmd p
     endif
 endf
 fu! RefreshRoadMap(timer)
-    if !exists('g:roadmapbuf') | retu | endif
+    if !exists('g:roadmapbuf') || &ft == 'roadmap' | retu | endif
     if index(tabpagebuflist(), g:roadmapbuf) < 0 | cal timer_pause(g:refresh, 1) | en
     " clear buf content first
     for i in range(1, 999) | cal setbufline(g:roadmapbuf, i, '') | endfor
-    call setbufline(g:roadmapbuf, 1, ['Aerial View:'])
+    call setbufline(g:roadmapbuf, 1, ['  Roadmap:'])
 
-    let marks = {}
-    for mk in getmarklist(bufnr()) " marks
-        let [mkn, ln] = [mk['mark'], mk['pos'][1]]
-        if index(g:alphabet, mkn[1:]) >= 0 | let marks[str2nr(ln)] = '󰉁'.mkn[1:] | endif
-    endfor
-    for [id, txt] in exists('b:extmks') ? items(b:extmks) : items({}) " extmarks
-        let ln = nvim_buf_get_extmark_by_id(bufnr(), g:extmk, str2nr(id), {})[0] + 1
-        let marks[str2nr(ln)] = (has_key(marks, str2nr(ln)) ? marks[str2nr(ln)] : '').' '.txt
-    endfor
-    if FugitiveStatusline() != '' && filereadable(expand('%:p')) " git diffs
-        let path = getcwd()
-        cal chdir(expand('%:p:h'))
-        for dif in split(system('git diff --unified=0 '.expand('%').'| ag ^@@'), '\n')
-            let ln = trim(matchstr(dif, '+\d*'))[1:]
-            let marks[ln] = " git diff"
-        endfor
-        cal chdir(path)
-    endif
-    for qf in filter(copy(getqflist()), {_,i -> i['bufnr']==bufnr()}) | let marks[qf['lnum']] = '󰙒 '.trim(qf['text']) | endfor
+    let marks = GetMarks()
 
     if !has_key(marks, str2nr(line('.'))) | let marks[str2nr(line('.'))] = '>>>>>' | endif
     if exists('b:anchorLn') && b:anchorLn != 0 | let marks[str2nr(b:anchorLn)] = ' ' | endif
@@ -268,6 +251,34 @@ fu! RefreshRoadMap(timer)
         endif
         let idx += 1
     endfor
+endf
+fu! GetMarks() " marks for road map and jumping
+    let marks = {}
+    for mk in getmarklist(bufnr()) " marks
+        let [mkn, ln] = [mk['mark'], mk['pos'][1]]
+        if index(g:alphabet, mkn[1:]) >= 0 | let marks[str2nr(ln)] = '󰉁'.mkn[1:].' '.trim(getline(ln)) | endif
+    endfor
+    for [id, txt] in exists('b:extmks') ? items(b:extmks) : items({}) " extmarks
+        let ln = nvim_buf_get_extmark_by_id(bufnr(), g:extmk, str2nr(id), {})[0] + 1
+        let marks[str2nr(ln)] = (has_key(marks, str2nr(ln)) ? marks[str2nr(ln)] : '').' '.txt
+    endfor
+    if FugitiveStatusline() != '' && filereadable(expand('%:p')) " git diffs
+        let path = getcwd()
+        cal chdir(expand('%:p:h'))
+        for dif in split(system('git diff --unified=0 '.expand('%').'| ag ^@@'), '\n')
+            let ln = trim(matchstr(dif, '+\d*'))[1:]
+            let marks[ln] = " ".trim(getline(ln))
+        endfor
+        cal chdir(path)
+    endif
+    for qf in filter(copy(getqflist()), {_,i -> i['bufnr']==bufnr()}) | let marks[qf['lnum']] = '󰙒 '.trim(qf['text']) | endfor
+    let b:roadmarks = sort(map(keys(marks), {_,v -> str2nr(v)}), 'n')
+    retu marks
+endf
+fu! GoMark(flag) " 0 for prev; 1 for next
+    let next = filter(copy(b:roadmarks), {_,i -> a:flag ? (i>line('.')) : (i<line('.'))})
+    if len(next) > 0 | exe (a:flag ? next[0] : next[-1]) | en
+    cal RefreshRoadMap('')
 endf
 let g:refresh = timer_start(1000, 'RefreshRoadMap', {'repeat': -1})
 
@@ -313,7 +324,7 @@ fu! InvokeCompletion()
 endf
 au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim,*.tex sil cal InvokeCompletion()
 "   <tab> for select candidate
-im <silent><expr> <tab> UltiSnips#CanExpandSnippet() ? "\<c-x>\<c-j>" :
+im <silent><expr> <tab> UltiSnips#CanExpandSnippet() ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
             \ pumvisible() ? "\<Down>" :
             \ UltiSnips#CanJumpForwards() ? "\<c-k>" :
             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), matchstr(getline('.')[:col('.')-1], \'\\S*$\'))<cr>" :
@@ -366,7 +377,7 @@ fu! BufJumpBack()
 endf
 nn <a-o> :cal BufJumpBack()<cr>
 let g:jumpMode = 'n'
-let g:jumpModeNames = {'n':'Normal','m':'Mark','f':'Fold','s':'Scroll','q':'Quickfix','d':'Diff','w':'Window','c':'Conflict'}
+let g:jumpModeNames = {'n':'Normal','m':'Mark','f':'Fold','s':'Scroll','q':'Quickfix','d':'Diff','w':'Window','c':'Conflict', 'r':'Roadmap'}
 fu! OmniJumpBoot(backNormFlag)
     let jumpMoves = {'nj':'gj','nk':'gk',
                 \'mj':"]'", 'mk':"['",
@@ -374,6 +385,7 @@ fu! OmniJumpBoot(backNormFlag)
                 \'fj':'zj','fk':'zk','fh':':setl fdl-=1<CR>','fl':':setl fdl+=1<CR>',
                 \'wj':'<c-w>-','wk':'<c-w>+','wh':'<c-w>>','wl':'<c-w><',
                 \'sj':'<c-d>','sk':'<c-u>','sh':'60h','sl':'60l',
+                \'rj':':sil cal GoMark(v:true)<cr>', 'rk':':sil cal GoMark(v:false)<cr>',
                 \'cj':':let @/="\\m^======="<cr>n','ck':':let @/="\\m^======="<cr>N',
                 \'cl':'V?\m^<<<<<<<<cr>d/\m^>>>>>>><cr>dd','ch':'V/\m^>>>>>>><cr>d?\m^<<<<<<<<cr>dd',
                 \'dj':'<Plug>(signify-next-hunk)','dk':'<Plug>(signify-prev-hunk)','dh':'<c-w>h','dl':'<c-w>l'}
@@ -382,6 +394,7 @@ fu! OmniJumpBoot(backNormFlag)
     if a:backNormFlag == 0
         let modeChar = nr2char(getchar()) " wait for a mode char
     en
+    if modeChar == 'r' | cal ToggleRoadmap() | en " open road map
     if modeChar == 'c' " Conflict
         hi CursorLine cterm=NONE ctermbg=167
     else
@@ -770,13 +783,22 @@ let g:snipScopeTimer = timer_start(100, 'SnipScope', {'repeat': -1})
 au InsertEnter * cal timer_pause(g:snipScopeTimer, 0)
 au InsertLeave * cal timer_pause(g:snipScopeTimer, 1)
 au InsertLeave * cal DelLineExtMark(g:snipsMk, 0, -1)
-fu! AnonExpand() " TODO Anon Expand: regex match and regex replace and expand!
+au CursorMovedI * cal AnonJobStart()
+let g:anonExpand = ''
+fu! s:GetExpanded(jobId, data, event) abort
+    let g:anonExpand = a:data[0] 
+endf
+fu! AnonJobStart()
+    let g:anonExpand = ''
     let cw = trim(matchstr(getline('.')[:col('.')-1], '\S*$'))
-    if cw == '$$'
-        retu ':latex:\\$1\'
-    else
-        retu ''
-    endif
+    if cw != ''
+        cal jobstart('~/OneDrive/ultisnips/anon_expand.py '.cw.' '.&ft,
+                    \{'on_stdout': function('s:GetExpanded'), 'stdout_buffered':v:true})
+    en
+endf
+fu! AnonExpand() " Anon Expand: regex match and regex replace and expand!
+    if g:anonExpand != '' | retu g:anonExpand | en
+    retu ''
 endf
 " leap.nvim
 nn ,f :lua require('leap').leap{ target_windows = { vim.fn.win_getid() } }<cr>
