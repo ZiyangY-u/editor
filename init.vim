@@ -125,10 +125,12 @@ au WinEnter,BufReadPost <buffer> cal SignMarks()
 " Colorful (ExtMark, AttachColor)
 let g:extmk = nvim_create_namespace('MyExtMarks')
 fu SetExMark(bn, ln, hl, ...)
-    let [ln, txt] = [line('.')-1, a:000]
+    let txt = a:000
     let extmk_id = nvim_buf_set_extmark(a:bn, g:extmk, a:ln, 0, { "virt_text":[[' '.join(txt, ' '), a:hl]], "hl_mode":"combine" })
-    if !exists('b:extmks') | let b:extmks = {} | endif
+    if !exists('b:extmks') | let [b:extmks, b:extmkColors] = [{}, {}] | endif
     let b:extmks[extmk_id] = ' '.join(txt, ' ')
+    let b:extmkColors[extmk_id] = a:hl
+    doautocmd User SetExtMarkPost
 endf
 fu DelLineExtMark(namespace, start, end)
     for mkInfo in nvim_buf_get_extmarks(bufnr(''), a:namespace, a:start, a:end, {})
@@ -151,9 +153,7 @@ fu RecoverGAttach()
     exe 'let _ca = ' . g:ColorAttachs
     for [sha, pcb] in items(_ca)
         let [pat, col, border] = pcb
-        if sha256(&ft.pat.border) == sha
-            cal AttachColor(pat, col, border, 0)
-        endif
+        if sha256(&ft.pat.border) == sha | cal AttachColor(pat, col, border, 0) | en
     endfor
 endf
 fu GDelAttach(pattern)
@@ -171,7 +171,7 @@ for color in keys(MColors)
     exe printf('com! -bang -range -nargs=0 Attach%s :cal AttachColor(Selected(), %d, <bang>0, 0)', color, MColors[color])
     exe printf('com! -bang -range -nargs=0 GAttach%s : cal AttachColor(Selected(), %d, <bang>0, 1)', color, MColors[color])
 endfor
-com! -nargs=0 DEMarks :cal DelLineExtMark(g:extmk, [line('.')-1,0], [line('.')-1,0])
+com! -nargs=0 DEMarks :do User UnsetExtMarkPost|cal DelLineExtMark(g:extmk, [line('.')-1,0], [line('.')-1,0])
 com! -range -nargs=0 DAttach :exe printf('syntax clear pat_%s', sha256(Selected()))
 com! -range -nargs=0 GDAttach :cal GDelAttach(Selected())
 

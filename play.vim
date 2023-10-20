@@ -291,53 +291,113 @@
 " endf
 " nn <silent> <tab><tab> :cal GrTransMode()<CR>
 
-" let roadmapwinnr = bufwinnr(win_getid())
-" echo roadmapwinnr
-" let prevwin = win_getid()
 " " echo winnr('$')
 " let pprevwin = win_getid()
 " " echo pprevwin
 
-au ExitPre * if exists('g:roadmapbuf') | exe 'bd!'.g:roadmapbuf | endif
-fu! ToggleRoadmap()
-    " cal RefreshRoadMap()
-    if !exists('g:roadmapbuf') || !bufexists(g:roadmapbuf)
-        let g:roadmapbuf = bufadd('')
-        call bufload(g:roadmapbuf)
-    endif
-    if index(tabpagebuflist(), g:roadmapbuf) == -1
-        exe 'bo vsplit |b'.g:roadmapbuf.'|vert res 25'
-        cal setbufvar(g:roadmapbuf, '&rnu', 0)
-        cal setbufvar(g:roadmapbuf, '&nu', 0)
-    endif
-endf
-fu! RefreshRoadMap()
-    " clear buf content first
-    for i in range(1, 999) | cal setbufline(g:roadmapbuf, i, '') | endfor
-    call setbufline(g:roadmapbuf, 1, ['Roadmap:'])
+" au ExitPre * if exists('g:roadmapbuf') | exe 'bd!'.g:roadmapbuf | endif
+" com! -nargs=0 Roadmap :cal ToggleRoadmap()
+" fu! ToggleRoadmap()
+"     " cal RefreshRoadMap()
+"     if !exists('g:roadmapbuf') || !bufexists(g:roadmapbuf)
+"         let g:roadmapbuf = bufadd('')
+"         call bufload(g:roadmapbuf)
+"     endif
+"     if index(tabpagebuflist(), g:roadmapbuf) == -1
+"         exe 'bo vsplit |b'.g:roadmapbuf.'|vert res 25'
+"         cal setbufvar(g:roadmapbuf, '&rnu', 0)
+"         cal setbufvar(g:roadmapbuf, '&nu', 0)
+"         cal setbufvar(g:roadmapbuf, '&ft', 'roadmap')
+"         syntax match rmap_mks /󰈿.*/ containedin=ALL | hi rmap_mks ctermfg=196
+"         syntax match rmap_git /.*/ containedin=ALL | hi rmap_git ctermfg=185
+"         syntax match rmap_anchor / .*/ containedin=ALL | hi rmap_anchor ctermfg=129
+"         syntax match rmap_curr /^>/ containedin=ALL | hi rmap_curr ctermfg=82
+"     endif
+" endf
+" fu! RefreshRoadMap(timer)
+"     " clear buf content first
+"     for i in range(1, 999) | cal setbufline(g:roadmapbuf, i, '') | endfor
+"     call setbufline(g:roadmapbuf, 1, ['Roadmap:'])
 
-    let marks = {}
-    for mk in getmarklist(bufnr())
-        let [mkn, ln] = [mk['mark'], mk['pos'][1]]
-        let marks[str2nr(ln)] = '󰈿'.mkn[1:]
-    endfor
-    for [id, txt] in exists('b:extmks') ? items(b:extmks) : items({})
-        let ln = nvim_buf_get_extmark_by_id(bufnr(), g:extmk, str2nr(id), {})[0] + 1
-        let marks[str2nr(ln)] = (has_key(marks, str2nr(ln)) ? marks[str2nr(ln)] : '').' '.txt
-    endfor
+    " let marks = {}
+    " for mk in getmarklist(bufnr())
+    "     let [mkn, ln] = [mk['mark'], mk['pos'][1]]
+    "     let marks[str2nr(ln)] = '󰈿'.mkn[1:]
+    " endfor
+    " for [id, txt] in exists('b:extmks') ? items(b:extmks) : items({})
+    "     let ln = nvim_buf_get_extmark_by_id(bufnr(), g:extmk, str2nr(id), {})[0] + 1
+    "     let marks[str2nr(ln)] = (has_key(marks, str2nr(ln)) ? marks[str2nr(ln)] : '').' '.txt
+    " endfor
+    " for dif in FugitiveStatusline() != '' ? split(system('git diff --unified=0 '.expand('%').'| ag ^@@'), '\n') : []
+    "     let ln = trim(matchstr(dif, '+\d*'))[1:]
+    "     let marks[ln] = " git diff"
+    " endfor
 
-    if !has_key(marks, str2nr(line('.'))) | let marks[str2nr(line('.'))] = '>>>>>' | endif
-    let [sortedlist, idx] = [sort(map(keys(marks), {_,v -> str2nr(v)}), 'n'), 2]
-    for ln in sortedlist
-        if line('.') == str2nr(ln) && marks[ln] == '>>>>>'
-            call setbufline(g:roadmapbuf, idx, ['>'])
-        else
-            let fmt = (line('.') == str2nr(ln) ? '> ' : '  '). '%'.len(line('$')).'d %s'
-            call setbufline(g:roadmapbuf, idx, [printf(fmt, ln, marks[ln])])
-        endif
-        let idx += 1
-    endfor
-endf
-au CursorMoved * if exists('g:roadmapbuf') && index(tabpagebuflist(), g:roadmapbuf) | cal RefreshRoadMap() | endif
-cal ToggleRoadmap()
+    " if !has_key(marks, str2nr(line('.'))) | let marks[str2nr(line('.'))] = '>>>>>' | endif
+    " if exists('b:anchorLn') && b:anchorLn != 0
+    "     let marks[str2nr(b:anchorLn)] = ' '.(line('.') < b:anchorLn ? 'before' : 'after')
+    " endif
+    " let [sortedlist, idx] = [sort(map(keys(marks), {_,v -> str2nr(v)}), 'n'), 2]
+    " for ln in sortedlist
+    "     if line('.') == str2nr(ln) && marks[ln] == '>>>>>'
+    "         call setbufline(g:roadmapbuf, idx, ['>'])
+    "     else
+    "         let fmt = (line('.') == str2nr(ln) ? '> ' : '  '). '%'.len(line('$')).'d %s'
+    "         call setbufline(g:roadmapbuf, idx, [printf(fmt, ln, marks[ln])])
+    "     endif
+    "     let idx += 1
+    " endfor
+" endf
+" let g:refresh = timer_start(1000, 'RefreshRoadMap', {'repeat': -1})
+
+" " au CursorMoved * if exists('g:roadmapbuf') && index(tabpagebuflist(), g:roadmapbuf) | cal RefreshRoadMap() | endif
+" if exists('g:refresh')
+"     cal timer_stop(g:refresh)
+" endif
+" cal ToggleRoadmap()
+
+" let test = '@@ -294,3 +293,0 @@'
+" echo trim(matchstr(test, '+\d*'))[1:]
+
+" fu! CurrWord()
+"     norm a
+"     echom UltiSnips#CanExpandSnippet()
+" endf
+" ino <c-x><c-j> <esc>:cal CurrWord()<cr>
+
+" fu! ActStl(isActive)
+"     if &ft == 'qf' && a:isActive == 1 | retu " QuickFix List %l/%L %P" | en
+"     if a:isActive == 0
+"         retu "%#error#%r%#mod#%m%#sleepWindow# %t %y %= ln:%l/%L %P "
+"     en
+"     let stl=""
+"     let stl="%{matchstr(getline('.')[:col('.')-1], \'\\w*$\')}"
+"     let stl.="%#error#%r%#mod#%m"
+"     let stl.="%#ModColor#%{(mode()=='n')?'  '.g:jumpModeNames[g:jumpMode].' ':''}%{(mode()=='t')?'  TERM ':''}"
+"     let stl.="%<%#c1# %w%{filereadable(expand('%p'))?RelPath(expand('%:p'),getcwd()):expand('%:p')}"
+
+"     let stl.="%=" " left/right separator
+"     " virtual column number and byte index number
+"     let stl.="%#posBar#%  %v[%c] %P %#totalL#%L% "
+"     let stl.=" %#fileType#% %y %{strlen(&fenc)?&fenc:'none'}/%{strlen(&ff)?&ff:''} "
+"     retu stl
+" endf
+
+" echo matchstr('something here', '\w*$')
+
+" let b:AnonExpand = 0
+" im <silent><expr> <tab> UltiSnips#CanExpandSnippet() ? "\<c-x>\<c-j>" :
+"             \ pumvisible() ? "\<Down>" :
+"             \ UltiSnips#CanJumpForwards() ? "\<c-k>" :
+"             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), matchstr(getline('.')[:col('.')-1], \'\\S*$\'))<cr>" :
+"             \ "\<tab>"
+
+" fu! AnonExpand()
+"     let cw = trim(matchstr(getline('.')[:col('.')-1], '\S*$'))
+"     if cw == 'afc'
+"         retu 'ABC'
+"     else
+"         retu ''
+"     endif
+" endf
 
