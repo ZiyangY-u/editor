@@ -124,21 +124,55 @@ au WinEnter,BufReadPost <buffer> cal SignMarks()
 
 " Colorful (ExtMark, AttachColor)
 let g:extmk = nvim_create_namespace('MyExtMarks')
+let g:ExMarks='{}' " key sha256(filepath.ln.txt); val: [filepath, ln, txt, hl]
 fu SetExMark(bn, ln, hl, ...)
-    let txt = a:000
-    let extmk_id = nvim_buf_set_extmark(a:bn, g:extmk, a:ln, 0, { "virt_text":[[' '.join(txt, ' '), a:hl]], "hl_mode":"combine" })
-    if !exists('b:extmks') | let [b:extmks, b:extmkColors] = [{}, {}] | endif
-    let b:extmks[extmk_id] = ' '.join(txt, ' ')
-    let b:extmkColors[extmk_id] = a:hl
-    doautocmd User SetExtMarkPost
+    let txt = ' '.join(a:000, ' ')
+    let extmk_id = nvim_buf_set_extmark(a:bn, g:extmk, a:ln, 0, { "virt_text":[[txt, a:hl]], "hl_mode":"combine" })
+    if !exists('b:extmks') | let [b:extmks, b:extcolor] = [{}, {}] | en
+    let [b:extmks[extmk_id], b:extcolor[extmk_id]] = [txt, a:hl]
+    cal AutoSaveExMarks('')
 endf
 fu DelLineExtMark(namespace, start, end)
     for mkInfo in nvim_buf_get_extmarks(bufnr(''), a:namespace, a:start, a:end, {})
         cal nvim_buf_del_extmark(bufnr(''), a:namespace, mkInfo[0])
+        if exists('b:extmks') | unlet b:extmks[mkInfo[0]] | en
+        if exists('b:extcolor') | unlet b:extcolor[mkInfo[0]] | en
+    endfor
+    cal AutoSaveExMarks('')
+endf
+fu AutoSaveExMarks(timer)
+    let _ca = {}
+    for bn in fzf#vim#_buflisted_sorted()
+        let [_be, _bc] = [getbufvar(bn, 'extmks'), getbufvar(bn, 'extcolor')]
+        for mkInfo in nvim_buf_get_extmarks(bn, g:extmk, 0, -1, {})
+            let [txt, hl] = [_be[mkInfo[0]], _bc[mkInfo[0]]]
+            let _ca[sha256(expand('#'.bn.':p').mkInfo[1].txt)] = [expand('#'.bn.':p'), mkInfo[1], txt, hl]
+        endfor
+    endfor
+    let g:ExMarks = string(_ca)
+endf
+let g:autoSaveExmk = timer_start(5000, 'AutoSaveExMarks', {'repeat': -1})
+au BufWritePost * cal AutoSaveExMarks('')
+let g:extRecoverCalled = 0 " make sure recovering called only once
+fu RecoverExMarks()
+    if g:extRecoverCalled == 0 | let g:extRecoverCalled = 1 | el | retu | en
+    exe 'let _ca = ' . g:ExMarks
+    for [sha, flth] in items(_ca)
+        let [fp, ln, txt, hl] = flth
+        if sha256(fp.ln.txt) == sha 
+            let bn = bufnr(fp)
+            if bn == -1 | continue | en
+            let extmk_id = nvim_buf_set_extmark(bn, g:extmk, ln, 0, { "virt_text":[[txt, hl]], "hl_mode":"combine" })
+            if empty(getbufvar(bn, 'extmks')) == 1 | cal setbufvar(bn, 'extmks', {}) | cal setbufvar(bn, 'extcolor', {}) | en
+            let [_be, _bc] = [getbufvar(bn, 'extmks'), getbufvar(bn, 'extcolor')]
+            let [_be[extmk_id], _bc[extmk_id]] = [txt, hl]
+            cal setbufvar(bn, 'extmks', _be) | cal setbufvar(bn, 'extcolor', _bc)
+        en
     endfor
 endf
+au SessionLoadPost * cal RecoverExMarks()
 
-let g:ColorAttachs='{}' " key: sha256(ft.pat.border); val: [pat,color,border]
+let g:ColorAttachs='{}' " key: sha256(ft.pat.border); val: [pat, color, border]
 fu AttachColor(pattern, color, border, saveFlag)
     let pat = a:border ? '/\<'.a:pattern.'\>/' : '/'.a:pattern.'/'
     exe printf('syntax match pat_%s %s%s', sha256(a:pattern), pat, (&ft==''?'':' containedin=ALL'))
@@ -147,7 +181,7 @@ fu AttachColor(pattern, color, border, saveFlag)
         exe 'let _ca = ' . g:ColorAttachs
         let _ca[sha256(&ft.a:pattern.a:border)] = [a:pattern, a:color, a:border]
         let g:ColorAttachs = string(_ca)
-    endif
+    en
 endf
 fu RecoverGAttach()
     exe 'let _ca = ' . g:ColorAttachs
@@ -158,8 +192,8 @@ fu RecoverGAttach()
 endf
 fu GDelAttach(pattern)
     exe 'let _ca = ' . g:ColorAttachs
-    if has_key(_ca, sha256(&ft.a:pattern.'0')) | unlet _ca[sha256(&ft.a:pattern.'0')] | endif
-    if has_key(_ca, sha256(&ft.a:pattern.'0')) | unlet _ca[sha256(&ft.a:pattern.'1')] | endif
+    if has_key(_ca, sha256(&ft.a:pattern.'0')) | unlet _ca[sha256(&ft.a:pattern.'0')] | en
+    if has_key(_ca, sha256(&ft.a:pattern.'0')) | unlet _ca[sha256(&ft.a:pattern.'1')] | en
     let g:ColorAttachs = string(_ca) " save to global
     exe printf('syntax clear pat_%s', sha256(a:pattern))
 endf
@@ -171,7 +205,7 @@ for color in keys(MColors)
     exe printf('com! -bang -range -nargs=0 Attach%s :cal AttachColor(Selected(), %d, <bang>0, 0)', color, MColors[color])
     exe printf('com! -bang -range -nargs=0 GAttach%s : cal AttachColor(Selected(), %d, <bang>0, 1)', color, MColors[color])
 endfor
-com! -nargs=0 DEMarks :do User UnsetExtMarkPost|cal DelLineExtMark(g:extmk, [line('.')-1,0], [line('.')-1,0])
+com! -nargs=0 DEMarks :cal DelLineExtMark(g:extmk, [line('.')-1,0], [line('.')-1,0])
 com! -range -nargs=0 DAttach :exe printf('syntax clear pat_%s', sha256(Selected()))
 com! -range -nargs=0 GDAttach :cal GDelAttach(Selected())
 
@@ -188,7 +222,7 @@ fu! RenderVerticalScope(start, dense)
     endwhile
 endf
 fu! ClearVirtualTxt()
-    for ns_id in [g:vertLineMark, g:transVisual]
+    for ns_id in [g:vertLineMark]
         for mkInfo in nvim_buf_get_extmarks(0, ns_id, 0, -1, {})
             cal nvim_buf_del_extmark(0, ns_id, mkInfo[0])
         endfor
@@ -209,28 +243,30 @@ au CursorMoved * if index(['V','v',"\<C-V>"], mode())>=0|sil cal RenderVerticalS
 au CursorMoved,TextChanged,InsertEnter,TextYankPost * if index(['V','v',"\<C-V>"], mode())<0|sil cal ClearVirtualTxt()|en
 
 " Roadmap
-au ExitPre * if exists('g:roadmapbuf') | exe 'bd!'.g:roadmapbuf | endif
+au ExitPre * if exists('g:roadmapbuf') | exe 'bd!'.g:roadmapbuf | en
 au CursorHold * if exists('g:roadmapbuf') && index(tabpagebuflist(), g:roadmapbuf) >= 0 | cal timer_pause(g:refresh, 0) | en
 com! -nargs=0 Roadmap :cal ToggleRoadmap()
 fu! ToggleRoadmap()
     if !exists('g:roadmapbuf') || !bufexists(g:roadmapbuf)
         let g:roadmapbuf = bufadd('')
         call bufload(g:roadmapbuf)
-    endif
+    en
+    cal RefreshRoadMap('')
     if index(tabpagebuflist(), g:roadmapbuf) == -1
         exe 'bo vsplit |b'.g:roadmapbuf.'|vert res 25'
         cal setbufvar(g:roadmapbuf, '&rnu', 0) | cal setbufvar(g:roadmapbuf, '&nu', 0)
         cal setbufvar(g:roadmapbuf, '&ft', 'roadmap')
-        syntax match rmap_mks /󰉁.*/ containedin=ALL | hi rmap_mks ctermfg=196
-        syntax match rmap_git /.*/ containedin=ALL | hi rmap_git ctermfg=208
-        syntax match rmap_anchor / .*/ containedin=ALL | hi rmap_anchor ctermfg=129
-        syntax match rmap_qf /󰙒 .*/ containedin=ALL | hi rmap_qf ctermfg=227
-        syntax match rmap_curr /^>/ containedin=ALL | hi rmap_curr ctermfg=82
-        wincmd p
-    endif
+        syn match rmap_mks /󰉁.*/ containedin=ALL | hi rmap_mks ctermfg=196
+        syn match rmap_git /.*/ containedin=ALL | hi rmap_git ctermfg=208
+        syn match rmap_anchor / .*/ containedin=ALL | hi rmap_anchor ctermfg=129
+        syn match rmap_qf /󰙒 .*/ containedin=ALL | hi rmap_qf ctermfg=227
+        syn match rmap_curr /^>/ containedin=ALL | hi rmap_curr ctermfg=82
+        syn match rmap_extmk / .*/ containedin=ALL | hi rmap_extmk ctermfg=154
+        wincmd p " jump back to main window
+    en
 endf
 fu! RefreshRoadMap(timer)
-    if !exists('g:roadmapbuf') || &ft == 'roadmap' | retu | endif
+    if !exists('g:roadmapbuf') || &ft == 'roadmap' | retu | en
     if index(tabpagebuflist(), g:roadmapbuf) < 0 | cal timer_pause(g:refresh, 1) | en
     " clear buf content first
     for i in range(1, 999) | cal setbufline(g:roadmapbuf, i, '') | endfor
@@ -238,17 +274,17 @@ fu! RefreshRoadMap(timer)
 
     let marks = GetMarks()
 
-    if !has_key(marks, str2nr(line('.'))) | let marks[str2nr(line('.'))] = '>>>>>' | endif
-    if exists('b:anchorLn') && b:anchorLn != 0 | let marks[str2nr(b:anchorLn)] = ' ' | endif
+    if !has_key(marks, str2nr(line('.'))) | let marks[str2nr(line('.'))] = '>>>>>' | en
+    if exists('b:anchorLn') && b:anchorLn != 0 | let marks[str2nr(b:anchorLn)] = ' ' | en
     let [sortedlist, idx] = [sort(map(keys(marks), {_,v -> str2nr(v)}), 'n'), 2]
     for ln in sortedlist
-        if !has_key(marks, ln) | continue | endif
+        if !has_key(marks, ln) | continue | en
         if line('.') == str2nr(ln) && marks[ln] == '>>>>>'
             call setbufline(g:roadmapbuf, idx, ['>'])
-        else
+        el
             let fmt = (line('.') == str2nr(ln) ? '> ' : '  '). '%'.len(line('$')).'d %s'
             call setbufline(g:roadmapbuf, idx, [printf(fmt, ln, marks[ln])])
-        endif
+        en
         let idx += 1
     endfor
 endf
@@ -256,11 +292,11 @@ fu! GetMarks() " marks for road map and jumping
     let marks = {}
     for mk in getmarklist(bufnr()) " marks
         let [mkn, ln] = [mk['mark'], mk['pos'][1]]
-        if index(g:alphabet, mkn[1:]) >= 0 | let marks[str2nr(ln)] = '󰉁'.mkn[1:].' '.trim(getline(ln)) | endif
+        if index(g:alphabet, mkn[1:]) >= 0 | let marks[str2nr(ln)] = '󰉁'.mkn[1:].' '.trim(getline(ln)) | en
     endfor
     for [id, txt] in exists('b:extmks') ? items(b:extmks) : items({}) " extmarks
         let ln = nvim_buf_get_extmark_by_id(bufnr(), g:extmk, str2nr(id), {})[0] + 1
-        let marks[str2nr(ln)] = (has_key(marks, str2nr(ln)) ? marks[str2nr(ln)] : '').' '.txt
+        let marks[str2nr(ln)] = (has_key(marks, str2nr(ln)) ? marks[str2nr(ln)] : '').txt
     endfor
     if FugitiveStatusline() != '' && filereadable(expand('%:p')) " git diffs
         let path = getcwd()
@@ -270,7 +306,7 @@ fu! GetMarks() " marks for road map and jumping
             let marks[ln] = " ".trim(getline(ln))
         endfor
         cal chdir(path)
-    endif
+    en
     for qf in filter(copy(getqflist()), {_,i -> i['bufnr']==bufnr()}) | let marks[qf['lnum']] = '󰙒 '.trim(qf['text']) | endfor
     let b:roadmarks = sort(map(keys(marks), {_,v -> str2nr(v)}), 'n')
     retu marks
@@ -287,7 +323,7 @@ hi DiffText ctermbg=88
 hi DiffChange ctermbg=none
 hi DiffDelete ctermbg=245
 hi DiffAdd ctermbg=86 ctermfg=black
-fun! Diffboth()
+fu! Diffboth()
     let curr = win_getid()
     let wins = gettabinfo(tabpagenr())[0]['windows']
     for winId in wins
@@ -325,11 +361,11 @@ endf
 au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim,*.tex sil cal InvokeCompletion()
 "   <tab> for select candidate
 im <silent><expr> <tab> UltiSnips#CanExpandSnippet() ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
-            \ pumvisible() ? "\<Down>" :
             \ UltiSnips#CanJumpForwards() ? "\<c-k>" :
             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), matchstr(getline('.')[:col('.')-1], \'\\S*$\'))<cr>" :
+            \ pumvisible() ? "\<Down>" :
             \ "\<tab>"
-ino <silent><expr> <s-tab> pumvisible() ? "\<Up>" : "\<tab>"
+ino <silent><expr> <s-tab> pumvisible() ? "\<down>" : "\<tab>"
 "   FZF integration
 ino <expr> <c-x><c-k> fzf#vim#complete('cat /usr/share/dict/en /usr/share/dict/esp /usr/share/dict/ngerman', {}, 0)
 ino <expr> <c-x><c-l> fzf#vim#complete#line({}, 1)
@@ -337,7 +373,7 @@ ino <expr> <c-x><c-h> fzf#vim#complete#buffer_line({}, 1)
 nn <F1> :Helptags!<CR>
 "   Consumable Autocmd
 let g:cmdToConsume = []
-fun! ConsumeCmd()
+fu! ConsumeCmd()
     for cmd in g:cmdToConsume
         cal execute(cmd)
     endfor
@@ -397,9 +433,9 @@ fu! OmniJumpBoot(backNormFlag)
     if modeChar == 'r' | cal ToggleRoadmap() | en " open road map
     if modeChar == 'c' " Conflict
         hi CursorLine cterm=NONE ctermbg=167
-    else
+    el
         hi CursorLine cterm=NONE ctermbg=DarkGray
-    endif
+    en
     let g:jumpMode = has_key(g:jumpModeNames, modeChar) ? modeChar : 'n'
     for direct in split('hjkl', '\zs')
         exe printf('nn %s %s', direct, get(jumpMoves, g:jumpMode.direct, direct))
@@ -431,7 +467,7 @@ fu! OpenByTarget(q, t)
     if trim(a:q) != ''
         let findCmd = OpenByFile(a:q)
         retu printf('%s | xargs ag -l --hidden -F %s "%s"', findCmd, e, a:t)
-    endif
+    en
     for anchor in keys(extend(copy(g:hda), {getcwd():1})) " include cwd
         let agCmds .= printf('ag -l --hidden -F %s "%s" %s;', e, a:t, anchor)
     endfor
@@ -485,7 +521,7 @@ com! -bang -nargs=* QfXearch :cal Xearch(<bang>0, <f-args>)
 com! -nargs=0 QfAll :cal fzf#run({'source': keys(g:qfHist), 'sink': {inst->setqflist(g:qfHist[inst])},})
 com! -nargs=1 QfYank :cal extend(g:qfHist, {<f-args>:getqflist()}) " save search result
 com! -nargs=0 QfRemove :cal fzf#run({'source': keys(g:qfHist), 'sink': {inst->execute('unl g:qfHist["'.inst.'"]')},})
-fun! QfMark()
+fu! QfMark()
     let [_, lnum, cnum, _, _] = getcurpos()
     let qfItem = [{'bufnr':bufnr(), 'lnum':lnum, 'col':cnum, 'text': getline('.')}]
     cal setqflist(extend(getqflist(), qfItem))
@@ -641,7 +677,7 @@ fu TagRender(edit, tag)
         retu printf('%s +%d %s " %s', a:edit, cmd, relPath, kind)
     en
 endf
-fun! GoToTag(edit, query)
+fu! GoToTag(edit, query)
     let tagExp = '\v(^'.a:query.'$)' "use strict match
     let tags = taglist(tagExp)
     let entries = map(tags, {_,tag -> TagRender(a:edit, tag)})
@@ -743,7 +779,7 @@ hi Purple ctermfg=135 ctermbg=none
 let g:fzf_colors = {'hl':['fg', 'Purple'], 'hl+':['fg', 'Purple']}
 let g:MfzfOpts = ['-1', '-m', '-i', '--reverse',]
 " ultisnips
-fun! UltiExpand(fromVisual)
+fu! UltiExpand(fromVisual)
     let [snips, query] = [UltiSnips#SnippetsInCurrentScope(1), '']
     if a:fromVisual == 1
         let Sink = {snip -> execute('norm! gv"_c'.split(snip, "	")[0]."\<c-r>=UltiSnips#ExpandSnippet()\<cr>\<esc>gvkoj=")}
@@ -773,11 +809,11 @@ fu! SnipScope(timer)
         let snips = UltiSnips#SnippetsInCurrentScope()
         let txt = join(values(map(snips, {_,v -> '󰧼 '.v})), ' ')
         cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[[txt, 'SnipMark']], "hl_mode":"combine" })
-    endif
+    en
     let txt = AnonExpand()
     if txt != ''
         cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[['󰧻 '.txt, 'SnipAnon']], "hl_mode":"combine" })
-    endif
+    en
 endf
 let g:snipScopeTimer = timer_start(100, 'SnipScope', {'repeat': -1})
 au InsertEnter * cal timer_pause(g:snipScopeTimer, 0)
@@ -788,24 +824,31 @@ let g:anonExpand = ''
 fu! s:GetExpanded(jobId, data, event) abort
     let g:anonExpand = a:data[0] 
 endf
+fu! InsertingWord()
+    retu trim(matchstr(getline('.')[:col('.')-1], '\S*$'))
+endf
 fu! AnonJobStart()
-    let g:anonExpand = ''
-    let cw = trim(matchstr(getline('.')[:col('.')-1], '\S*$'))
+    let [g:anonExpand, cw] = ['', InsertingWord()]
     if cw != ''
         cal jobstart('~/OneDrive/ultisnips/anon_expand.py '.cw.' '.&ft,
-                    \{'on_stdout': function('s:GetExpanded'), 'stdout_buffered':v:true})
+                    \ {'on_stdout': function('s:GetExpanded'), 'stdout_buffered':v:true})
     en
 endf
 fu! AnonExpand() " Anon Expand: regex match and regex replace and expand!
-    if g:anonExpand != '' | retu g:anonExpand | en
+    if g:anonExpand != '' | retu substitute(g:anonExpand, '<cr>', "\<cr>", 'g') | en
+    " expand from registered snips
+    let cw = InsertingWord()
+    let snips = UltiSnips#SnippetsInCurrentScope(1) " All
+    let rst = filter(keys(snips), {_,s -> s[0:len(cw)-1] ==# cw})
+    if len(rst) != 0 | retu rst[0] | en
     retu ''
 endf
 " leap.nvim
 nn ,f :lua require('leap').leap{ target_windows = { vim.fn.win_getid() } }<cr>
 " quick-scope
 let g:qs_highlight_on_keys = ['f', 'F', 't', 'T']
-highlight QuickScopePrimary ctermfg=red
-highlight QuickScopeSecondary ctermfg=92
+hi QuickScopePrimary ctermfg=red
+hi QuickScopeSecondary ctermfg=91
 " vim-matchup
 let g:matchup_matchparen_offscreen = {}
 let g:matchup_matchparen_enabled   = 0
@@ -1056,9 +1099,7 @@ fu! IndoEuropeanFZF()
     let spec = {'options': ['--phony', '--bind', 'change:reload:'.reload_cmd]}
     cal fzf#vim#grep('echo "type to search"', 1, spec, 1)
 endf
-let g:transVisual = nvim_create_namespace('transVisual')
-let g:transCache = ''
-let g:TransMode = ''
+let [g:transCache, g:TransMode] = ['', '']
 fu! TranslitMode()
     hi CursorLine ctermbg=31 | redraw | let ch = getchar()
     if ch == 27 || (g:transCache[-1:-1] == 'j' && ch == 107) " ESC
@@ -1105,7 +1146,7 @@ com! -nargs=0 Directory exe 'sil !explorer.exe ' . substitute(WinPath(expand('%:
 "  let one qfEntry in qfSearchCmd hold multiple jobId
 let [g:qfSearchCmd, g:qfListTobe] = [{}, {}]
 let g:AutoPop = 1
-function! s:OnGetRst(jobId, data, event) dict " parse rg result line by line
+fu! s:OnGetRst(jobId, data, event) dict " parse rg result line by line
     for ln in a:data
         let posInfo = matchstr(trim(ln), '^.*:\d*:\d*:')
         let blc = split(posInfo, ':') " Buf Ln Col
@@ -1113,24 +1154,24 @@ function! s:OnGetRst(jobId, data, event) dict " parse rg result line by line
         if (len(blc) > 0)
             let qfItem = [{'bufnr':bufnr(blc[0], 1), 'lnum':blc[1], 'col':blc[2], 'text': showTxt}]
             sil cal extend(g:qfListTobe[a:jobId], qfItem)
-        endif
+        en
     endfo
-endfunction
+endf
 fu! ComparePos(pl, pr)
     if a:pl['bufnr'] != a:pr['bufnr']
-        return a:pl['bufnr'] > a:pr['bufnr']
+        retu a:pl['bufnr'] > a:pr['bufnr']
     elseif a:pl['lnum'] != a:pr['lnum']
-        return a:pl['lnum'] > a:pr['lnum']
+        retu a:pl['lnum'] > a:pr['lnum']
     elseif a:pl['col'] != a:pr['col']
-        return a:pl['col'] < a:pr['col'] " for result in same line, let cursor move right to left
-    endif
-    return 0
+        retu a:pl['col'] < a:pr['col'] " for result in same line, let cursor move right to left
+    en
+    retu 0
 endf
 fu! s:OnExit(jobId, data, event) abort " merge multiple rg result by qfEntry
     for [entry, jobIdLst] in items(g:qfSearchCmd) " search qfEntry by a:jobId
         if index(jobIdLst, a:jobId) >= 0
             let qfEntry = entry | break
-        endif
+        en
     endfor
     let tobeLists = {} " let same position (buf, ln, col) to be added once
     for jobid in g:qfSearchCmd[qfEntry]
@@ -1142,7 +1183,7 @@ fu! s:OnExit(jobId, data, event) abort " merge multiple rg result by qfEntry
     cal setqflist(sort(values(tobeLists), function('ComparePos')))
     cal extend(g:qfHist, {qfEntry:getqflist()}) " save search result
     let g:asyncCnt -= 1
-    if g:asyncCnt == 0 && g:AutoPop == 1 | copen | endif
+    if g:asyncCnt == 0 && g:AutoPop == 1 | copen | en
 endf
 let g:asynQfOpts = {'on_stdout': function('s:OnGetRst'), 'on_exit': function('s:OnExit')}
 fu! AsyncSearch(target, cmdArgs, qfEntry)
@@ -1161,10 +1202,10 @@ fu! Xearch(...) " bang, target, opts...
     cal AsyncSearch(toSearch, args, qfEntry)
     if bang && (match(toSearch, '_\([a-zA-Z]\)') >= 0 || match(toSearch, '\(\u\?\l\+\)\(\u\)') >= 0) " u2c
         cal AsyncSearch(CaseConvert(toSearch), args, qfEntry)
-    endif
+    en
     if match(toSearch, '[^\x00-\x7F]') >= 0 " no-ASCII char
         cal AsyncSearch(toSearch, extend(args, ['--encoding=sjis']), qfEntry)
-    endif
+    en
 endf
 " }}}
 
