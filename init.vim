@@ -130,7 +130,6 @@ fu SetExMark(bn, ln, hl, ...)
     let extmk_id = nvim_buf_set_extmark(a:bn, g:extmk, a:ln, 0, { "virt_text":[[txt, a:hl]], "hl_mode":"combine" })
     if !exists('b:extmks') | let [b:extmks, b:extcolor] = [{}, {}] | en
     let [b:extmks[extmk_id], b:extcolor[extmk_id]] = [txt, a:hl]
-    cal AutoSaveExMarks('')
 endf
 fu DelLineExtMark(namespace, start, end)
     for mkInfo in nvim_buf_get_extmarks(bufnr(''), a:namespace, a:start, a:end, {})
@@ -138,7 +137,6 @@ fu DelLineExtMark(namespace, start, end)
         if exists('b:extmks') | unlet b:extmks[mkInfo[0]] | en
         if exists('b:extcolor') | unlet b:extcolor[mkInfo[0]] | en
     endfor
-    cal AutoSaveExMarks('')
 endf
 fu AutoSaveExMarks(timer)
     let _ca = {}
@@ -295,8 +293,11 @@ fu! GetMarks() " marks for road map and jumping
         if index(g:alphabet, mkn[1:]) >= 0 | let marks[str2nr(ln)] = '󰉁'.mkn[1:].' '.trim(getline(ln)) | en
     endfor
     for [id, txt] in exists('b:extmks') ? items(b:extmks) : items({}) " extmarks
-        let ln = nvim_buf_get_extmark_by_id(bufnr(), g:extmk, str2nr(id), {})[0] + 1
-        let marks[str2nr(ln)] = (has_key(marks, str2nr(ln)) ? marks[str2nr(ln)] : '').txt
+        let mkinfo = nvim_buf_get_extmark_by_id(bufnr(), g:extmk, str2nr(id), {})
+        if empty(mkinfo) != 1
+            let ln = mkinfo[0] + 1
+            let marks[str2nr(ln)] = (has_key(marks, str2nr(ln)) ? marks[str2nr(ln)] : '').txt
+        en
     endfor
     if FugitiveStatusline() != '' && filereadable(expand('%:p')) " git diffs
         let path = getcwd()
@@ -862,9 +863,10 @@ ca glg tab Git log -n 100 --graph --pretty='%H %s %d %ad %ae' --date=short --aut
 ca glga tab Git log -n 100 --graph --pretty='%H %s %d %ad %ae' --date=short --all --author-date-order
 ca glp tab Git log -p -- %
 ca gb tab Git branch
+ca gbd :cal fzf#run({'source':GitBranches(), 'sink':{gb -> execute('Git branch -d '.gb)}, 'options':extend(copy(g:MfzfOpts), ['--prompt=delete > ']), })<cr>
 ca gc Git commit
 ca gca Git commit --amend
-ca gco Git checkout
+ca gco :cal fzf#run({'source':GitBranches(), 'sink':{gb -> execute('Git checkout '.gb)}, 'options':extend(copy(g:MfzfOpts), ['--prompt=checkout > ']), })<cr>
 ca gps Git push
 ca gm Git merge
 " vim-easy-align
@@ -981,6 +983,13 @@ endf
 fu Cap(word) " Capitalize first letter
     retu substitute(a:word, '^.', '\u&', '')
 endfu
+fu! GitBranches()
+    let path = getcwd()
+    cal chdir(expand('%:p:h'))
+    let branches = map(split(system('git branch'), '\n'), {_,b -> trim(b)})
+    cal chdir(path)
+    retu branches
+endf
 
 " ----------------- Operator Functions -----------------
 " Replace-Operator
