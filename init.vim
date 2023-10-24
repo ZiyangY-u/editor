@@ -361,12 +361,13 @@ fu! InvokeCompletion()
 endf
 au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim,*.tex sil cal InvokeCompletion()
 "   <tab> for select candidate
-im <silent><expr> <tab> UltiSnips#CanExpandSnippet() ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
-            \ UltiSnips#CanJumpForwards() ? "\<c-k>" :
-            \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), matchstr(getline('.')[:col('.')-1], \'\\S*$\'))<cr>" :
-            \ pumvisible() ? "\<Down>" :
-            \ "\<tab>"
-ino <silent><expr> <s-tab> pumvisible() ? "\<down>" : "\<tab>"
+im <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
+ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
+"   snip expand
+im <silent><expr> <c-l> UltiSnips#CanJumpForwards() ? "\<c-k>" :
+            \ UltiSnips#CanExpandSnippet() ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
+            \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'w')<cr>" :
+            \ "\<space>"
 "   FZF integration
 ino <expr> <c-x><c-k> fzf#vim#complete('cat /usr/share/dict/en /usr/share/dict/esp /usr/share/dict/ngerman', {}, 0)
 ino <expr> <c-x><c-l> fzf#vim#complete#line({}, 1)
@@ -727,6 +728,7 @@ cal plug#begin('~/.vim/plugged')
 
     " Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
     Plug 'SirVer/ultisnips'
+    Plug 'Shougo/deoplete.nvim'
     Plug 'preservim/tagbar'
     Plug 'ryanoasis/vim-devicons'
     Plug 'andymass/vim-matchup'
@@ -821,12 +823,12 @@ au InsertEnter * cal timer_pause(g:snipScopeTimer, 0)
 au InsertLeave * cal timer_pause(g:snipScopeTimer, 1)
 au InsertLeave * cal DelLineExtMark(g:snipsMk, 0, -1)
 au CursorMovedI * cal AnonJobStart()
-let g:anonExpand = ''
+let g:exAnonExpand = ''
 fu! s:GetExpanded(jobId, data, event) abort
-    let g:anonExpand = a:data[0] 
+    let g:exAnonExpand = a:data[0] 
 endf
 fu! InsertingWord()
-    retu trim(matchstr(getline('.')[:col('.')-1], '\S*$'))
+    retu trim(matchstr(getline('.')[:col('.')-2], '[a-zA-Z0-9\-_]*$'))
 endf
 fu! AnonJobStart()
     let [g:anonExpand, cw] = ['', InsertingWord()]
@@ -836,7 +838,7 @@ fu! AnonJobStart()
     en
 endf
 fu! AnonExpand() " Anon Expand: regex match and regex replace and expand!
-    if g:anonExpand != '' | retu substitute(g:anonExpand, '<cr>', "\<cr>", 'g') | en
+    if g:exAnonExpand != '' | retu substitute(g:exAnonExpand, '<cr>', "\<cr>", 'g') | en
     " expand from registered snips
     let cw = InsertingWord()
     let snips = UltiSnips#SnippetsInCurrentScope(1) " All
@@ -857,16 +859,16 @@ let g:matchup_matchparen_enabled   = 0
 let g:context_enabled = 0
 " fugitive
 let g:fugitive_no_maps = 1
-ca gi Git
+ca gi Git<cr>
 ca gl tab Git log -n 500 --pretty=tformat:"commit %H%d%nparent %P%nauthor %an <%ae> %ci%n%n%B" --author-date-order --abbrev=40
 ca glg tab Git log -n 100 --graph --pretty='%H %s %d %ad %ae' --date=short --author-date-order
 ca glga tab Git log -n 100 --graph --pretty='%H %s %d %ad %ae' --date=short --all --author-date-order
 ca glp tab Git log -p -- %
 ca gb tab Git branch
-ca gbd :cal fzf#run({'source':GitBranches(), 'sink':{gb -> execute('Git branch -d '.gb)}, 'options':extend(copy(g:MfzfOpts), ['--prompt=delete > ']), })<cr>
+ca gbd cal fzf#run({'source':GitBranches(), 'sink':{gb -> execute('Git branch -d '.gb)}, 'options':extend(copy(g:MfzfOpts), ['--prompt=delete > ']), })<cr>
 ca gc Git commit
-ca gca Git commit --amend
-ca gco :cal fzf#run({'source':GitBranches(), 'sink':{gb -> execute('Git checkout '.gb)}, 'options':extend(copy(g:MfzfOpts), ['--prompt=checkout > ']), })<cr>
+ca gca Git commit --amend<cr>
+ca gco cal fzf#run({'source':GitBranches(), 'sink':{gb -> execute('Git checkout '.gb)}, 'options':extend(copy(g:MfzfOpts), ['--prompt=checkout > ']), })<cr>
 ca gps Git push
 ca gm Git merge
 " vim-easy-align
@@ -901,6 +903,11 @@ endf
 nn <leader>u :UndotreeToggle<cr>
 " devicons
 let g:webdevicons_enable_nerdtree = 1
+" deoplete.
+let g:deoplete#enable_at_startup = 1
+let g:max_list = 50
+let g:num_processes = 5
+call deoplete#custom#source('_', 'smart_case', v:true)
 " }}}
 " => File type Specific -------------------- {{{
 aug filetypes
@@ -952,7 +959,7 @@ fu! Selected() " get visual selected content
     retu @v
 endf
 fu! GetBufFilePath() " return a list
-    retu map(filter(range(0,bufnr('$')), 'buflisted(v:val)'), 'fnamemodify(bufname(v:val), "")')
+    retu map(filter(range(0,bufnr('$')), 'buflisted(v:val) && filereadable(bufname(v:val))'), 'fnamemodify(bufname(v:val), ":p")')
 endf
 fu! GetDefault(v, default)
     if empty(a:v) | retu a:default
