@@ -359,9 +359,9 @@ fu! InvokeCompletion()
         en
     en
 endf
-au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim,*.tex sil cal InvokeCompletion()
+" au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim,*.tex sil cal InvokeCompletion()
 "   <tab> for select candidate
-im <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
+ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
 "   snip expand
 im <silent><expr> <c-l> UltiSnips#CanJumpForwards() ? "\<c-k>" :
@@ -369,7 +369,7 @@ im <silent><expr> <c-l> UltiSnips#CanJumpForwards() ? "\<c-k>" :
             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'w')<cr>" :
             \ "\<space>"
 "   FZF integration
-ino <expr> <c-x><c-k> fzf#vim#complete('cat /usr/share/dict/en /usr/share/dict/esp /usr/share/dict/ngerman', {}, 0)
+ino <expr> <c-x><c-k> fzf#vim#complete(extend(FzfFloatWin(), {'source':'cat /usr/share/dict/en /usr/share/dict/esp /usr/share/dict/ngerman'}))
 ino <expr> <c-x><c-l> fzf#vim#complete#line({}, 1)
 ino <expr> <c-x><c-h> fzf#vim#complete#buffer_line({}, 1)
 nn <F1> :Helptags!<CR>
@@ -382,6 +382,25 @@ fu! ConsumeCmd()
     let g:cmdToConsume = [] " clear cmd list
 endf
 au BufWinEnter *.* sil cal ConsumeCmd()|cal SignMarks()
+" yank history
+let g:yankHistory = []
+au TextYankPost * cal AddYankHist(getreg('"'))
+fu! AddYankHist(toAdd)
+    let [tmpl, sha] = [[], sha256(a:toAdd)]
+    for item in g:yankHistory
+        if sha256(item) != sha | cal add(tmpl, item) | en
+    endfor
+    cal add(tmpl, a:toAdd)
+    let g:yankHistory = tmpl
+endf
+fu! FzfFloatWin()
+    let fzfCurOpts = {'width':55, 'height': 15,
+                \ 'xoffset': (virtcol('.')*1.0)/winwidth(0) + 0.07,
+                \ 'yoffset': (winline()*1.0)/winheight(0) + 0.2}
+    retu {'source':reverse(copy(g:yankHistory)), 'options':g:MfzfOpts, 'window':fzfCurOpts}
+endf
+nn <c-x><c-p> :cal fzf#run(extend({'sink': {t -> execute(['let @" = "'.t.'"', 'norm p', "cal AddYankHist(getreg('".'"'."'))"])}}, FzfFloatWin()))<cr>
+ino <expr> <c-x><c-p> fzf#vim#complete(FzfFloatWin())
 
 " }}}
 " => Handle -------------------- {{{
@@ -632,11 +651,13 @@ nn S :cal DeSurroundOp()<cr>
 "   change current letter by its next (for quick fix misspell)
 nn <expr> <BS> col(".") == (col("$")-1) ? 'xP' : 'xhP'
 "   replace content
-nn ,r r
+nn <leader>r r
 nn <silent> r :let b:reg_name = v:register<cr>:set opfunc=ReplaceOp<cr>g@
+nn <silent> ,r :set opfunc=ReplaceOpFzf<cr>g@
 nm <silent> rr Vr
-vn ,r r
+vn <leader>r r
 vn r :<c-u>let b:reg_name = v:register<cr>:cal ReplaceOp(visualmode())<cr>
+vn ,r :cal ReplaceOpFzf(visualmode())<cr>
 "   fzf commands
 nn ,c :Commands!<cr>
 "   compensate for Visual Edition
@@ -865,10 +886,10 @@ ca glg tab Git log -n 100 --graph --pretty='%H %s %d %ad %ae' --date=short --aut
 ca glga tab Git log -n 100 --graph --pretty='%H %s %d %ad %ae' --date=short --all --author-date-order
 ca glp tab Git log -p -- %
 ca gb tab Git branch
-ca gbd cal fzf#run({'source':GitBranches(), 'sink':{gb -> execute('Git branch -d '.gb)}, 'options':extend(copy(g:MfzfOpts), ['--prompt=delete > ']), })<cr>
+ca gbd cal fzf#run({'source':'git branch', 'dir':expand('%:p:h'), 'sink':{gb->execute('Git branch -d '.gb)}, 'options':extend(copy(g:MfzfOpts), ['--prompt=delete > ']), })<cr>
 ca gc Git commit
 ca gca Git commit --amend<cr>
-ca gco cal fzf#run({'source':GitBranches(), 'sink':{gb -> execute('Git checkout '.gb)}, 'options':extend(copy(g:MfzfOpts), ['--prompt=checkout > ']), })<cr>
+ca gco cal fzf#run({'source':'git branch', 'dir':expand('%:p:h'), 'sink':{gb -> execute('Git checkout '.gb)}, 'options':extend(copy(g:MfzfOpts), ['--prompt=checkout > ']), })<cr>
 ca gps Git push
 ca gm Git merge
 " vim-easy-align
@@ -903,11 +924,10 @@ endf
 nn <leader>u :UndotreeToggle<cr>
 " devicons
 let g:webdevicons_enable_nerdtree = 1
-" deoplete.
+" deoplete
 let g:deoplete#enable_at_startup = 1
-let g:max_list = 50
-let g:num_processes = 5
-call deoplete#custom#source('_', 'smart_case', v:true)
+cal deoplete#custom#option({'max_list': 50, 'num_processes':5, 'min_pattern_length':1})
+call deoplete#custom#source('_', 'ignore_case', v:true)
 " }}}
 " => File type Specific -------------------- {{{
 aug filetypes
@@ -990,18 +1010,14 @@ endf
 fu Cap(word) " Capitalize first letter
     retu substitute(a:word, '^.', '\u&', '')
 endfu
-fu! GitBranches()
-    let path = getcwd()
-    cal chdir(expand('%:p:h'))
-    let branches = map(split(system('git branch'), '\n'), {_,b -> trim(b)})
-    cal chdir(path)
-    retu branches
-endf
 
 " ----------------- Operator Functions -----------------
 " Replace-Operator
+fu! ReplaceOpFzf(type)
+    let Sink = {t -> execute(['let @" = "'.t.'"', "let b:reg_name='".'"'."'", "cal AddYankHist(getreg('".'"'."'))" , 'cal ReplaceOp("'.a:type.'")'])}
+    cal fzf#run(extend({ 'sink': Sink }, FzfFloatWin()))
+endf
 fu! ReplaceOp(type)
-    echom a:type
     if a:type ==# 'v'
         exe printf('norm! `<v`>"_d"%sP', b:reg_name)
     elseif a:type ==# 'char'
