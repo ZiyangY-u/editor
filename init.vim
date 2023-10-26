@@ -350,6 +350,28 @@ set cot=menu,menuone,noselect
 set ssop+=globals
 
 "   auto completion
+fu! MComplete(findstart, base)
+    if a:findstart
+	let [line, start] = [getline('.'), col('.') - 1]
+	while start > 0 && line[start - 1] =~ '\a'
+	    let start -= 1
+	endwhile
+	return start
+    else
+	let cmd = join(['wget', '--no-proxy', '-qO-', 'http://127.0.0.1:12345', '--post-data="'.'query:'.a:base.''.'"'], ' ')
+	retu split(system(cmd), '\n')
+    en
+endf
+set completefunc=MComplete
+fu! RefreshServer()
+    let cmd = ['wget', '--no-proxy', '-qO-', 'http://127.0.0.1:12345', '--post-data="hello"']
+    if system(join(cmd, ' ')) != 'hello' " start server
+        cal jobstart('~/OneDrive/ultisnips/complete_server.py', {})
+    en
+    let cmd = ['wget', '--no-proxy', '-qO-', 'http://127.0.0.1:12345', '--post-data="'.'add_path:'.join(GetBufFilePath(v:true), ' ').''.'"']
+    cal jobstart(join(cmd, ' '), {})
+endf
+au VimEnter,BufReadPost,BufWritePost * cal RefreshServer()
 fu! InvokeCompletion()
     if !pumvisible() && (v:char =~ '[0-9A-Za-z.\\]')
         if &omnifunc != ''
@@ -359,7 +381,7 @@ fu! InvokeCompletion()
         en
     en
 endf
-" au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim,*.tex sil cal InvokeCompletion()
+au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim,*.tex sil cal InvokeCompletion()
 "   <tab> for select candidate
 ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
@@ -532,7 +554,7 @@ vn # y?<C-R>"<cr>
 "   QuickFix searching
 let g:qfHist = (exists('g:qfHist') ? g:qfHist : {}) " qfSearchHistory
 set gp=rg\ --vimgrep\ --ignore-case\ --hidden\ --follow
-com! -nargs=* QfSearch :sil exe 'vimgrep /'.(len(<q-args>)==0?Selected():<q-args>).'/j '.join(GetBufFilePath(), " ")
+com! -nargs=* QfSearch :sil exe 'vimgrep /'.(len(<q-args>)==0?Selected():<q-args>).'/j '.join(GetBufFilePath(v:false), " ")
 com! -nargs=0 QfJearch :sil exe 'vimgrep /[^\x00-\x7F]/j '.expand('%')|copen|setl cul
 nn ,F yiw:QfXearch <c-r>"
 vn ,F y:QfXearch <c-r>"
@@ -749,7 +771,6 @@ cal plug#begin('~/.vim/plugged')
 
     " Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
     Plug 'SirVer/ultisnips'
-    Plug 'Shougo/deoplete.nvim'
     Plug 'preservim/tagbar'
     Plug 'ryanoasis/vim-devicons'
     Plug 'andymass/vim-matchup'
@@ -811,8 +832,7 @@ fu! UltiExpand(fromVisual)
         let query = expand("<cword>")
         let Sink = {snip -> execute('norm! "_ciw'.split(snip, "	")[0]."\<c-r>=UltiSnips#ExpandSnippet()\<cr>")}
     en
-    cal fzf#run({'source': values(map(snips, {k,v -> k."	".v})), 'sink': Sink,
-                \'window':{'width':0.7,'height':0.6}, 'options':['-1', '-i', '--query='.query]})
+    cal fzf#run(extend(FzfFloatWin(), {'source': values(map(snips, {k,v -> k."	".v})), 'sink': Sink, 'options':['-1', '-i', '--query='.query]}))
 endf
 let g:UltiSnipsExpandTrigger="<c-x><c-j>"
 let g:UltiSnipsJumpForwardTrigger="<c-k>"
@@ -924,10 +944,6 @@ endf
 nn <leader>u :UndotreeToggle<cr>
 " devicons
 let g:webdevicons_enable_nerdtree = 1
-" deoplete
-let g:deoplete#enable_at_startup = 1
-cal deoplete#custom#option({'max_list': 50, 'num_processes':5, 'min_pattern_length':1})
-call deoplete#custom#source('_', 'ignore_case', v:true)
 " }}}
 " => File type Specific -------------------- {{{
 aug filetypes
@@ -978,8 +994,12 @@ fu! Selected() " get visual selected content
     exe 'norm! `<v`>"vy'
     retu @v
 endf
-fu! GetBufFilePath() " return a list
-    retu map(filter(range(0,bufnr('$')), 'buflisted(v:val) && filereadable(bufname(v:val))'), 'fnamemodify(bufname(v:val), ":p")')
+fu! GetBufFilePath(withEncoding) " return a list
+    if a:withEncoding == v:false
+        retu map(filter(range(0,bufnr('$')), 'buflisted(v:val) && filereadable(bufname(v:val))'), 'fnamemodify(bufname(v:val), ":p")')
+    el
+        retu map(filter(range(0,bufnr('$')), 'buflisted(v:val) && filereadable(bufname(v:val))'), 'fnamemodify(bufname(v:val), ":p").":".getbufvar(v:val, "&encoding")')
+    en
 endf
 fu! GetDefault(v, default)
     if empty(a:v) | retu a:default
