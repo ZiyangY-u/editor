@@ -350,38 +350,51 @@ set cot=menu,menuone,noselect
 set ssop+=globals
 
 "   auto completion
+let g:candidates = []
+fu! RefreshCandidates(timer)
+    let cw = InsertingWord()
+    let cmd = join(add(copy(g:completeServerCmd), '--post-data="'.'query:'.cw.''.'"'), ' ')
+    let g:candidates = split(system(cmd), '\n')
+    cal timer_pause(g:mcompleteTimer, 1)
+endf
 fu! MComplete(findstart, base)
-    if a:findstart
+    if a:findstart " findstart will control the pulldown positiong
 	let [line, start] = [getline('.'), col('.') - 1]
 	while start > 0 && line[start - 1] =~ '\a'
 	    let start -= 1
 	endwhile
 	return start
-    else
-	let cmd = join(['wget', '--no-proxy', '-qO-', 'http://127.0.0.1:12345', '--post-data="'.'query:'.a:base.''.'"'], ' ')
-	retu split(system(cmd), '\n')
-    en
+    el | retu g:candidates | en
 endf
 set completefunc=MComplete
+let g:completeServerCmd = ['wget', '--no-proxy', '-qO-', 'http://127.0.0.1:12345']
 fu! RefreshServer()
-    let cmd = ['wget', '--no-proxy', '-qO-', 'http://127.0.0.1:12345', '--post-data="hello"']
+    let cmd = add(copy(g:completeServerCmd), '--post-data="hello"')
     if system(join(cmd, ' ')) != 'hello' " start server
         cal jobstart('~/OneDrive/ultisnips/complete_server.py', {})
     en
-    let cmd = ['wget', '--no-proxy', '-qO-', 'http://127.0.0.1:12345', '--post-data="'.'add_path:'.join(GetBufFilePath(v:true), ' ').''.'"']
+    let cmd = add(copy(g:completeServerCmd), '--post-data="'.'add_path:'.join(GetBufFilePath(v:true), ' ').''.'"')
     cal jobstart(join(cmd, ' '), {})
 endf
 au VimEnter,BufReadPost,BufWritePost * cal RefreshServer()
+let g:mcompleteTimer = timer_start(200, 'RefreshCandidates', {'repeat': -1})
+let g:mcompleteTrigger = timer_start(30, 'TriggerComplete', {'repeat': -1})
 fu! InvokeCompletion()
-    if !pumvisible() && (v:char =~ '[0-9A-Za-z.\\]')
-        if &omnifunc != ''
-            cal nvim_feedkeys("\<C-x>\<C-o>", "i", 1)
-        elseif v:char !~ '[j.]'
-            cal nvim_feedkeys("\<C-n>", "i", 1)
-        en
+    cal timer_pause(g:mcompleteTrigger, 1)
+    if !pumvisible() && (v:char =~ '[0-9A-Za-z_.\\]')
+        if &omnifunc != '' | cal nvim_feedkeys("\<C-x>\<C-o>", "i", 1) | en
     en
+    cal timer_pause(g:mcompleteTrigger, 0)
 endf
-au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim,*.tex sil cal InvokeCompletion()
+fu! TriggerComplete(timer)
+    if mode() == 'i' && (empty(complete_info()['items']) || complete_info()['mode'] == 'function')
+        cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) 
+    en
+    cal timer_pause(g:mcompleteTrigger, 1)
+endf
+" au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim,*.tex sil cal InvokeCompletion()
+au InsertCharPre * sil cal InvokeCompletion()
+au CursorMovedI * sil cal timer_pause(g:mcompleteTimer, 0)
 "   <tab> for select candidate
 ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
@@ -494,6 +507,7 @@ nn <leader>H @=(has_key(g:hda,getcwd())==1 ? ':unlet g:hda[getcwd()]' : ':let g:
 nn <silent> <leader>Y :cal fzf#run({'source': keys(g:hda), 'sink': 'lcd','window':{'width':0.9,'height':0.6}})<CR>
 nn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen("", "MEdit")':':Files')<CR><CR>
 vn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen(Selected(), "MEdit")':':Files')<CR><CR>
+vn <silent> <leader>O @=(g:HRSmode==1?':cal HiraishinOpen(".".Selected(), "MEdit")':':Files')<CR><CR>
 let g:openExclude = ['"*.class"']
 let g:openExcludePath = ['"*/target/*"', '"*/.git/*"']
 fu! OpenByFile(fn)
@@ -582,6 +596,8 @@ fu! SplitOp(sc, query) " run a split cmd first, then operate
     let opts = extend(copy(g:MfzfOpts), ['--query='.a:query])
     if (op == 'o') " Open File
         cal HiraishinOpen(a:query, a:sc.'MEdit')
+    elseif (op == 'o')
+        cal HiraishinOpen('.'.a:query, a:sc.'MEdit')
     elseif (op == 'b') " Buffer
         cal ClearNoName()
         let sorted = fzf#vim#_buflisted_sorted()
@@ -673,13 +689,13 @@ nn S :cal DeSurroundOp()<cr>
 "   change current letter by its next (for quick fix misspell)
 nn <expr> <BS> col(".") == (col("$")-1) ? 'xP' : 'xhP'
 "   replace content
-nn <leader>r r
+nn ,r r
 nn <silent> r :let b:reg_name = v:register<cr>:set opfunc=ReplaceOp<cr>g@
-nn <silent> ,r :set opfunc=ReplaceOpFzf<cr>g@
+nn <silent> <leader>r :set opfunc=ReplaceOpFzf<cr>g@
 nm <silent> rr Vr
-vn <leader>r r
+vn ,r r
 vn r :<c-u>let b:reg_name = v:register<cr>:cal ReplaceOp(visualmode())<cr>
-vn ,r :cal ReplaceOpFzf(visualmode())<cr>
+vn <leader>r :cal ReplaceOpFzf(visualmode())<cr>
 "   fzf commands
 nn ,c :Commands!<cr>
 "   compensate for Visual Edition
@@ -846,6 +862,7 @@ nn <silent> ,<f4> :to vsplit \|e /usr/share/nvim/runtime/mycoolsnippets/all.snip
 let g:snipsMk = nvim_create_namespace('snippetMarks')
 hi SnipMark cterm=bold ctermfg=227
 hi SnipAnon cterm=bold ctermfg=198
+hi CompleteFun cterm=bold ctermfg=154
 fu! SnipScope(timer)
     cal DelLineExtMark(g:snipsMk, 0, -1)
     if mode() != 'i' | retu | en
@@ -858,6 +875,10 @@ fu! SnipScope(timer)
     if txt != ''
         cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[['󰧻 '.txt, 'SnipAnon']], "hl_mode":"combine" })
     en
+    if pumvisible()
+        let completef = complete_info()['mode'] . ' ' . len(complete_info()['items'])
+        cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[['󱦟 '.completef, 'CompleteFun']], "hl_mode":"combine" })
+    en
 endf
 let g:snipScopeTimer = timer_start(100, 'SnipScope', {'repeat': -1})
 au InsertEnter * cal timer_pause(g:snipScopeTimer, 0)
@@ -869,7 +890,7 @@ fu! s:GetExpanded(jobId, data, event) abort
     let g:exAnonExpand = a:data[0] 
 endf
 fu! InsertingWord()
-    retu trim(matchstr(getline('.')[:col('.')-2], '[a-zA-Z0-9\-_]*$'))
+    retu trim(matchstr(getline('.')[:col('.')-2], '\i*$'))
 endf
 fu! AnonJobStart()
     let [g:anonExpand, cw] = ['', InsertingWord()]
