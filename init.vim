@@ -124,7 +124,6 @@ au WinEnter,BufReadPost <buffer> cal SignMarks()
 
 " Colorful (ExtMark, AttachColor)
 let g:extmk = nvim_create_namespace('MyExtMarks')
-let g:ExMarks='{}' " key sha256(filepath.ln.txt); val: [filepath, ln, txt, hl]
 fu SetExMark(bn, ln, hl, ...)
     let txt = ' '.join(a:000, ' ')
     let extmk_id = nvim_buf_set_extmark(a:bn, g:extmk, a:ln, 0, { "virt_text":[[txt, a:hl]], "hl_mode":"combine" })
@@ -138,37 +137,6 @@ fu DelLineExtMark(namespace, start, end)
         if exists('b:extcolor') | unlet b:extcolor[mkInfo[0]] | en
     endfor
 endf
-fu AutoSaveExMarks(timer)
-    let _ca = {}
-    for bn in fzf#vim#_buflisted_sorted()
-        let [_be, _bc] = [getbufvar(bn, 'extmks'), getbufvar(bn, 'extcolor')]
-        for mkInfo in nvim_buf_get_extmarks(bn, g:extmk, 0, -1, {})
-            let [txt, hl] = [_be[mkInfo[0]], _bc[mkInfo[0]]]
-            let _ca[sha256(expand('#'.bn.':p').mkInfo[1].txt)] = [expand('#'.bn.':p'), mkInfo[1], txt, hl]
-        endfor
-    endfor
-    let g:ExMarks = string(_ca)
-endf
-let g:autoSaveExmk = timer_start(5000, 'AutoSaveExMarks', {'repeat': -1})
-au BufWritePost * cal AutoSaveExMarks('')
-let g:extRecoverCalled = 0 " make sure recovering called only once
-fu RecoverExMarks()
-    if g:extRecoverCalled == 0 | let g:extRecoverCalled = 1 | el | retu | en
-    exe 'let _ca = ' . g:ExMarks
-    for [sha, flth] in items(_ca)
-        let [fp, ln, txt, hl] = flth
-        if sha256(fp.ln.txt) == sha 
-            let bn = bufnr(fp)
-            if bn == -1 | continue | en
-            let extmk_id = nvim_buf_set_extmark(bn, g:extmk, ln, 0, { "virt_text":[[txt, hl]], "hl_mode":"combine" })
-            if empty(getbufvar(bn, 'extmks')) == 1 | cal setbufvar(bn, 'extmks', {}) | cal setbufvar(bn, 'extcolor', {}) | en
-            let [_be, _bc] = [getbufvar(bn, 'extmks'), getbufvar(bn, 'extcolor')]
-            let [_be[extmk_id], _bc[extmk_id]] = [txt, hl]
-            cal setbufvar(bn, 'extmks', _be) | cal setbufvar(bn, 'extcolor', _bc)
-        en
-    endfor
-endf
-au SessionLoadPost * cal RecoverExMarks()
 
 let g:ColorAttachs='{}' " key: sha256(ft.pat.border); val: [pat, color, border]
 fu AttachColor(pattern, color, border, saveFlag)
@@ -353,14 +321,16 @@ set ssop+=globals
 let g:candidates = []
 fu! RefreshCandidates(timer)
     let cw = InsertingWord()
+    cal timer_pause(g:mcompleteTimer, 1)
+    if len(cw) <= 3 | retu | en
     let cmd = join(add(copy(g:completeServerCmd), '--post-data="'.'query:'.cw.''.'"'), ' ')
     let g:candidates = split(system(cmd), '\n')
-    cal timer_pause(g:mcompleteTimer, 1)
+    cal InvokeCompletion()
 endf
 fu! MComplete(findstart, base)
     if a:findstart " findstart will control the pulldown positiong
 	let [line, start] = [getline('.'), col('.') - 1]
-	while start > 0 && line[start - 1] =~ '\a'
+	while start > 0 && line[start - 1] =~ '\i'
 	    let start -= 1
 	endwhile
 	return start
@@ -377,23 +347,23 @@ fu! RefreshServer()
     cal jobstart(join(cmd, ' '), {})
 endf
 au VimEnter,BufReadPost,BufWritePost * cal RefreshServer()
-let g:mcompleteTimer = timer_start(200, 'RefreshCandidates', {'repeat': -1})
+let g:mcompleteTimer = timer_start(50, 'RefreshCandidates', {'repeat': -1})
 let g:mcompleteTrigger = timer_start(30, 'TriggerComplete', {'repeat': -1})
 fu! InvokeCompletion()
     cal timer_pause(g:mcompleteTrigger, 1)
     if !pumvisible() && (v:char =~ '[0-9A-Za-z_.\\]')
-        if &omnifunc != '' | cal nvim_feedkeys("\<C-x>\<C-o>", "i", 1) | en
+        if &omnifunc != '' && &ft == 'vim' | cal nvim_feedkeys("\<C-x>\<C-o>", "i", 1) | en
     en
     cal timer_pause(g:mcompleteTrigger, 0)
 endf
 fu! TriggerComplete(timer)
-    if mode() == 'i' && (empty(complete_info()['items']) || complete_info()['mode'] == 'function')
+    if mode() == 'i' && len(InsertingWord()) > 3 && (empty(complete_info()['items']) || complete_info()['mode'] == 'function')
         cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) 
     en
     cal timer_pause(g:mcompleteTrigger, 1)
 endf
 " au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim,*.tex sil cal InvokeCompletion()
-au InsertCharPre * sil cal InvokeCompletion()
+" au InsertCharPre * sil cal InvokeCompletion()
 au CursorMovedI * sil cal timer_pause(g:mcompleteTimer, 0)
 "   <tab> for select candidate
 ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
@@ -402,7 +372,7 @@ ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
 im <silent><expr> <c-l> UltiSnips#CanJumpForwards() ? "\<c-k>" :
             \ UltiSnips#CanExpandSnippet() ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'w')<cr>" :
-            \ "\<space>"
+            \ ""
 "   FZF integration
 ino <expr> <c-x><c-k> fzf#vim#complete(extend(FzfFloatWin(), {'source':'cat /usr/share/dict/en /usr/share/dict/esp /usr/share/dict/ngerman'}))
 ino <expr> <c-x><c-l> fzf#vim#complete#line({}, 1)
@@ -787,6 +757,7 @@ cal plug#begin('~/.vim/plugged')
 
     " Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
     Plug 'SirVer/ultisnips'
+    Plug 'voldikss/vim-floaterm'
     Plug 'preservim/tagbar'
     Plug 'ryanoasis/vim-devicons'
     Plug 'andymass/vim-matchup'
@@ -874,10 +845,6 @@ fu! SnipScope(timer)
     let txt = AnonExpand()
     if txt != ''
         cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[['󰧻 '.txt, 'SnipAnon']], "hl_mode":"combine" })
-    en
-    if pumvisible()
-        let completef = complete_info()['mode'] . ' ' . len(complete_info()['items'])
-        cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[['󱦟 '.completef, 'CompleteFun']], "hl_mode":"combine" })
     en
 endf
 let g:snipScopeTimer = timer_start(100, 'SnipScope', {'repeat': -1})
@@ -1017,10 +984,8 @@ fu! Selected() " get visual selected content
 endf
 fu! GetBufFilePath(withEncoding) " return a list
     if a:withEncoding == v:false
-        retu map(filter(range(0,bufnr('$')), 'buflisted(v:val) && filereadable(bufname(v:val))'), 'fnamemodify(bufname(v:val), ":p")')
-    el
-        retu map(filter(range(0,bufnr('$')), 'buflisted(v:val) && filereadable(bufname(v:val))'), 'fnamemodify(bufname(v:val), ":p").":".getbufvar(v:val, "&encoding")')
-    en
+        retu map(filter(range(0,bufnr('$')), 'buflisted(v:val) && filereadable(bufname(v:val))'), 'fnamemodify(bufname(v:val), ":p")') | en
+    retu map(filter(range(0,bufnr('$')), 'buflisted(v:val) && filereadable(bufname(v:val))'), 'fnamemodify(bufname(v:val), ":p").":".getbufvar(v:val, "&encoding")')
 endf
 fu! GetDefault(v, default)
     if empty(a:v) | retu a:default
@@ -1180,7 +1145,7 @@ fu! TranslitMode()
         cal ClearVirtualTxt() | let g:transCache = '' | retu
     elseif ch == "\<BS>" && len(g:transCache) > 0            " backward
         let g:transCache = g:transCache[:-2]
-    elseif nr2char(ch) == "\<CR>"                            " complete
+    elseif nr2char(ch) == "\<CR>" || nr2char(ch) == "\<tab>" " complete
         let g:transCache = ''
         cal nvim_put([getreg('"')], "c", 0, 1)
         hi CursorLine cterm=NONE ctermbg=DarkGray | retu
