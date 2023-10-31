@@ -319,12 +319,19 @@ set ssop+=globals
 
 "   auto completion
 let g:candidates = []
+let g:completeServerCmd = ['wget', '--no-proxy', '-qO-', 'http://127.0.0.1:12345']
+fu! PostCompleteServer(post, isJob)
+    let completeServerCmd = ['wget', '--no-proxy', '-qO-', 'http://127.0.0.1:12345', '--post-data='.a:post]
+    if a:isJob == v:true
+        cal jobstart(join(completeServerCmd, ' '), {})
+    else
+        retu system(join(completeServerCmd, ' ')) | en
+endf
 fu! RefreshCandidates(timer)
     let cw = InsertingWord()
     cal timer_pause(g:mcompleteTimer, 1)
     if len(cw) <= 3 | retu | en
-    let cmd = join(add(copy(g:completeServerCmd), '--post-data="'.'query:'.cw.''.'"'), ' ')
-    let g:candidates = split(system(cmd), '\n')
+    let g:candidates = split(PostCompleteServer('query:'.cw, v:false), '\n')
     cal InvokeCompletion()
 endf
 fu! MComplete(findstart, base)
@@ -337,12 +344,9 @@ fu! MComplete(findstart, base)
     el | retu g:candidates | en
 endf
 set completefunc=MComplete
-let g:completeServerCmd = ['wget', '--no-proxy', '-qO-', 'http://127.0.0.1:12345']
 fu! RefreshServer()
-    let cmd = add(copy(g:completeServerCmd), '--post-data="hello"')
-    if system(join(cmd, ' ')) != 'hello' " start server
-        cal jobstart('~/OneDrive/ultisnips/complete_server.py', {})
-    en
+    if PostCompleteServer('hello', v:false) != 'hello' " start server
+        cal jobstart('~/OneDrive/ultisnips/complete_server.py', {}) | en
     let cmd = add(copy(g:completeServerCmd), '--post-data="'.'add_path:'.join(GetBufFilePath(v:true), ' ').''.'"')
     cal jobstart(join(cmd, ' '), {})
 endf
@@ -362,9 +366,17 @@ fu! TriggerComplete(timer)
     en
     cal timer_pause(g:mcompleteTrigger, 1)
 endf
+" fu! AfterComplete()
+"     echoe v:completed_item
+"     if exists("v:completed_item['word']") 
+"         cal PostCompleteServer('chosen:'.v:completed_item['word'], v:false) 
+"         en
+" endf
 " au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim,*.tex sil cal InvokeCompletion()
 " au InsertCharPre * sil cal InvokeCompletion()
 au CursorMovedI * sil cal timer_pause(g:mcompleteTimer, 0)
+au CompleteDone * sil if exists("v:completed_item['word']") | cal PostCompleteServer('chosen:'.v:completed_item['word'], v:false) | en
+" au CompleteDone * sil cal AfterComplete()
 "   <tab> for select candidate
 ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
@@ -404,7 +416,7 @@ fu! FzfFloatWin()
                 \ 'yoffset': (winline()*1.0)/winheight(0) + 0.2}
     retu {'source':reverse(copy(g:yankHistory)), 'options':g:MfzfOpts, 'window':fzfCurOpts}
 endf
-nn <c-x><c-p> :cal fzf#run(extend({'sink': {t -> execute(['let @" = "'.t.'"', 'norm p', "cal AddYankHist(getreg('".'"'."'))"])}}, FzfFloatWin()))<cr>
+nn <c-p> :cal fzf#run(extend({'sink': {t -> execute(['let @" = "'.t.'"', 'norm p', "cal AddYankHist(getreg('".'"'."'))"])}}, FzfFloatWin()))<cr>
 ino <expr> <c-x><c-p> fzf#vim#complete(FzfFloatWin())
 
 " }}}
