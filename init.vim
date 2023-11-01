@@ -12,8 +12,8 @@ set udf             " save undo history
 set history=300
 set hidden          " enable to change buffer without save changes
 set shada=<800,:700,'100,@1000,/700,h,n~/nvim/shada
-set updatetime=200
-set maxmempattern=10000
+set updatetime=77
+set mmp=10000
 
 " Indention
 set ai et sta ts=4  " autoindent expandtab smarttab tabstop
@@ -304,8 +304,7 @@ endf
 com! -nargs=0 Dfboth :cal Diffboth()
 " }}}
 " => Automatic -------------------- {{{
-set wmnu wim=list:longest,full
-set fic wic
+set wmnu wim=list:longest,full fic wic
 " set nrformats+=octal " let CTRL-A/CTRL-X support octal number
 "   auto check time
 au WinEnter,CursorHold,FocusGained * if expand('%')!="[Command Line]"|checktime
@@ -314,26 +313,39 @@ au WinEnter,CursorHold,FocusGained * if expand('%')!="[Command Line]"|checktime
 set dict+=/usr/share/dict/en
 set dict+=/usr/share/dict/esp
 
-set cot=menu,menuone,noselect
-set ssop+=globals
+set cot=menu,menuone,noselect ssop+=globals
 
 "   auto completion
-let g:candidates = []
-let g:completeServerCmd = ['wget', '--no-proxy', '-qO-', 'http://127.0.0.1:12345']
-fu! PostCompleteServer(post, isJob)
+let [g:candidates, g:finished] = [[], v:true]
+fu! PostCmd(post)
     let completeServerCmd = ['wget', '--no-proxy', '-qO-', 'http://127.0.0.1:12345', '--post-data='.a:post]
-    if a:isJob == v:true
-        cal jobstart(join(completeServerCmd, ' '), {})
-    else
-        retu system(join(completeServerCmd, ' ')) | en
+    retu join(completeServerCmd)
 endf
-fu! RefreshCandidates(timer)
+fu! s:GotCandidates(jobId, data, event)
+    let g:candidates = a:data
+    if !empty(g:candidates) && g:candidates[0] != '' && mode() == 'i'
+        cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) 
+	let g:finished = v:true
+    endif
+endf
+fu! RefreshCandidates()
     let cw = InsertingWord()
-    cal timer_pause(g:mcompleteTimer, 1)
-    if len(cw) <= 3 | retu | en
-    let g:candidates = split(PostCompleteServer('query:'.cw, v:false), '\n')
-    cal InvokeCompletion()
+    if g:finished && len(cw) >= 3
+	let g:finished = v:false
+	cal jobstart(PostCmd('query:'.cw), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
+    endif
 endf
+fu! RefreshServer(all)
+    if system(PostCmd('hello')) != 'hello' " start server
+        cal jobstart('~/OneDrive/ultisnips/complete_server.py', {}) | en
+    let cmd = PostCmd('"add_path:'.join(GetBufFilePath(v:true), ';').'"')
+    if a:all != v:true && filereadable(bufname(bufnr()))
+        let cmd = PostCmd('"add_path:'.(expand('%:p').':'.getbufvar(bufnr(), "&enc")).'"') | en
+    cal jobstart(cmd, {})
+endfunction
+au VimEnter,BufReadPost,BufWritePost * if filereadable(bufname(bufnr())) | cal RefreshServer(v:false) | en
+au CursorHoldI * sil cal RefreshCandidates()
+au InsertLeave * let g:finished = v:true
 fu! MComplete(findstart, base)
     if a:findstart " findstart will control the pulldown positiong
 	let [line, start] = [getline('.'), col('.') - 1]
@@ -344,39 +356,7 @@ fu! MComplete(findstart, base)
     el | retu g:candidates | en
 endf
 set completefunc=MComplete
-fu! RefreshServer()
-    if PostCompleteServer('hello', v:false) != 'hello' " start server
-        cal jobstart('~/OneDrive/ultisnips/complete_server.py', {}) | en
-    let cmd = add(copy(g:completeServerCmd), '--post-data="'.'add_path:'.join(GetBufFilePath(v:true), ' ').''.'"')
-    cal jobstart(join(cmd, ' '), {})
-endf
-au VimEnter,BufReadPost,BufWritePost * cal RefreshServer()
-let g:mcompleteTimer = timer_start(50, 'RefreshCandidates', {'repeat': -1})
-let g:mcompleteTrigger = timer_start(30, 'TriggerComplete', {'repeat': -1})
-fu! InvokeCompletion()
-    cal timer_pause(g:mcompleteTrigger, 1)
-    if !pumvisible() && (v:char =~ '[0-9A-Za-z_.\\]')
-        if &omnifunc != '' && &ft == 'vim' | cal nvim_feedkeys("\<C-x>\<C-o>", "i", 1) | en
-    en
-    cal timer_pause(g:mcompleteTrigger, 0)
-endf
-fu! TriggerComplete(timer)
-    if mode() == 'i' && len(InsertingWord()) > 3 && (empty(complete_info()['items']) || complete_info()['mode'] == 'function')
-        cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) 
-    en
-    cal timer_pause(g:mcompleteTrigger, 1)
-endf
-" fu! AfterComplete()
-"     echoe v:completed_item
-"     if exists("v:completed_item['word']") 
-"         cal PostCompleteServer('chosen:'.v:completed_item['word'], v:false) 
-"         en
-" endf
-" au InsertCharPre *.la,*.gr,*.txt,*.py,*.vim,*.tex sil cal InvokeCompletion()
-" au InsertCharPre * sil cal InvokeCompletion()
-au CursorMovedI * sil cal timer_pause(g:mcompleteTimer, 0)
-au CompleteDone * sil if exists("v:completed_item['word']") | cal PostCompleteServer('chosen:'.v:completed_item['word'], v:false) | en
-" au CompleteDone * sil cal AfterComplete()
+au CompleteDone * sil if exists("v:completed_item['word']") | cal jobstart(PostCmd('chosen:'.v:completed_item['word']), {}) | en
 "   <tab> for select candidate
 ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
@@ -400,7 +380,7 @@ fu! ConsumeCmd()
 endf
 au BufWinEnter *.* sil cal ConsumeCmd()|cal SignMarks()
 " yank history
-let g:yankHistory = []
+let [g:yankHistory, g:YankHistorySave] = [[], '[]']
 au TextYankPost * cal AddYankHist(getreg('"'))
 fu! AddYankHist(toAdd)
     let [tmpl, sha] = [[], sha256(a:toAdd)]
@@ -409,7 +389,11 @@ fu! AddYankHist(toAdd)
     endfor
     cal add(tmpl, a:toAdd)
     let g:yankHistory = tmpl
+    if match(a:toAdd, '^\i*$') >= 0
+        cal jobstart(PostCmd('chosen:'.a:toAdd), {}) | en
+    let g:YankHistorySave = string(filter(copy(g:yankHistory), {_,his -> stridx(his, "\n") == -1}))
 endf
+au SessionLoadPost * exe 'let g:yankHistory = ' . g:YankHistorySave
 fu! FzfFloatWin()
     let fzfCurOpts = {'width':55, 'height': 15,
                 \ 'xoffset': (virtcol('.')*1.0)/winwidth(0) + 0.07,
@@ -417,7 +401,7 @@ fu! FzfFloatWin()
     retu {'source':reverse(copy(g:yankHistory)), 'options':g:MfzfOpts, 'window':fzfCurOpts}
 endf
 nn <c-p> :cal fzf#run(extend({'sink': {t -> execute(['let @" = "'.t.'"', 'norm p', "cal AddYankHist(getreg('".'"'."'))"])}}, FzfFloatWin()))<cr>
-ino <expr> <c-x><c-p> fzf#vim#complete(FzfFloatWin())
+ino <expr> <c-x><c-p> fzf#vim#complete(extend(FzfFloatWin(), {'source':reverse(filter(copy(g:yankHistory), {_,his -> stridx(his, "\n") == -1}))}))
 
 " }}}
 " => Handle -------------------- {{{
@@ -453,7 +437,7 @@ nn <a-o> :cal BufJumpBack()<cr>
 let g:jumpMode = 'n'
 let g:jumpModeNames = {'n':'Normal','m':'Mark','f':'Fold','s':'Scroll','q':'Quickfix','d':'Diff','w':'Window','c':'Conflict', 'r':'Roadmap'}
 fu! OmniJumpBoot(backNormFlag)
-    let jumpMoves = {'nj':'gj','nk':'gk',
+    let jumpMoves = {'nj':'j','nk':'k',
                 \'mj':"]'", 'mk':"['",
                 \'qj':':cn<cr>','qk':':cp<cr>',
                 \'fj':'zj','fk':'zk','fh':':setl fdl-=1<CR>','fl':':setl fdl+=1<CR>',
@@ -856,8 +840,9 @@ fu! SnipScope(timer)
     en
     let txt = AnonExpand()
     if txt != ''
-        cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[['󰧻 '.txt, 'SnipAnon']], "hl_mode":"combine" })
-    en
+        cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[['󰧻 '.txt, 'SnipAnon']], "hl_mode":"combine" }) | en
+    if g:finished != v:true
+        cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[['󰥺 ', 'SnipMark']], "hl_mode":"combine" }) | en
 endf
 let g:snipScopeTimer = timer_start(100, 'SnipScope', {'repeat': -1})
 au InsertEnter * cal timer_pause(g:snipScopeTimer, 0)
