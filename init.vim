@@ -73,9 +73,9 @@ hi nontext ctermfg=10
 hi Search cterm=underline ctermfg=red ctermbg=none
 hi IncSearch cterm=bold ctermfg=black ctermbg=white
 hi Folded ctermfg=lightblue ctermbg=236
-hi Pmenu ctermfg=white ctermbg=239
 hi Visual ctermfg=black ctermbg=lightblue
 hi VertSplit cterm=bold ctermfg=white ctermbg=none
+hi Pmenu ctermfg=white ctermbg=239
 hi CursorLine cterm=none ctermbg=DarkGray
 hi LineNrAbove ctermfg=blue
 hi CursorLineNr cterm=bold ctermfg=white
@@ -324,15 +324,19 @@ endf
 fu! s:GotCandidates(jobId, data, event)
     let g:candidates = a:data
     if !empty(g:candidates) && g:candidates[0] != '' && mode() == 'i'
+        hi Pmenu ctermfg=black ctermbg=249
         cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) 
 	let g:finished = v:true
     endif
 endf
 fu! RefreshCandidates()
-    let cw = InsertingWord()
+    let [cw, preCh] = [InsertingWord(), getline('.')[col('.')-2:col('.')-1]]
     if g:finished && len(cw) >= 3
 	let g:finished = v:false
 	cal jobstart(PostCmd('query:'.cw), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
+    elseif index(['.', ' '], preCh) && &omnifunc != ''
+        hi Pmenu ctermfg=white ctermbg=239
+        cal nvim_feedkeys("\<C-x>\<C-o>", "i", 1) 
     endif
 endf
 fu! RefreshServer(all)
@@ -344,15 +348,15 @@ fu! RefreshServer(all)
     cal jobstart(cmd, {})
 endfunction
 au VimEnter,BufReadPost,BufWritePost * if filereadable(bufname(bufnr())) | cal RefreshServer(v:false) | en
-au CursorHoldI * sil cal RefreshCandidates()
-au InsertLeave * let g:finished = v:true
+au CursorMovedI * sil cal RefreshCandidates()
+au InsertLeave * let g:finished = v:true | hi Pmenu ctermfg=white ctermbg=239
 fu! MComplete(findstart, base)
     if a:findstart " findstart will control the pulldown positiong
-	let [line, start] = [getline('.'), col('.') - 1]
-	while start > 0 && line[start - 1] =~ '\i'
-	    let start -= 1
-	endwhile
-	return start
+        let [line, start] = [getline('.'), col('.') - 1]
+        while start > 0 && line[start - 1] =~ '\i'
+            let start -= 1
+        endwhile
+        return start
     el | retu g:candidates | en
 endf
 set completefunc=MComplete
@@ -362,7 +366,7 @@ ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
 "   snip expand
 im <silent><expr> <c-l> UltiSnips#CanJumpForwards() ? "\<c-k>" :
-            \ UltiSnips#CanExpandSnippet() ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
+            \ g:canSnipExpand ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'w')<cr>" :
             \ ""
 "   FZF integration
@@ -830,14 +834,15 @@ let g:snipsMk = nvim_create_namespace('snippetMarks')
 hi SnipMark cterm=bold ctermfg=227
 hi SnipAnon cterm=bold ctermfg=198
 hi CompleteFun cterm=bold ctermfg=154
+let g:canSnipExpand = v:false
 fu! SnipScope(timer)
     cal DelLineExtMark(g:snipsMk, 0, -1)
     if mode() != 'i' | retu | en
     if UltiSnips#CanExpandSnippet()
-        let snips = UltiSnips#SnippetsInCurrentScope()
+        let [snips, g:canSnipExpand] = [UltiSnips#SnippetsInCurrentScope(), v:true]
         let txt = join(values(map(snips, {_,v -> '󰧼 '.v})), ' ')
         cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[[txt, 'SnipMark']], "hl_mode":"combine" })
-    en
+    el | let g:canSnipExpand = v:false | en
     let txt = AnonExpand()
     if txt != ''
         cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[['󰧻 '.txt, 'SnipAnon']], "hl_mode":"combine" }) | en
