@@ -127,14 +127,10 @@ let g:extmk = nvim_create_namespace('MyExtMarks')
 fu SetExMark(bn, ln, hl, ...)
     let txt = ' '.join(a:000, ' ')
     let extmk_id = nvim_buf_set_extmark(a:bn, g:extmk, a:ln, 0, { "virt_text":[[txt, a:hl]], "hl_mode":"combine" })
-    if !exists('b:extmks') | let [b:extmks, b:extcolor] = [{}, {}] | en
-    let [b:extmks[extmk_id], b:extcolor[extmk_id]] = [txt, a:hl]
 endf
 fu DelLineExtMark(namespace, start, end)
     for mkInfo in nvim_buf_get_extmarks(bufnr(''), a:namespace, a:start, a:end, {})
         cal nvim_buf_del_extmark(bufnr(''), a:namespace, mkInfo[0])
-        if exists('b:extmks') | unlet b:extmks[mkInfo[0]] | en
-        if exists('b:extcolor') | unlet b:extcolor[mkInfo[0]] | en
     endfor
 endf
 
@@ -214,9 +210,7 @@ au CursorHold * if exists('g:roadmapbuf') && index(tabpagebuflist(), g:roadmapbu
 com! -nargs=0 Roadmap :cal ToggleRoadmap()
 fu! ToggleRoadmap()
     if !exists('g:roadmapbuf') || !bufexists(g:roadmapbuf)
-        let g:roadmapbuf = bufadd('')
-        call bufload(g:roadmapbuf)
-    en
+        let g:roadmapbuf = bufadd('') | call bufload(g:roadmapbuf) | en
     cal RefreshRoadMap('')
     if index(tabpagebuflist(), g:roadmapbuf) == -1
         exe 'bo vsplit |b'.g:roadmapbuf.'|vert res 25'
@@ -260,12 +254,9 @@ fu! GetMarks() " marks for road map and jumping
         let [mkn, ln] = [mk['mark'], mk['pos'][1]]
         if index(g:alphabet, mkn[1:]) >= 0 | let marks[str2nr(ln)] = '󰉁'.mkn[1:].' '.trim(getline(ln)) | en
     endfor
-    for [id, txt] in exists('b:extmks') ? items(b:extmks) : items({}) " extmarks
-        let mkinfo = nvim_buf_get_extmark_by_id(bufnr(), g:extmk, str2nr(id), {})
-        if empty(mkinfo) != 1
-            let ln = mkinfo[0] + 1
-            let marks[str2nr(ln)] = (has_key(marks, str2nr(ln)) ? marks[str2nr(ln)] : '').txt
-        en
+    for mkinfo in nvim_buf_get_extmarks(bufnr(), g:extmk, 0, -1, {'details':v:true}) " extmarks
+        let [ln, txt] = [mkinfo[1]+1, mkinfo[3]['virt_text'][0][0]]
+        let marks[str2nr(ln)] = (has_key(marks, str2nr(ln)) ? marks[str2nr(ln)] : '').txt
     endfor
     if FugitiveStatusline() != '' && filereadable(expand('%:p')) " git diffs
         let path = getcwd()
@@ -293,11 +284,9 @@ hi DiffChange ctermbg=none
 hi DiffDelete ctermbg=245
 hi DiffAdd ctermbg=86 ctermfg=black
 fu! Diffboth()
-    let curr = win_getid()
-    let wins = gettabinfo(tabpagenr())[0]['windows']
+    let [curr, wins] = [win_getid(), gettabinfo(tabpagenr())[0]['windows']]
     for winId in wins
-        cal win_gotoid(winId)
-        diffthis
+        cal win_gotoid(winId) | diffthis
     endfor
     cal win_gotoid(curr)
 endf
@@ -366,7 +355,7 @@ ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
 "   snip expand
 im <silent><expr> <c-l> UltiSnips#CanJumpForwards() ? "\<c-k>" :
-            \ g:canSnipExpand ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
+            \ (g:canSnipExpand \|\| UltiSnips#CanExpandSnippet()) ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'w')<cr>" :
             \ ""
 "   FZF integration
@@ -576,8 +565,10 @@ fu! SplitOp(sc, query) " run a split cmd first, then operate
     elseif (op == 't') " Tag
         cal GoToTag(a:sc.'e', GetDefault(a:query, expand("<cword>")))
     elseif (op == 'q') " QuickFix
-        cal fzf#run({'source': GetQfFzfList(),
-                    \'sink': {pi->execute(a:sc.'cc'.split(pi,' ')[0])}, 'options':opts,})
+        cal fzf#run({'source': map(getqflist(), {_,qf -> printf('+%d %d %s', qf['lnum'], qf['bufnr'], trim(qf['text']))}),
+                    \'sink': {pi->execute(a:sc.'b '.matchstr(pi, '+\d*\s\d*'))}, 'options':opts,})
+    elseif (op == 'm') " ExMarks
+        cal fzf#run({'source': GetAllExmarks(), 'sink': {mk->execute(a:sc.'b '.matchstr(mk, '+\d*\s\d*'))}, 'options':opts,})
     el
         exe a:sc."|norm \<C-L>"
     en
@@ -824,10 +815,10 @@ endf
 let g:UltiSnipsExpandTrigger="<c-x><c-j>"
 let g:UltiSnipsJumpForwardTrigger="<c-k>"
 let g:UltiSnipsJumpBackwardTrigger="<c-j>"
-ino <a-j> <esc>:cal UltiExpand(0)<cr>
+ino <a-l> <esc>:cal UltiExpand(0)<cr>
 let g:UltiSnipsSnippetDirectories=["UltiSnips", "mycoolsnippets"]
 let g:UltiSnipsEditSplit="context"
-vn <a-j> :cal UltiSnips#SaveLastVisualSelection()<cr>:cal UltiExpand(1)<cr>
+vn <c-l> :cal UltiSnips#SaveLastVisualSelection()<cr>:cal UltiExpand(1)<cr>
 nn <silent> <f4> :UltiSnipsEdit<cr>
 nn <silent> ,<f4> :to vsplit \|e /usr/share/nvim/runtime/mycoolsnippets/all.snippets<cr>
 let g:snipsMk = nvim_create_namespace('snippetMarks')
@@ -865,14 +856,12 @@ fu! AnonJobStart()
     let [g:anonExpand, cw] = ['', InsertingWord()]
     if cw != ''
         cal jobstart('~/OneDrive/ultisnips/anon_expand.py '.cw.' '.&ft,
-                    \ {'on_stdout': function('s:GetExpanded'), 'stdout_buffered':v:true})
-    en
+                    \ {'on_stdout': function('s:GetExpanded'), 'stdout_buffered':v:true}) | en
 endf
 fu! AnonExpand() " Anon Expand: regex match and regex replace and expand!
     if g:exAnonExpand != '' | retu substitute(g:exAnonExpand, '<cr>', "\<cr>", 'g') | en
     " expand from registered snips
-    let cw = InsertingWord()
-    let snips = UltiSnips#SnippetsInCurrentScope(1) " All
+    let [cw, snips] = [InsertingWord(), UltiSnips#SnippetsInCurrentScope(1)]
     let rst = filter(keys(snips), {_,s -> s[0:len(cw)-1] ==# cw})
     if len(rst) != 0 | retu rst[0] | en
     retu ''
@@ -986,8 +975,8 @@ fu! Selected() " get visual selected content
 endf
 fu! GetBufFilePath(withEncoding) " return a list
     if a:withEncoding == v:false
-        retu map(filter(range(0,bufnr('$')), 'buflisted(v:val) && filereadable(bufname(v:val))'), 'fnamemodify(bufname(v:val), ":p")') | en
-    retu map(filter(range(0,bufnr('$')), 'buflisted(v:val) && filereadable(bufname(v:val))'), 'fnamemodify(bufname(v:val), ":p").":".getbufvar(v:val, "&encoding")')
+        retu map(filter(range(1,bufnr('$')), 'buflisted(v:val) && filereadable(bufname(v:val))'), 'fnamemodify(bufname(v:val), ":p")') | en
+    retu map(filter(range(1,bufnr('$')), 'buflisted(v:val) && filereadable(bufname(v:val))'), 'fnamemodify(bufname(v:val), ":p").":".getbufvar(v:val, "&encoding")')
 endf
 fu! GetDefault(v, default)
     if empty(a:v) | retu a:default
@@ -1018,6 +1007,17 @@ endf
 fu Cap(word) " Capitalize first letter
     retu substitute(a:word, '^.', '\u&', '')
 endfu
+fu! GetAllExmarks()
+    let marks = []
+    for bn in filter(range(1,bufnr('$')), 'buflisted(v:val) && filereadable(bufname(v:val))')
+        for mkinfo in nvim_buf_get_extmarks(bn, g:extmk, 0, -1, {})
+            let [ln, txt] = [mkinfo[1] + 1, nvim_buf_get_extmark_by_id(bn, g:extmk, mkinfo[0], {'details':v:true})[2]['virt_text'][0][0]]
+            let lnTxt = getbufline(bn, ln)[0]
+            cal add(marks, printf('+%d %d %s', ln, bn, trim(lnTxt . ' ' . txt)))
+        endfor
+    endfor
+    retu marks
+endf
 
 " ----------------- Operator Functions -----------------
 " Replace-Operator
