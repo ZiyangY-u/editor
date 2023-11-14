@@ -562,13 +562,15 @@ fu! SplitOp(sc, query) " run a split cmd first, then operate
         let sorted = fzf#vim#_buflisted_sorted()
         cal fzf#run({'source':map(sorted, {_,bn->bn.' '.bufname(bn)}),
                     \'sink':{bn->execute(a:sc.'b'.matchstr(bn, '^[0-9]*'))}, 'options':opts,})
-    elseif (op == 't') " Tag
+    elseif (op ==# 't') " Tag
         cal GoToTag(a:sc.'e', GetDefault(a:query, expand("<cword>")))
     elseif (op == 'q') " QuickFix
         cal fzf#run({'source': map(getqflist(), {_,qf -> printf('+%d %d %s', qf['lnum'], qf['bufnr'], trim(qf['text']))}),
                     \'sink': {pi->execute(a:sc.'b '.matchstr(pi, '+\d*\s\d*'))}, 'options':opts,})
     elseif (op == 'm') " ExMarks
         cal fzf#run({'source': GetAllExmarks(), 'sink': {mk->execute(a:sc.'b '.matchstr(mk, '+\d*\s\d*'))}, 'options':opts,})
+    elseif (op ==# 'T') " Terminal
+        exe 'FloatermToggle'
     el
         exe a:sc."|norm \<C-L>"
     en
@@ -577,6 +579,9 @@ nn ,s :cal SplitOp('bo vsplit\|', '')<CR>
 nn ,S :cal SplitOp('bo split\|', '')<CR>
 vn ,s :cal SplitOp('bo vsplit\|', Selected())<CR>
 vn ,S :cal SplitOp('bo split\|', Selected())<CR>
+let g:MFloatOpts = {'relative':'editor','width':100, 'height':30, 'col':20, 'row':5}
+nn ,f :cal SplitOp("cal nvim_open_win(bufnr(), 1, g:MFloatOpts)\|", '')<CR>
+vn ,f :cal SplitOp("cal nvim_open_win(bufnr(), 1, g:MFloatOpts)\|", Selected())<CR>
 "   window navigation from any mode
 for direct in split('hjkl', '\zs')
     exe printf('tno <a-%s> <c-\><c-n><c-w>%s', direct, direct)
@@ -867,7 +872,7 @@ fu! AnonExpand() " Anon Expand: regex match and regex replace and expand!
     retu ''
 endf
 " leap.nvim
-nn ,f :lua require('leap').leap{ target_windows = { vim.fn.win_getid() } }<cr>
+nn <leader>f :lua require('leap').leap{ target_windows = { vim.fn.win_getid() } }<cr>
 " quick-scope
 let g:qs_highlight_on_keys = ['f', 'F', 't', 'T']
 hi QuickScopePrimary ctermfg=red
@@ -889,6 +894,7 @@ ca gbd cal fzf#run({'source':'git branch', 'dir':expand('%:p:h'), 'sink':{gb->ex
 ca gc Git commit
 ca gca Git commit --amend<cr>
 ca gco cal fzf#run({'source':'git branch', 'dir':expand('%:p:h'), 'sink':{gb -> execute('Git checkout '.gb)}, 'options':extend(copy(g:MfzfOpts), ['--prompt=checkout > ']), })<cr>
+ca gch Git checkout
 ca gps Git push
 ca gm Git merge
 " vim-easy-align
