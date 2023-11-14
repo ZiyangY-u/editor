@@ -596,6 +596,7 @@ hi Title cterm=bold ctermfg=red
 hi Git ctermfg=Black ctermbg=185
 hi Trans ctermfg=227 ctermbg=31
 hi Obss ctermfg=Black ctermbg=118
+hi AdditionIcon cterm=bold ctermfg=white ctermbg=blue
 nn ,t :cal SplitOp('tabe \|', '')<CR>
 vn ,t :cal SplitOp('tabe \|', Selected())<CR>
 nn t gt
@@ -619,6 +620,7 @@ fu! ActTal()
     " running indicators
     let tal .= "%#error#%{g:asyncCnt > 0 ? '  '.g:asyncCnt.' ':''}"
     let tal .= "%{gutentags#statusline() == '' ? '' : ' 󱈢 '}"
+    if exists('*AdditionalTabIcons') | let tal .= "%#AdditionIcon#%{AdditionalTabIcons()}" | en
     let tal .= "%#Git#%{FugitiveStatusline()}"
     let tal .= "%#Trans#%{g:TransMode}"
     let tal .= "%#Obss#%{ObsessionStatus()}"
