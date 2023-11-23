@@ -51,7 +51,7 @@ fu! ActStl(isActive)
     let stl=""
     let stl.="%#error#%r%#mod#%m"
     let stl.="%#ModColor#%{(mode()=='n'||mode()=='c')?'  '.g:jumpModeNames[g:jumpMode].' ':''}%{(mode()=='t')?'  TERM ':''}"
-    let stl.="%<%#c1# %w%{filereadable(expand('%p'))?RelPath(expand('%:p'),getcwd()):expand('%:p')}"
+    let stl.="%<%#c1# %w%{filereadable(expand('%p')) ? Longf(expand('%:p')) : expand('%:p')}"
 
     let stl.="%=" " left/right separator
     " virtual column number and byte index number
@@ -305,23 +305,22 @@ set dict+=/usr/share/dict/esp
 set cot=menu,menuone,noselect ssop+=globals
 
 "   auto completion
-let [g:candidates, g:finished] = [[], v:true]
+let g:candidates = []
 fu! PostCmd(post)
     let completeServerCmd = ['wget', '--no-proxy', '-qO-', 'http://127.0.0.1:12345', '--post-data='.a:post]
     retu join(completeServerCmd)
 endf
 fu! s:GotCandidates(jobId, data, event)
     let g:candidates = a:data
-    if !empty(g:candidates) && g:candidates[0] != '' && mode() == 'i'
+    if !empty(g:candidates) && g:candidates[0] != '' && len(g:candidates[0]) == len(InsertingWord()) && mode() == 'i'
+        let g:candidates = filter(a:data[1:], {_,item -> item != ''})
         hi Pmenu ctermfg=black ctermbg=249
-        cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) 
-	let g:finished = v:true
     endif
+    cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) 
 endf
 fu! RefreshCandidates()
     let [cw, preCh] = [InsertingWord(), getline('.')[col('.')-2:col('.')-1]]
-    if g:finished && len(cw) >= 3
-	let g:finished = v:false
+    if len(cw) >= 2
 	cal jobstart(PostCmd('query:'.cw), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
     elseif index(['.', ' '], preCh) && &omnifunc != ''
         hi Pmenu ctermfg=white ctermbg=239
@@ -337,26 +336,23 @@ fu! RefreshServer(all)
     cal jobstart(cmd, {})
 endfunction
 au VimEnter,BufReadPost,BufWritePost * if filereadable(bufname(bufnr())) | cal RefreshServer(v:false) | en
-au CursorMovedI * sil cal RefreshCandidates()
-au InsertLeave * let g:finished = v:true | hi Pmenu ctermfg=white ctermbg=239
+au CursorMovedI * sil redraw | cal RefreshCandidates()
+au InsertLeave * hi Pmenu ctermfg=white ctermbg=239
+au CursorHoldI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
 fu! MComplete(findstart, base)
     if a:findstart " findstart will control the pulldown positiong
-        let [line, start] = [getline('.'), col('.') - 1]
-        while start > 0 && line[start - 1] =~ '\i'
-            let start -= 1
-        endwhile
-        return start
+        return col('.') - len(InsertingWord()) - 1
     el | retu g:candidates | en
 endf
 set completefunc=MComplete
-au CompleteDone * sil if exists("v:completed_item['word']") | cal jobstart(PostCmd('chosen:'.v:completed_item['word']), {}) | en
+au CompleteDone * sil redraw | if exists("v:completed_item['word']") | cal jobstart(PostCmd('chosen:'.v:completed_item['word']), {}) | en
 "   <tab> for select candidate
 ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
 "   snip expand
 im <silent><expr> <c-l> UltiSnips#CanJumpForwards() ? "\<c-k>" :
             \ (g:canSnipExpand \|\| UltiSnips#CanExpandSnippet()) ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
-            \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'w')<cr>" :
+            \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'w', '', {})<cr>" :
             \ ""
 "   FZF integration
 ino <expr> <c-x><c-k> fzf#vim#complete(extend(FzfFloatWin(), {'source':'cat /usr/share/dict/en /usr/share/dict/esp /usr/share/dict/ngerman'}))
@@ -372,7 +368,7 @@ fu! ConsumeCmd()
     let g:cmdToConsume = [] " clear cmd list
 endf
 au BufWinEnter *.* sil cal ConsumeCmd()|cal SignMarks()
-" yank history
+"   Yank History
 let [g:yankHistory, g:YankHistorySave] = [[], '[]']
 au TextYankPost * cal AddYankHist(getreg('"'))
 fu! AddYankHist(toAdd)
@@ -381,7 +377,7 @@ fu! AddYankHist(toAdd)
         if sha256(item) != sha | cal add(tmpl, item) | en
     endfor
     cal add(tmpl, a:toAdd)
-    let g:yankHistory = tmpl
+    let g:yankHistory = tmpl[-100:]
     if match(a:toAdd, '^\i*$') >= 0
         cal jobstart(PostCmd('chosen:'.a:toAdd), {}) | en
     let g:YankHistorySave = string(filter(copy(g:yankHistory), {_,his -> stridx(his, "\n") == -1}))
@@ -394,7 +390,7 @@ fu! FzfFloatWin()
     retu {'source':reverse(copy(g:yankHistory)), 'options':g:MfzfOpts, 'window':fzfCurOpts}
 endf
 nn <c-p> :cal fzf#run(extend({'sink': {t -> execute(['let @" = "'.t.'"', 'norm p', "cal AddYankHist(getreg('".'"'."'))"])}}, FzfFloatWin()))<cr>
-ino <expr> <c-x><c-p> fzf#vim#complete(extend(FzfFloatWin(), {'source':reverse(filter(copy(g:yankHistory), {_,his -> stridx(his, "\n") == -1}))}))
+ino <expr> <c-p> fzf#vim#complete(extend(FzfFloatWin(), {'source':reverse(filter(copy(g:yankHistory), {_,his -> stridx(his, "\n") == -1}))}))
 
 " }}}
 " => Handle -------------------- {{{
@@ -464,6 +460,7 @@ let g:HRSmode=1 " HiRaiShin mode
 let g:hda=(exists('g:hda') ? g:hda : {}) " hda for 'hiraishin directory anchors'
 nn <leader>H @=(has_key(g:hda,getcwd())==1 ? ':unlet g:hda[getcwd()]' : ':let g:hda[getcwd()]=1')<CR><CR>
 nn <silent> <leader>Y :cal fzf#run({'source': keys(g:hda), 'sink': 'lcd','window':{'width':0.9,'height':0.6}})<CR>
+nn <silent> <leader>D :cal fzf#run({'source': keys(g:hda), 'sink': {p -> execute('unlet g:hda["'.p.'"]')}, 'window':{'width':0.9,'height':0.6}})<CR>
 nn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen("", "MEdit")':':Files')<CR><CR>
 vn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen(Selected(), "MEdit")':':Files')<CR><CR>
 vn <silent> <leader>O @=(g:HRSmode==1?':cal HiraishinOpen(".".Selected(), "MEdit")':':Files')<CR><CR>
@@ -563,9 +560,9 @@ fu! SplitOp(sc, query) " run a split cmd first, then operate
         cal fzf#run({'source':map(sorted, {_,bn->bn.' '.bufname(bn)}),
                     \'sink':{bn->execute(a:sc.'b'.matchstr(bn, '^[0-9]*'))}, 'options':opts,})
     elseif (op ==# 't') " Tag
-        cal GoToTag(a:sc.'e', GetDefault(a:query, expand("<cword>")))
+        cal GoToTag(a:sc.'MEdit', GetDefault(a:query, expand("<cword>")))
     elseif (op == 'q') " QuickFix
-        cal fzf#run({'source': map(getqflist(), {_,qf -> printf('+%d %d %s', qf['lnum'], qf['bufnr'], trim(qf['text']))}),
+        cal fzf#run({'source': map(getqflist(), {_,qf -> printf('+%d %d %s | %s', qf['lnum'], qf['bufnr'], Shortf(bufname(qf['bufnr'])), trim(qf['text']))}),
                     \'sink': {pi->execute(a:sc.'b '.matchstr(pi, '+\d*\s\d*'))}, 'options':opts,})
     elseif (op == 'm') " ExMarks
         cal fzf#run({'source': GetAllExmarks(), 'sink': {mk->execute(a:sc.'b '.matchstr(mk, '+\d*\s\d*'))}, 'options':opts,})
@@ -579,9 +576,12 @@ nn ,s :cal SplitOp('bo vsplit\|', '')<CR>
 nn ,S :cal SplitOp('bo split\|', '')<CR>
 vn ,s :cal SplitOp('bo vsplit\|', Selected())<CR>
 vn ,S :cal SplitOp('bo split\|', Selected())<CR>
-let g:MFloatOpts = {'relative':'editor','width':100, 'height':30, 'col':20, 'row':5}
-nn ,f :cal SplitOp("cal nvim_open_win(bufnr(), 1, g:MFloatOpts)\|", '')<CR>
-vn ,f :cal SplitOp("cal nvim_open_win(bufnr(), 1, g:MFloatOpts)\|", Selected())<CR>
+fu! Getfloatopt(width, height)
+    retu {'relative':'editor','width':a:width, 'height':a:height, 'col':(&columns - a:width)/2, 'row':(&lines - a:height)/2}
+endf
+nn ,f :cal SplitOp("cal nvim_open_win(bufnr(), 1, Getfloatopt(100, 30))\|", '')<CR>
+vn ,f :cal SplitOp("cal nvim_open_win(bufnr(), 1, Getfloatopt(100, 30))\|", Selected())<CR>
+nn ,o :let [g:bufToOpen, g:lnToGo, g:cmdToConsume] = [bufnr(), line('.'), ['norm zz']] \| quit! \| exe 'b +'.g:lnToGo.' '.g:bufToOpen<CR>
 "   window navigation from any mode
 for direct in split('hjkl', '\zs')
     exe printf('tno <a-%s> <c-\><c-n><c-w>%s', direct, direct)
@@ -603,6 +603,9 @@ nn t gt
 nn T gT
 fu! Shortf(fname)
     retu fnamemodify(a:fname, ':p:t')
+endf
+fu! Longf(fpath)
+    retu RelPath(a:fpath, getcwd())
 endf
 fu! ActTal()
     let [tal, curr] = ['', tabpagenr()]
@@ -755,6 +758,9 @@ cal plug#begin('~/.vim/plugged')
 
     " Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
     Plug 'SirVer/ultisnips'
+    Plug 'preservim/vim-pencil'
+    Plug 'itchyny/vim-cursorword'
+    Plug 'machakann/vim-highlightedyank'
     Plug 'voldikss/vim-floaterm'
     Plug 'preservim/tagbar'
     Plug 'ryanoasis/vim-devicons'
@@ -844,11 +850,9 @@ fu! SnipScope(timer)
     let txt = AnonExpand()
     if txt != ''
         cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[['󰧻 '.txt, 'SnipAnon']], "hl_mode":"combine" }) | en
-    if g:finished != v:true
-        cal nvim_buf_set_extmark(bufnr(), g:snipsMk, line(".")-1, 0, { "virt_text":[['󰥺 ', 'SnipMark']], "hl_mode":"combine" }) | en
 endf
 let g:snipScopeTimer = timer_start(100, 'SnipScope', {'repeat': -1})
-au InsertEnter * cal timer_pause(g:snipScopeTimer, 0)
+au InsertEnter * let g:exAnonExpand = '' | cal timer_pause(g:snipScopeTimer, 0)
 au InsertLeave * cal timer_pause(g:snipScopeTimer, 1)
 au InsertLeave * cal DelLineExtMark(g:snipsMk, 0, -1)
 au CursorMovedI * cal AnonJobStart()
@@ -931,6 +935,9 @@ endf
 nn <leader>u :UndotreeToggle<cr>
 " devicons
 let g:webdevicons_enable_nerdtree = 1
+" HighlightedYank
+let g:highlightedyank_highlight_duration = 150
+hi HighlightedyankRegion ctermbg=191
 " }}}
 " => File type Specific -------------------- {{{
 aug filetypes
@@ -947,7 +954,6 @@ aug filetypes
     au FileType javascript setl ts=2 sw=2
     au FileType vim setl tw=0
     au FileType html,javascript,css,xml :EmmetInstall
-    au FileType sql setl ofu=
     au FileType python,vim,c,javascript,java setl ofu=v:lua.vim.lsp.omnifunc
     au FileType git setl fdm=syntax fdl=0
     " au BufWritePre * :sil! ClearTailBlank
@@ -1021,7 +1027,7 @@ fu! GetAllExmarks()
         for mkinfo in nvim_buf_get_extmarks(bn, g:extmk, 0, -1, {})
             let [ln, txt] = [mkinfo[1] + 1, nvim_buf_get_extmark_by_id(bn, g:extmk, mkinfo[0], {'details':v:true})[2]['virt_text'][0][0]]
             let lnTxt = getbufline(bn, ln)[0]
-            cal add(marks, printf('+%d %d %s', ln, bn, trim(lnTxt . ' ' . txt)))
+            cal add(marks, printf('+%d %d %s | %s', ln, bn, Shortf(bufname(bn)), trim(lnTxt . ' ' . txt)))
         endfor
     endfor
     retu marks
