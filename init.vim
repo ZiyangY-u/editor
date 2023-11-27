@@ -293,6 +293,7 @@ endf
 com! -nargs=0 Dfboth :cal Diffboth()
 " }}}
 " => Automatic -------------------- {{{
+au InsertLeave * :execute 'sil! .s/\s\+$//'
 set wmnu wim=list:longest,full fic wic
 " set nrformats+=octal " let CTRL-A/CTRL-X support octal number
 "   auto check time
@@ -305,26 +306,38 @@ set dict+=/usr/share/dict/esp
 set cot=menu,menuone,noselect ssop+=globals
 
 "   auto completion
-let g:candidates = []
+let [g:candidates, g:completingId] = [[], 0]
 fu! PostCmd(post)
     let completeServerCmd = ['wget', '--no-proxy', '-qO-', 'http://127.0.0.1:12345', '--post-data='.a:post]
     retu join(completeServerCmd)
 endf
+let g:completeKinds = {1:' Text',2:' Method',3:'󰊕 Function',4:' Constructor',5:' Field',6:'󰫧 Variable',7:' Class',8:' Interface',9:'󰕳 Module',10:' Property',11:'Unit',12:'Value',13:'Enum',14:' Keyword',15:' Snippet',16:'Color',17:'File',18:'Reference',19:'Folder',20:'EnumMember',21:' Constant',22:'Struct',23:'Event',24:' Operator',25:'TypeParameter',}
+fu! LspItemsToCompleteItems(fromLsp)
+    let rst = []
+    for item in sort(a:fromLsp.result.items, {i1, i2 -> len(i1.label) - len(i2.label)})[:10]
+        cal add(rst, {'word':item.label, 'menu':g:completeKinds[item.kind]})
+    endfor
+    retu rst
+endf
 fu! s:GotCandidates(jobId, data, event)
-    let g:candidates = a:data
-    if !empty(g:candidates) && g:candidates[0] != '' && len(g:candidates[0]) == len(InsertingWord()) && mode() == 'i'
-        let g:candidates = filter(a:data[1:], {_,item -> item != ''})
-        hi Pmenu ctermfg=black ctermbg=249
+    if a:jobId == g:completingId
+        let [candidates, com_items] = [filter(a:data[1:], {_,item -> item != ''}), []]
+        if &omnifunc != '' " blocking request
+            let luacmd = "vim.lsp.buf_request_sync(".bufnr().",'textDocument/completion', vim.lsp.util.make_position_params(), 1000)"
+            try
+                let _clientId = luaeval("next(".luacmd.")")
+                let fromlsp = luaeval(luacmd."["._clientId."]")
+                let com_items = LspItemsToCompleteItems(fromlsp)
+            catch | endtry
+        endif
+        cal extend(com_items, map(candidates, {_,t -> {'word':t, 'menu':g:completeKinds[1]}}))
+        cal complete(col('.') - len(InsertingWord()), com_items)
     endif
-    cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) 
 endf
 fu! RefreshCandidates()
-    let [cw, preCh] = [InsertingWord(), getline('.')[col('.')-2:col('.')-1]]
+    let cw = InsertingWord()
     if len(cw) >= 2
-	cal jobstart(PostCmd('query:'.cw), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
-    elseif index(['.', ' '], preCh) && &omnifunc != ''
-        hi Pmenu ctermfg=white ctermbg=239
-        cal nvim_feedkeys("\<C-x>\<C-o>", "i", 1) 
+	let g:completingId = jobstart(PostCmd('query:'.cw), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
     endif
 endf
 fu! RefreshServer(all)
@@ -337,14 +350,7 @@ fu! RefreshServer(all)
 endfunction
 au VimEnter,BufReadPost,BufWritePost * if filereadable(bufname(bufnr())) | cal RefreshServer(v:false) | en
 au CursorMovedI * sil redraw | cal RefreshCandidates()
-au InsertLeave * hi Pmenu ctermfg=white ctermbg=239
 au CursorHoldI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
-fu! MComplete(findstart, base)
-    if a:findstart " findstart will control the pulldown positiong
-        return col('.') - len(InsertingWord()) - 1
-    el | retu g:candidates | en
-endf
-set completefunc=MComplete
 au CompleteDone * sil redraw | if exists("v:completed_item['word']") | cal jobstart(PostCmd('chosen:'.v:completed_item['word']), {}) | en
 "   <tab> for select candidate
 ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
@@ -855,18 +861,20 @@ let g:snipScopeTimer = timer_start(100, 'SnipScope', {'repeat': -1})
 au InsertEnter * let g:exAnonExpand = '' | cal timer_pause(g:snipScopeTimer, 0)
 au InsertLeave * cal timer_pause(g:snipScopeTimer, 1)
 au InsertLeave * cal DelLineExtMark(g:snipsMk, 0, -1)
-au CursorMovedI * cal AnonJobStart()
-let g:exAnonExpand = ''
+au CursorMovedI * cal AnonRefresh('')
+au CursorHoldI * cal timer_start(100, 'AnonRefresh', {'repeat': 1})
+let [g:exAnonExpand, g:expandingId] = ['', 0]
 fu! s:GetExpanded(jobId, data, event) abort
-    let g:exAnonExpand = a:data[0] 
+    if a:jobId == g:expandingId
+        let g:exAnonExpand = a:data[0] | en
 endf
 fu! InsertingWord()
-    retu trim(matchstr(getline('.')[:col('.')-2], '\i*$'))
+    retu trim(matchstr(getline('.')[:col('.')-2], '[&:[:ident:]]*$'))
 endf
-fu! AnonJobStart()
-    let [g:anonExpand, cw] = ['', InsertingWord()]
+fu! AnonRefresh(timer)
+    let cw = InsertingWord()
     if cw != ''
-        cal jobstart('~/OneDrive/ultisnips/anon_expand.py '.cw.' '.&ft,
+        let g:expandingId = jobstart('~/OneDrive/ultisnips/anon_expand.py '.cw.' '.&ft,
                     \ {'on_stdout': function('s:GetExpanded'), 'stdout_buffered':v:true}) | en
 endf
 fu! AnonExpand() " Anon Expand: regex match and regex replace and expand!
