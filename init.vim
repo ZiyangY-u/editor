@@ -307,9 +307,9 @@ set cot=menu,menuone,noselect ssop+=globals
 
 "   auto completion
 let [g:candidates, g:completingId] = [[], 0]
-fu! PostCmd(post)
-    let completeServerCmd = ['wget', '--no-proxy', '-qO-', 'http://127.0.0.1:12345', '--post-data='.a:post]
-    retu join(completeServerCmd)
+fu! SendService(arg1, arg2)
+    let cmd = ['~/OneDrive/ultisnips/complete_service.py', a:arg1, a:arg2]
+    retu join(cmd, ' ')
 endf
 let g:completeKinds = {1:' Text',2:' Method',3:'󰊕 Function',4:' Constructor',5:' Field',6:'󰫧 Variable',7:' Class',8:' Interface',9:'󰕳 Module',10:' Property',11:'Unit',12:'Value',13:'Enum',14:' Keyword',15:' Snippet',16:'Color',17:'File',18:'Reference',19:'Folder',20:'EnumMember',21:' Constant',22:'Struct',23:'Event',24:' Operator',25:'TypeParameter',}
 fu! LspItemsToCompleteItems(fromLsp)
@@ -320,10 +320,10 @@ fu! LspItemsToCompleteItems(fromLsp)
     retu rst
 endf
 fu! s:GotCandidates(jobId, data, event)
-    if a:jobId == g:completingId
-        let [candidates, com_items] = [filter(a:data[1:], {_,item -> item != ''}), []]
+    if a:jobId == g:completingId && mode() == 'i'
+        let [candidates, com_items] = [filter(a:data, {_,item -> item != ''}), []]
         if &omnifunc != '' " blocking request
-            let luacmd = "vim.lsp.buf_request_sync(".bufnr().",'textDocument/completion', vim.lsp.util.make_position_params(), 1000)"
+            let luacmd = "vim.lsp.buf_request_sync(".bufnr().",'textDocument/completion', vim.lsp.util.make_position_params(), 500)"
             try
                 let _clientId = luaeval("next(".luacmd.")")
                 let fromlsp = luaeval(luacmd."["._clientId."]")
@@ -337,21 +337,19 @@ endf
 fu! RefreshCandidates()
     let cw = InsertingWord()
     if len(cw) >= 2
-	let g:completingId = jobstart(PostCmd('query:'.cw), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
+	let g:completingId = jobstart(SendService('-query', cw), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
     endif
 endf
 fu! RefreshServer(all)
-    if system(PostCmd('hello')) != 'hello' " start server
-        cal jobstart('~/OneDrive/ultisnips/complete_server.py', {}) | en
-    let cmd = PostCmd('"add_path:'.join(GetBufFilePath(v:true), ';').'"')
+    let cmd = SendService('-add_path', join(GetBufFilePath(v:true), ' '))
     if a:all != v:true && filereadable(bufname(bufnr()))
-        let cmd = PostCmd('"add_path:'.(expand('%:p').':'.getbufvar(bufnr(), "&enc")).'"') | en
+        let cmd = SendService('-add_path', (expand('%:p').':'.getbufvar(bufnr(), "&enc"))) | en
     cal jobstart(cmd, {})
 endfunction
 au VimEnter,BufReadPost,BufWritePost * if filereadable(bufname(bufnr())) | cal RefreshServer(v:false) | en
 au CursorMovedI * sil redraw | cal RefreshCandidates()
 au CursorHoldI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
-au CompleteDone * sil redraw | if exists("v:completed_item['word']") | cal jobstart(PostCmd('chosen:'.v:completed_item['word']), {}) | en
+au CompleteDone * sil redraw | if exists("v:completed_item['word']") | cal jobstart(SendService('-chosen', v:completed_item['word']), {}) | en
 "   <tab> for select candidate
 ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
@@ -385,7 +383,7 @@ fu! AddYankHist(toAdd)
     cal add(tmpl, a:toAdd)
     let g:yankHistory = tmpl[-100:]
     if match(a:toAdd, '^\i*$') >= 0
-        cal jobstart(PostCmd('chosen:'.a:toAdd), {}) | en
+        cal jobstart(SendService('-chosen', a:toAdd), {}) | en
     let g:YankHistorySave = string(filter(copy(g:yankHistory), {_,his -> stridx(his, "\n") == -1}))
 endf
 au SessionLoadPost * exe 'let g:yankHistory = ' . g:YankHistorySave
@@ -962,7 +960,7 @@ aug filetypes
     au FileType javascript setl ts=2 sw=2
     au FileType vim setl tw=0
     au FileType html,javascript,css,xml :EmmetInstall
-    au FileType python,vim,c,javascript,java setl ofu=v:lua.vim.lsp.omnifunc
+    au FileType python,vim,c setl ofu=v:lua.vim.lsp.omnifunc
     au FileType git setl fdm=syntax fdl=0
     " au BufWritePre * :sil! ClearTailBlank
     " auto save file to OneDrive
