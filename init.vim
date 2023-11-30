@@ -294,7 +294,7 @@ endf
 com! -nargs=0 Dfboth :cal Diffboth()
 " }}}
 " => Automatic -------------------- {{{
-au InsertLeave * :execute 'sil! .s/\s\+$//'
+" au InsertLeave * :execute 'sil! .s/\s\+$//'
 set wmnu wim=list:longest,full fic wic
 " set nrformats+=octal " let CTRL-A/CTRL-X support octal number
 "   auto check time
@@ -307,7 +307,7 @@ set dict+=/usr/share/dict/esp
 set cot=menu,menuone,noselect ssop+=globals
 
 "   auto completion
-let [g:candidates, g:completingId, g:jpIme] = [[], 0, 0]
+let [g:candidates, g:completingId, g:jpIme, g:inserted] = [[], 0, 0, '']
 fu! SendService(arg1, arg2)
     let cmd = ['~/OneDrive/ultisnips/complete_service.py', a:arg1, a:arg2]
     retu join(cmd, ' ')
@@ -322,7 +322,7 @@ fu! LspItemsToCompleteItems(fromLsp)
 endf
 fu! s:GotCandidates(jobId, data, event)
     if a:jobId == g:completingId && mode() == 'i'
-        let [candidates, com_items] = [filter(a:data, {_,item -> item != ''}), []]
+        let [candidates, com_items, g:inserted] = [filter(a:data, {_,item -> item != ''}), [], InsertingWord()]
         if &omnifunc != '' && !g:jpIme " blocking request
             let luacmd = "vim.lsp.buf_request_sync(".bufnr().",'textDocument/completion', vim.lsp.util.make_position_params(), 500)"
             try
@@ -352,7 +352,7 @@ au VimEnter,BufReadPost,BufWritePost * if filereadable(bufname(bufnr())) | cal R
 au CursorMovedI * sil redraw | cal RefreshCandidates()
 au CursorHoldI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
 au CompleteDone * sil redraw | if exists("v:completed_item['word']") | cal jobstart(SendService('-chosen', v:completed_item['word']), {}) | en
-au CompleteDone * sil redraw | if exists("v:completed_item['word']") && g:jpIme | cal jobstart(SendService('-chosen_d', v:completed_item['word']), {}) | let g:kana='' | en
+au CompleteDone * sil redraw | if exists("v:completed_item['word']") && g:jpIme | cal jobstart(SendService('-chosen_d', v:completed_item['word'].' '.g:inserted), {}) | let g:kana='' | en
 "   <tab> for select candidate
 ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
@@ -384,7 +384,7 @@ fu! AddYankHist(toAdd)
         if sha256(item) != sha | cal add(tmpl, item) | en
     endfor
     cal add(tmpl, a:toAdd)
-    let g:yankHistory = tmpl[-100:]
+    let g:yankHistory = len(tmpl) > 100 ? tmpl[-100:] : tmpl
     if match(a:toAdd, '^\i*$') >= 0
         cal jobstart(SendService('-chosen', a:toAdd), {}) | en
     let g:YankHistorySave = string(filter(copy(g:yankHistory), {_,his -> stridx(his, "\n") == -1}))
@@ -559,7 +559,7 @@ fu! SplitOp(sc, query) " run a split cmd first, then operate
     let opts = extend(copy(g:MfzfOpts), ['--query='.a:query])
     if (op == 'o') " Open File
         cal HiraishinOpen(a:query, a:sc.'MEdit')
-    elseif (op == 'o')
+    elseif (op == 'O')
         cal HiraishinOpen('.'.a:query, a:sc.'MEdit')
     elseif (op == 'b') " Buffer
         cal ClearNoName()
@@ -875,7 +875,7 @@ fu! InsertingWord()
     if !g:jpIme
         retu trim(matchstr(getline('.')[:col('.')-2], '[-&:[:ident:]]*$'))
     else
-        retu trim(matchstr(getline('.')[:col('.')-2], '[-[:lower:]]*$')) | en
+        retu trim(matchstr(getline('.')[:col('.')-2], '[-[:lower:]/]*$')) | en
 endf
 fu! AnonRefresh(timer)
     let cw = InsertingWord()
@@ -1191,7 +1191,7 @@ nn <silent> ,<tab>i :cal TranslitMode()<CR>
 nn <silent> ,<tab>o o<esc>:cal TranslitMode()<CR>
 nn <silent> ,<tab>l :let g:TransMode='Latin'<CR>
 nn <silent> ,<tab>g :let g:TransMode='Greek'<CR>
-nn <silent> ,<tab>j :let g:jpIme = (g:jpIme == 1 ? 0 : 1)<CR>
+ino <silent> jj <c-\><c-o>:let g:jpIme = (g:jpIme == 1 ? 0 : 1)\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
 im <silent><expr> <cr> (g:jpIme && AnonExpand() != '' && complete_info().selected == -1) ? "<c-l>" : "<cr>"
 " -------------------- Calc Misc -----------------------
 fu! NumTrans(fmt, num)
