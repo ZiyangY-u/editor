@@ -885,10 +885,6 @@ fu! AnonRefresh(timer)
 endf
 fu! AnonExpand() " Anon Expand: regex match and regex replace and expand!
     if g:exAnonExpand != '' | retu substitute(g:exAnonExpand, '<cr>', "\<cr>", 'g') | en
-    " expand from registered snips
-    let [cw, snips] = [InsertingWord(), UltiSnips#SnippetsInCurrentScope(1)]
-    let rst = filter(keys(snips), {_,s -> s[0:len(cw)-1] ==# cw})
-    if len(rst) != 0 | retu rst[0] | en
     retu ''
 endf
 " leap.nvim
@@ -1192,7 +1188,7 @@ nn <silent> ,<tab>o o<esc>:cal TranslitMode()<CR>
 nn <silent> ,<tab>l :let g:TransMode='Latin'<CR>
 nn <silent> ,<tab>g :let g:TransMode='Greek'<CR>
 ino <silent> jj <c-\><c-o>:let g:jpIme = (g:jpIme == 1 ? 0 : 1)\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
-im <silent><expr> <cr> (g:jpIme && AnonExpand() != '' && complete_info().selected == -1) ? "<c-l>" : "<cr>"
+im <silent><expr> <cr> (g:jpIme && (AnonExpand([]) != '' \|\| UltiSnips#CanExpandSnippet()) && complete_info().selected == -1) ? "<c-l>" : "<cr>"
 " -------------------- Calc Misc -----------------------
 fu! NumTrans(fmt, num)
     let fmtMap = {'x': '0x%X', 'b': '0b%08b', 'd': '%d'}
