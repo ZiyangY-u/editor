@@ -331,15 +331,15 @@ fu! s:GotCandidates(jobId, data, event)
                 let com_items = LspItemsToCompleteItems(fromlsp)
             catch | endtry
         endif
-        cal extend(com_items, map(candidates, {_,t -> {'word':t, 'menu':g:completeKinds[1]}}))
+        cal extend(com_items, map(candidates, {_,t -> {'word':t, 'menu':(g:jpIme ? ' Dict' : g:completeKinds[1])}}))
         cal complete(col('.') - len(InsertingWord()), com_items)
     endif
 endf
 fu! RefreshCandidates()
     let cw = InsertingWord()
-    if len(cw) >= 2
+    if len(cw) >= 1
         let query = g:jpIme ? '-query_d' : '-query'
-	let g:completingId = jobstart(SendService(query, cw), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
+	let g:completingId = jobstart(SendService(query, '"'.cw.'"'), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
     endif
 endf
 fu! RefreshServer(all)
@@ -351,8 +351,12 @@ endfunction
 au VimEnter,BufReadPost,BufWritePost * if filereadable(bufname(bufnr())) | cal RefreshServer(v:false) | en
 au CursorMovedI * sil redraw | cal RefreshCandidates()
 au CursorHoldI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
-au CompleteDone * sil redraw | if exists("v:completed_item['word']") | cal jobstart(SendService('-chosen', v:completed_item['word']), {}) | en
-au CompleteDone * sil redraw | if exists("v:completed_item['word']") && g:jpIme | cal jobstart(SendService('-chosen_d', v:completed_item['word'].' '.g:inserted), {}) | let g:kana='' | en
+fu! PostComplete()
+    if exists("v:completed_item['word']")
+        cal jobstart(SendService((g:jpIme ? '-chosen_d' : '-chosen'), v:completed_item['word'].' '.g:inserted), {}) | en
+    let g:exAnonExpand = ''
+endf
+au CompleteDone * sil redraw | cal PostComplete()
 "   <tab> for select candidate
 ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
@@ -875,12 +879,12 @@ fu! InsertingWord()
     if !g:jpIme
         retu trim(matchstr(getline('.')[:col('.')-2], '[-&:[:ident:]]*$'))
     else
-        retu trim(matchstr(getline('.')[:col('.')-2], '[-[:lower:]/]*$')) | en
+        retu trim(matchstr(getline('.')[:col('.')-2], '[\x00-\x7F]*$')) | en
 endf
 fu! AnonRefresh(timer)
     let cw = InsertingWord()
     if cw == '' | retu | en
-    let cmd = g:jpIme ? ("~/OneDrive/ultisnips/jpn_ime_server.py -t '".cw."'") : ('~/OneDrive/ultisnips/anon_expand.py '.cw.' '.&ft)
+    let cmd = g:jpIme ? ("~/OneDrive/ultisnips/romaji_hirakana '".cw."'") : ('~/OneDrive/ultisnips/anon_expand.py '.cw.' '.&ft)
     let g:expandingId = jobstart(cmd, {'on_stdout': function('s:GetExpanded'), 'stdout_buffered':v:true})
 endf
 fu! AnonExpand() " Anon Expand: regex match and regex replace and expand!
@@ -1188,7 +1192,7 @@ nn <silent> ,<tab>o o<esc>:cal TranslitMode()<CR>
 nn <silent> ,<tab>l :let g:TransMode='Latin'<CR>
 nn <silent> ,<tab>g :let g:TransMode='Greek'<CR>
 ino <silent> jj <c-\><c-o>:let g:jpIme = (g:jpIme == 1 ? 0 : 1)\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
-im <silent><expr> <cr> (g:jpIme && (AnonExpand([]) != '' \|\| UltiSnips#CanExpandSnippet()) && complete_info().selected == -1) ? "<c-l>" : "<cr>"
+im <silent><expr> <cr> (g:jpIme && (AnonExpand() != '' \|\| UltiSnips#CanExpandSnippet()) && complete_info().selected == -1) ? "<c-l>" : "<cr>"
 " -------------------- Calc Misc -----------------------
 fu! NumTrans(fmt, num)
     let fmtMap = {'x': '0x%X', 'b': '0b%08b', 'd': '%d'}
