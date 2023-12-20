@@ -353,8 +353,9 @@ au CursorMovedI * sil redraw | cal RefreshCandidates()
 au CursorHoldI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
 fu! PostComplete()
     if exists("v:completed_item['word']")
-        cal jobstart(SendService((g:jpIme ? '-chosen_d' : '-chosen'), v:completed_item['word'].' '.g:inserted), {}) | en
-    let g:exAnonExpand = ''
+        cal jobstart(SendService((g:jpIme ? '-chosen_d' : '-chosen'), v:completed_item['word'].' '.g:inserted), {}) 
+        let g:exAnonExpand = ''
+    en
 endf
 au CompleteDone * sil redraw | cal PostComplete()
 "   <tab> for select candidate
@@ -363,7 +364,7 @@ ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
 "   snip expand
 im <silent><expr> <c-l> UltiSnips#CanJumpForwards() ? "\<c-k>" :
             \ (g:canSnipExpand \|\| UltiSnips#CanExpandSnippet()) ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
-            \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'w', '', {})<cr>" :
+            \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'i', '', {})<cr>" :
             \ ""
 "   FZF integration
 ino <expr> <c-x><c-k> fzf#vim#complete(extend(FzfFloatWin(), {'source':'cat /usr/share/dict/en /usr/share/dict/esp /usr/share/dict/ngerman'}))
@@ -876,15 +877,17 @@ fu! s:GetExpanded(jobId, data, event) abort
         let g:exAnonExpand = a:data[0] | endif
 endf
 fu! InsertingWord()
+    let frontText = getline('.')[:col('.')-2]
     if !g:jpIme
-        retu trim(matchstr(getline('.')[:col('.')-2], '[-&:[:ident:]]*$'))
+        retu trim(matchstr(frontText, '[-&:[:ident:]]*$'))
     else
-        retu trim(matchstr(getline('.')[:col('.')-2], '[\x00-\x7F]*$')) | en
+        retu frontText[len(frontText)-1] =~ '\C[a-z]' ? trim(matchstr(frontText, '\\\?[/[:lower:]]*$')) : trim(matchstr(frontText, '[\x00-\x1F\x21-\x7F]*$'))
+    en
 endf
 fu! AnonRefresh(timer)
     let cw = InsertingWord()
     if cw == '' | retu | en
-    let cmd = g:jpIme ? ("~/OneDrive/ultisnips/romaji_hirakana '".cw."'") : ('~/OneDrive/ultisnips/anon_expand.py '.cw.' '.&ft)
+    let cmd = g:jpIme ? ("~/OneDrive/ultisnips/romaji_hirakana '".substitute(cw, '^\\', '', '')."'") : ('~/OneDrive/ultisnips/anon_expand.py '.cw.' '.&ft)
     let g:expandingId = jobstart(cmd, {'on_stdout': function('s:GetExpanded'), 'stdout_buffered':v:true})
 endf
 fu! AnonExpand() " Anon Expand: regex match and regex replace and expand!

@@ -1,4 +1,33 @@
 " let d = {'true': 'false'}
+" 
+" データリカバリーエビデンスを添付します
+" 送付先情報に取引先名が入っていない 住所１・２ がNULL表示になっている
+" 楽々明細に連携されてしまっている
+" 
+" このボタンをクリックしたら、エラーメッセージが出てきます
+" 想定外エラーになった
+" SAS 請求書発行一覧/ステータス: 発行街
+" 請求書を発行したら請求書発行一覧画面に検索されなくなりました
+" 処理済に変更します
+" そうしたら浅くなりました
+" 基幹システムリニューアル
+" SAS側で代理店四捨五入処理
+" 締め後変更の承認で作成された自動処理された請求書をCSVダウンロードするとエラー
+" 取引先参照・編集画面の与信限度項目配置変更
+" 請求予定一覧、ダウンロード項目追加「受注明細No」経理、No.446
+" タスク:インボイス対応
+" 実施料金を送ってください
+" 請求書を送ったら
+" 確認依頼:請求書発行一覧 取消したあと削除した請求書のうち、請求書発行一覧に[取消済]で 検索できるものとできないものがある
+" 請求分割の金額に、代理店手数料を円未満の場合、切り捨て計算されていない
+" 調査・修正依頼: Repoco Azure 反映処理(売上分析の更新内容が反映していない
+" 締め後変更設定 金額入力欄 連続して数字が入力されることがある
+" インボイス対応_軽減消費税対応関連、XONE側の中間テーブル、中間テーブル毎月にTAX_NOクラムが追加必要
+" 受注明細一覧 検索条件のステータスを選択しなおした直後の[検索]ボタンがきかない
+" 修正依頼: AG組織検索 OC_ORG_NAMEも習べて表示してください
+" 請求書参照画面(CLM006)のExcel 出力に、[金額]と[金額(外貨)]この二つのカラムを削除
+" 未決裁一覧で承認ができない
+" 調査依頼: AG送付先未連携なのに
 
 " echo 'true'[0] =~ '\u'
 "     for mark in filter(keys(g:hma), {mk -> split(mk)[0] == string(bufnr('%'))})
@@ -286,7 +315,7 @@
 "         let g:GreekCache .= nr2char(ch)
 "     endif
 "     cal ClearVirtScope()
-"     cal ClearVirtScope()|VertMarkWrapper(line('.')-1, virtcol('.')-1, GrTrans(g:GreekCache), 'GreekVisual')
+"     cal ClearVirtScope()|VertMarkWrapper(line('.')-1, virtcol('.')-2, GrTrans(g:GreekCache), 'GreekVisual')
 "     redraw | cal GrTransMode()
 " endf
 " nn <silent> <tab><tab> :cal GrTransMode()<CR>
@@ -304,7 +333,7 @@
 "         call bufload(g:roadmapbuf)
 "     endif
 "     if index(tabpagebuflist(), g:roadmapbuf) == -1
-"         exe 'bo vsplit |b'.g:roadmapbuf.'|vert res 25'
+"         exe 'bo vsplit |b'.g:roadmapbuf.'|vert res 24'
 "         cal setbufvar(g:roadmapbuf, '&rnu', 0)
 "         cal setbufvar(g:roadmapbuf, '&nu', 0)
 "         cal setbufvar(g:roadmapbuf, '&ft', 'roadmap')
@@ -322,7 +351,7 @@
     " let marks = {}
     " for mk in getmarklist(bufnr())
     "     let [mkn, ln] = [mk['mark'], mk['pos'][1]]
-    "     let marks[str2nr(ln)] = '󰈿'.mkn[1:]
+    "     let marks[str2nr(ln)] = '󰈿'.mkn[0:]
     " endfor
     " for [id, txt] in exists('b:extmks') ? items(b:extmks) : items({})
     "     let ln = nvim_buf_get_extmark_by_id(bufnr(), g:extmk, str2nr(id), {})[0] + 1
@@ -365,39 +394,22 @@
 " endf
 " ino <c-x><c-j> <esc>:cal CurrWord()<cr>
 
-" fu! ActStl(isActive)
-"     if &ft == 'qf' && a:isActive == 1 | retu " QuickFix List %l/%L %P" | en
-"     if a:isActive == 0
-"         retu "%#error#%r%#mod#%m%#sleepWindow# %t %y %= ln:%l/%L %P "
-"     en
-"     let stl=""
-"     let stl="%{matchstr(getline('.')[:col('.')-1], \'\\w*$\')}"
-"     let stl.="%#error#%r%#mod#%m"
-"     let stl.="%#ModColor#%{(mode()=='n')?'  '.g:jumpModeNames[g:jumpMode].' ':''}%{(mode()=='t')?'  TERM ':''}"
-"     let stl.="%<%#c1# %w%{filereadable(expand('%p'))?RelPath(expand('%:p'),getcwd()):expand('%:p')}"
-
-"     let stl.="%=" " left/right separator
-"     " virtual column number and byte index number
-"     let stl.="%#posBar#%  %v[%c] %P %#totalL#%L% "
-"     let stl.=" %#fileType#% %y %{strlen(&fenc)?&fenc:'none'}/%{strlen(&ff)?&ff:''} "
-"     retu stl
-" endf
-
-" echo matchstr('something here', '\w*$')
-
-" let b:AnonExpand = 0
-" im <silent><expr> <tab> UltiSnips#CanExpandSnippet() ? "\<c-x>\<c-j>" :
-"             \ pumvisible() ? "\<Down>" :
-"             \ UltiSnips#CanJumpForwards() ? "\<c-k>" :
-"             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), matchstr(getline('.')[:col('.')-1], \'\\S*$\'))<cr>" :
-"             \ "\<tab>"
-
-" fu! AnonExpand()
-"     let cw = trim(matchstr(getline('.')[:col('.')-1], '\S*$'))
-"     if cw == 'afc'
-"         retu 'ABC'
-"     else
-"         retu ''
-"     endif
-" endf
+  fu! ActStl(isActive)
+      if &ft == 'qf' && a:isActive == 1 | retu " QuickFix List %l/%L %P" | en
+      if a:isActive == 0
+          retu "%#error#%r%#mod#%m%#sleepWindow# %t %y %= ln:%l/%L %P "
+      en
+      let stl=""
+      let stl="%{InsertingWord()}"
+      " let stl="%{matchstr(getline('.')[:col('.')-2], '\\S*$')}"
+      " let stl="%{matchstr(getline('.')[:col('.')-1], \'\\w*$\')}"
+      let stl.="%#error#%r%#mod#%m"
+      let stl.="%#ModColor#%{(mode()=='n')?'  '.g:jumpModeNames[g:jumpMode].' ':''}%{(mode()=='t')?'  TERM ':''}"
+      let stl.="%<%#c1# %w%{filereadable(expand('%p'))?RelPath(expand('%:p'),getcwd()):expand('%:p')}"
+      let stl.="%=" " left/right separator
+      " virtual column number and byte index number
+      let stl.="%#posBar#%  %v[%c] %P %#totalL#%L% "
+      let stl.=" %#fileType#% %y %{strlen(&fenc)?&fenc:'none'}/%{strlen(&ff)?&ff:''} "
+      retu stl
+  endf
 
