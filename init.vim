@@ -368,9 +368,9 @@ au CompleteDone * sil redraw | cal PostComplete()
 ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
 "   snip expand
-im <silent><expr> <c-l> UltiSnips#CanJumpForwards() ? "\<c-k>" :
-            \ (g:canSnipExpand \|\| UltiSnips#CanExpandSnippet()) ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
+im <silent><expr> <c-l> (g:canSnipExpand \|\| UltiSnips#CanExpandSnippet()) ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'i', '', {})<cr>" :
+            \UltiSnips#CanJumpForwards() ? "\<c-k>" :
             \ ""
 "   FZF integration
 ino <expr> <c-x><c-k> fzf#vim#complete(extend(FzfFloatWin(), {'source':'cat /usr/share/dict/en /usr/share/dict/esp /usr/share/dict/ngerman'}))
