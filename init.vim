@@ -380,10 +380,8 @@ nn <F1> :Helptags!<CR>
 "   Consumable Autocmd
 let g:cmdToConsume = []
 fu! ConsumeCmd()
-    for cmd in g:cmdToConsume
-        cal execute(cmd)
-    endfor
-    let g:cmdToConsume = [] " clear cmd list
+    let [_cmds, g:cmdToConsume] = [g:cmdToConsume, []] " clear cmd list
+    for cmd in _cmds | cal execute(cmd) | endfor
 endf
 au BufWinEnter *.* sil cal ConsumeCmd()|cal SignMarks()
 "   Yank History
@@ -858,7 +856,7 @@ let g:snipsMk = nvim_create_namespace('snippetMarks')
 hi SnipMark cterm=bold ctermfg=227
 hi SnipAnon cterm=bold ctermfg=198
 hi CompleteFun cterm=bold ctermfg=154
-let g:canSnipExpand = v:false
+let [g:exAnonExpand, g:expandingId, g:canSnipExpand] = ['', 0, v:false]
 fu! SnipScope(timer)
     cal DelLineExtMark(g:snipsMk, 0, -1)
     if mode() != 'i' | retu | en
@@ -878,7 +876,6 @@ au InsertEnter * let g:exAnonExpand = '' | cal timer_pause(g:snipScopeTimer, 0)
 au InsertLeave * cal timer_pause(g:snipScopeTimer, 1)
 au InsertLeave * cal DelLineExtMark(g:snipsMk, 0, -1)
 au CursorMovedI * cal AnonRefresh('')
-let [g:exAnonExpand, g:expandingId] = ['', 0]
 fu! s:GetExpanded(jobId, data, event) abort
     if a:jobId == g:expandingId
         let g:exAnonExpand = a:data[0] | endif
