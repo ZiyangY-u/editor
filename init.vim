@@ -307,7 +307,7 @@ set dict+=/usr/share/dict/esp
 set cot=menu,menuone,noselect ssop+=globals
 
 "   auto completion
-let [g:candidates, g:completingId, g:jpIme, g:inserted, g:refreshFlag, g:pathQueue] = [[], 0, 0, '', 0, {}]
+let [g:candidates, g:completingId, g:jpIme, g:inserted, g:refreshFlag, g:pathQueue, g:omniExclude] = [[], 0, 0, '', 0, {}, {}]
 fu! SendService(arg1, arg2)
     let cmd = ['~/OneDrive/ultisnips/complete_service.py', a:arg1, a:arg2]
     retu join(cmd, ' ')
@@ -328,7 +328,7 @@ endf
 fu! s:GotCandidates(jobId, data, event)
     if a:jobId == g:completingId && mode() == 'i'
         let [candidates, com_items, g:inserted] = [filter(a:data, {_,item -> item != ''}), [], InsertingWord()]
-        if &omnifunc != '' && !g:jpIme " blocking request
+        if &omnifunc != '' && !g:jpIme && !has_key(g:omniExclude, &ft) " blocking request
             let luacmd = "vim.lsp.buf_request_sync(".bufnr().",'textDocument/completion', vim.lsp.util.make_position_params(), 500)"
             try
                 let _clientId = luaeval("next(".luacmd.")")
@@ -568,9 +568,9 @@ set fdm=manual fdl=99 fdc=auto
 fu! SplitOp(sc, query) " run a split cmd first, then operate
     let op = nr2char(getchar())
     let opts = extend(copy(g:MfzfOpts), ['--query='.a:query])
-    if (op == 'o') " Open File
+    if (op ==# 'o') " Open File
         cal HiraishinOpen(a:query, a:sc.'MEdit')
-    elseif (op == 'O')
+    elseif (op ==# 'O')
         cal HiraishinOpen('.'.a:query, a:sc.'MEdit')
     elseif (op == 'b') " Buffer
         cal ClearNoName()
