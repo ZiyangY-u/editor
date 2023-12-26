@@ -307,7 +307,7 @@ set dict+=/usr/share/dict/esp
 set cot=menu,menuone,noselect ssop+=globals
 
 "   auto completion
-let [g:candidates, g:completingId, g:jpIme, g:inserted] = [[], 0, 0, '']
+let [g:candidates, g:completingId, g:jpIme, g:inserted, g:refreshFlag, g:pathQueue] = [[], 0, 0, '', 0, {}]
 fu! SendService(arg1, arg2)
     let cmd = ['~/OneDrive/ultisnips/complete_service.py', a:arg1, a:arg2]
     retu join(cmd, ' ')
@@ -320,6 +320,11 @@ fu! LspItemsToCompleteItems(fromLsp)
     endfor
     retu rst
 endf
+fu! RenderCandidate(_, word)
+    let seq = split(a:word, ' ')
+    let menu = len(seq) == 1 ? g:completeKinds[1] : join(seq[1:], ' ')
+    retu {'word':seq[0], 'menu':menu}
+endf
 fu! s:GotCandidates(jobId, data, event)
     if a:jobId == g:completingId && mode() == 'i'
         let [candidates, com_items, g:inserted] = [filter(a:data, {_,item -> item != ''}), [], InsertingWord()]
@@ -331,7 +336,7 @@ fu! s:GotCandidates(jobId, data, event)
                 let com_items = LspItemsToCompleteItems(fromlsp)
             catch | endtry
         endif
-        cal extend(com_items, map(candidates, {_,t -> {'word':t, 'menu':(g:jpIme ? ' Dict' : g:completeKinds[1])}}))
+        cal extend(com_items, map(candidates, function('RenderCandidate')))
         cal complete(col('.') - len(InsertingWord()), com_items)
     endif
 endf
@@ -342,13 +347,14 @@ fu! RefreshCandidates()
 	let g:completingId = jobstart(SendService(query, '"'.cw.'"'), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
     endif
 endf
-fu! RefreshServer(all)
-    let cmd = SendService('-add_path', join(GetBufFilePath(v:true), ' '))
-    if a:all != v:true && filereadable(bufname(bufnr()))
-        let cmd = SendService('-add_path', (expand('%:p').':'.getbufvar(bufnr(), "&enc"))) | en
-    cal jobstart(cmd, {})
+fu! RefreshService(timer)
+    if g:refreshFlag == 1 || empty(g:pathQueue) | retu | en
+    let cmd = SendService('-add_path', join(keys(g:pathQueue), ' '))
+    let [g:refreshFlag, g:pathQueue] = [1, {}] " set running flat
+    cal jobstart(cmd, {'on_exit': {jobId, data, event -> execute('let g:refreshFlag = 0')}})
 endfunction
-au VimEnter,BufReadPost,BufWritePost * if filereadable(bufname(bufnr())) | cal RefreshServer(v:false) | en
+au BufReadPost,BufWritePost * if filereadable(bufname(bufnr())) | let g:pathQueue[expand('%:p').':'.getbufvar(bufnr(), "&enc")] = 1 | en
+cal timer_start(1500, 'RefreshService', {'repeat': -1})
 au CursorMovedI * sil redraw | cal RefreshCandidates()
 au CursorHoldI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
 fu! PostComplete()
@@ -648,6 +654,7 @@ set tal=%!ActTal()
 " Buffers
 nn ,b :cal ClearNoName()\|cal fzf#vim#buffers({}, 1)<CR>
 vn ,b :cal ClearNoName()\|cal fzf#vim#buffers(Selected(), {}, 1)<CR>
+nn ,db :cal fzf#run({'source': GetBufFilePath(v:false), 'sink': 'bd', 'options':['-m', '--reverse', '--prompt=delete buf > ']})<cr>
 
 " Shortcuts
 "   execute current line as bash cmd ('e' for 'execute')
@@ -881,7 +888,7 @@ fu! InsertingWord()
     if !g:jpIme
         retu trim(matchstr(frontText, '[-&:[:ident:]]*$'))
     else
-        retu frontText[len(frontText)-1] =~ '\C[a-z]' ? trim(matchstr(frontText, '\\\?[/[:lower:]]*$')) : trim(matchstr(frontText, '[\x00-\x1F\x21-\x7F]*$'))
+        retu frontText[len(frontText)-1] =~ '\C[a-z]' ? trim(matchstr(frontText, '\\\?[-/[:lower:]]*$')) : trim(matchstr(frontText, '[\x00-\x1F\x21-\x7F]*$'))
     en
 endf
 fu! AnonRefresh(timer)
