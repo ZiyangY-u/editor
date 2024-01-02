@@ -307,7 +307,7 @@ set dict+=/usr/share/dict/esp
 set cot=menu,menuone,noselect ssop+=globals
 
 "   auto completion
-let [g:candidates, g:completingId, g:jpIme, g:inserted, g:refreshFlag, g:pathQueue, g:omniExclude] = [[], 0, 0, '', 0, {}, {}]
+let [g:completingId, g:jpIme, g:inserted, g:refreshFlag, g:pathQueue, g:omniExclude] = [0, 0, '', 0, {}, {}]
 fu! SendService(arg1, arg2)
     let cmd = ['~/OneDrive/ultisnips/complete_service.py', a:arg1, a:arg2]
     retu join(cmd, ' ')
@@ -342,10 +342,9 @@ fu! s:GotCandidates(jobId, data, event)
 endf
 fu! RefreshCandidates()
     let cw = InsertingWord()
-    if len(cw) >= 1
-        let query = g:jpIme ? '-query_d' : '-query'
-	let g:completingId = jobstart(SendService(query, '"'.cw.'"'), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
-    endif
+    if len(cw) < 1 | retu | en
+    let query = g:jpIme ? '-query_d' : '-query'
+    let g:completingId = jobstart(SendService(query, '"'.cw.'"'), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
 endf
 fu! RefreshService(timer)
     if g:refreshFlag == 1 || empty(g:pathQueue) | retu | en
@@ -356,7 +355,7 @@ endfunction
 au BufReadPost,BufWritePost * if filereadable(bufname(bufnr())) | let g:pathQueue[expand('%:p').':'.getbufvar(bufnr(), "&enc")] = 1 | en
 cal timer_start(1500, 'RefreshService', {'repeat': -1})
 au CursorMovedI * sil redraw | cal RefreshCandidates()
-au CursorHoldI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
+" au CursorMovedI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
 fu! PostComplete()
     if exists("v:completed_item['word']")
         cal jobstart(SendService((g:jpIme ? '-chosen_d' : '-chosen'), v:completed_item['word'].' '.g:inserted), {}) 
@@ -364,9 +363,10 @@ fu! PostComplete()
     en
 endf
 au CompleteDone * sil redraw | cal PostComplete()
-"   <tab> for select candidate
+"   <tab> for select candidate, <space> for quick select in jpIme
 ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
+im <silent><expr> <space> (pumvisible() && g:jpIme) ? "\<tab>" : "\<space>"
 "   snip expand
 im <silent><expr> <c-l> (g:canSnipExpand \|\| UltiSnips#CanExpandSnippet()) ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'i', '', {})<cr>" :
@@ -875,7 +875,7 @@ let g:snipScopeTimer = timer_start(100, 'SnipScope', {'repeat': -1})
 au InsertEnter * let g:exAnonExpand = '' | cal timer_pause(g:snipScopeTimer, 0)
 au InsertLeave * cal timer_pause(g:snipScopeTimer, 1)
 au InsertLeave * cal DelLineExtMark(g:snipsMk, 0, -1)
-au CursorMovedI * cal AnonRefresh('')
+au CursorMovedI * cal AnonRefresh()
 fu! s:GetExpanded(jobId, data, event) abort
     if a:jobId == g:expandingId
         let g:exAnonExpand = a:data[0] | endif
@@ -888,7 +888,7 @@ fu! InsertingWord()
         retu frontText[len(frontText)-1] =~ '\C[a-z]' ? trim(matchstr(frontText, '\\\?[-/[:lower:]]*$')) : trim(matchstr(frontText, '[\x00-\x1F\x21-\x7F]*$'))
     en
 endf
-fu! AnonRefresh(timer)
+fu! AnonRefresh()
     let cw = InsertingWord()
     if cw == '' | retu | en
     let cmd = g:jpIme ? ("~/OneDrive/ultisnips/romaji_hirakana '".substitute(cw, '^\\', '', '')."'") : ('~/OneDrive/ultisnips/anon_expand.py '.cw.' '.&ft)
