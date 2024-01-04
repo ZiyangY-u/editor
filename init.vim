@@ -701,14 +701,7 @@ nn <silent> K @=(index(['ark','text'],&ft)>=0?':cal Wiki(expand("<cword>"))':(&f
 nn gl :cal LspAction()<CR>
 fu! LspAction()
     let prefix = 'vim.lsp.buf.'
-    let actTable = {
-                \ 'a':'code_action',
-                \ 'd':'definition',
-                \ 'k':'hover',
-                \ 'i':'implementation',
-                \ 'r':'references',
-                \ 'n':'rename',
-                \}
+    let actTable = { 'a':'code_action', 'd':'definition', 'k':'hover', 'i':'implementation', 'r':'references', 'n':'rename', }
     let infoList = values(map(copy(actTable), {k,v -> k..':'..v}))
     echom reduce(infoList, {acc,val -> acc..' '..val}, '')
     let actChar = nr2char(getchar()) " wait for a action char
