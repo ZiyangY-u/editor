@@ -307,7 +307,7 @@ set dict+=/usr/share/dict/esp
 set cot=menu,menuone,noselect ssop+=globals
 
 "   auto completion
-let [g:completingId, g:jpIme, g:inserted, g:refreshFlag, g:pathQueue, g:omniExclude] = [0, 0, '', 0, {}, {}]
+let [g:completingId, g:jpIme, g:inserted, g:refreshFlag, g:pathQueue, g:omniExclude, g:serviceBlackList] = [0, 0, '', 0, {}, {}, {}]
 fu! SendService(arg1, arg2)
     let cmd = ['~/OneDrive/ultisnips/complete_service.py', a:arg1, a:arg2]
     retu join(cmd, ' ')
@@ -352,7 +352,8 @@ fu! RefreshService(timer)
     let [g:refreshFlag, g:pathQueue] = [1, {}] " set running flat
     cal jobstart(cmd, {'on_exit': {jobId, data, event -> execute('let g:refreshFlag = 0')}})
 endfunction
-au BufReadPost,BufWritePost * if filereadable(bufname(bufnr())) | let g:pathQueue[expand('%:p').':'.getbufvar(bufnr(), "&enc")] = 1 | en
+au BufReadPost,BufWritePost * if filereadable(bufname(bufnr())) && !has_key(g:serviceBlackList, bufname(bufnr())) 
+            \| let g:pathQueue[expand('%:p').':'.getbufvar(bufnr(), "&enc")] = 1 | en
 cal timer_start(1500, 'RefreshService', {'repeat': -1})
 au CursorMovedI * sil redraw | cal RefreshCandidates()
 " au CursorMovedI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
