@@ -350,7 +350,7 @@ fu! RefreshService(timer)
     if g:refreshFlag == 1 || empty(g:pathQueue) | retu | en
     let cmd = SendService('-add_path', join(keys(g:pathQueue), ' '))
     let [g:refreshFlag, g:pathQueue] = [1, {}] " set running flat
-    cal jobstart(cmd, {'on_exit': {jobId, data, event -> execute('let g:refreshFlag = 0')}})
+    cal jobstart(cmd, {'on_exit': {jobId, data, event -> execute('let g:refreshFlag = 0|redrawtabline')}})
 endfunction
 au BufReadPost,BufWritePost * if filereadable(bufname(bufnr())) && !has_key(g:serviceBlackList, bufname(bufnr())) 
             \| let g:pathQueue[expand('%:p').':'.getbufvar(bufnr(), "&enc")] = 1 | en
@@ -640,7 +640,7 @@ fu! ActTal()
     " running indicators
     let tal .= "%#error#%{g:asyncCnt > 0 ? '  '.g:asyncCnt.' ':''}"
     let tal .= "%{gutentags#statusline() == '' ? '' : ' 󱈢 '}"
-    if g:refreshFlag == 1 | let tal .= "%#CSInfo#%{' 󱦟 '.(empty(g:pathQueue) ? '' : len(g:pathQueue).' ')}" | en
+    if g:refreshFlag == 1 | let tal .= "%#CSInfo#%{'[󱦟'.(empty(g:pathQueue) ? ']' : ' '.len(g:pathQueue).']')}" | en
     let tal .= "%#Git#%{FugitiveStatusline()}"
     let tal .= "%#Trans#%{g:TransMode}"
     let tal .= "%#Trans#%{g:jpIme ? '  󰗊 ' : ''}"
