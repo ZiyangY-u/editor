@@ -670,6 +670,7 @@ nn <a-u> ddp
 nn <expr> <a-i> (line('$') == line('.') \|\| line('.') == 1) ? 'ddP' : 'ddkP'
 "   file operations
 nn ,q @=((expand('%')=='')?':quit!':((&mod==0)?':quit':':echo"Not Saved"'))<CR><CR>
+tmap ,q jk:quit<cr>
 nn ,Q :quita!<CR>
 nn ,w :update<CR>
 "   surround operations ('s' for surround, 'S' for remove surround)
