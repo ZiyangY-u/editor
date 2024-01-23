@@ -1211,8 +1211,6 @@ fu WinPath(mntPath) " convert wsl mnt path to windows path
 endf
 com! -nargs=0 WSLview exe 'sil !wslview %'
 com! -nargs=0 Notepad exe 'sil !subl.exe -a '.WinPath(expand('%')).':'.line('.')
-let g:EclipsePath = '/mnt/c/Users/ziyan/desktop/sas/jee-2021-062/eclipse' " eclipse needs relative path for eclipse.exe
-com! -nargs=0 Eclipse exe 'sil !' . g:EclipsePath . '/eclipse.exe '.RelPath(expand('%'), g:EclipsePath)
 com! -nargs=0 Directory exe 'sil !explorer.exe ' . substitute(WinPath(expand('%:p:h')), '/', '\\\\', 'g')
 " ------------------- Async Misc -----------------------
 "  qfSearchCmd { qfEntry : [jobId list] }
