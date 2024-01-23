@@ -32,13 +32,11 @@ set title titlestring=%<%F titlelen=0
 set ph=15 pw=20
 
 " Statusline
-"   self-define color scheme
 hi mod cterm=bold ctermfg=Black ctermbg=DarkRed
 hi totalL cterm=bold ctermfg=White ctermbg=Blue
 hi fileType cterm=bold ctermfg=Red ctermbg=Blue
 hi posBar ctermfg=Black ctermbg=Blue
 hi c1 ctermfg=Black ctermbg=DarkCyan
-hi Hiraishin ctermfg=Yellow ctermbg=21
 hi ModColor cterm=bold ctermfg=white ctermbg=68
 hi sleepWindow ctermbg=DarkGray
 
@@ -646,7 +644,6 @@ fu! ActTal()
     let tal .= "%#Trans#%{g:TransMode}"
     let tal .= "%#Trans#%{g:jpIme ? '  󰗊 ' : ''}"
     let tal .= "%#Obss#%{ObsessionStatus()}"
-    let tal .= "%#Hiraishin#%{(g:HRSmode==1)  ?'   ':''}"
     retu tal
 endfu
 set tal=%!ActTal()
