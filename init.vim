@@ -48,7 +48,8 @@ fu! ActStl(isActive)
     en
     let stl=""
     let stl.="%#error#%r%#mod#%m"
-    let stl.="%#ModColor#%{(mode()=='n'||mode()=='c')?'  '.g:jumpModeNames[g:jumpMode].' ':''}%{(mode()=='t')?'  TERM ':''}"
+    let stl.= (g:jumpMode == 'n' ? "%#ModColor#" : "%#JumpModColor#")
+    let stl.="%{(mode()=='n'||mode()=='c')?'  '.g:jumpModeNames[g:jumpMode].' ':''}%{(mode()=='t')?'  TERM ':''}"
     let stl.="%<%#c1# %w%{filereadable(expand('%p')) ? Longf(expand('%:p')) : expand('%:p')}"
 
     let stl.="%=" " left/right separator
@@ -474,6 +475,7 @@ fu! OmniJumpBoot(backNormFlag)
         hi CursorLine cterm=NONE ctermbg=DarkGray
     en
     let g:jumpMode = has_key(g:jumpModeNames, modeChar) ? modeChar : 'n'
+    exe printf('hi JumpModColor cterm=bold ctermfg=%d ctermbg=%d', char2nr(g:jumpMode), ((char2nr(g:jumpMode) + 16) % 256))
     for direct in split('hjkl', '\zs')
         exe printf('nn %s %s', direct, get(jumpMoves, g:jumpMode.direct, direct))
     endfor
