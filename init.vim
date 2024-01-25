@@ -521,8 +521,8 @@ endf
 com! -nargs=1 MEdit :cal MEdit(<f-args>)
 fu! HiraishinOpen(query, sink) " query.target
     let queries = split(' '.a:query, '[\./@]')
-    let q = a:query=='' ? '' : queries[0]       " query for file
-    let t = len(queries) > 1 ? queries[1] : ''  " target for content
+    let q = a:query=='' ? '' : queries[0] " query for file
+    let t = len(queries) > 1 ? (exists('*ReduceTarget') ? ReduceTarget(queries[1]) : queries[1]) : '' " target for content
 
     if t != ''
         let findCmds = OpenByTarget(q, t) " target orient
