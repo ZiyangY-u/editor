@@ -348,7 +348,7 @@ fu! RefreshService(timer)
     if g:refreshFlag == 1 || empty(g:pathQueue) | retu | en
     let cmd = SendService('-add_path', join(keys(g:pathQueue), ' '))
     let [g:refreshFlag, g:pathQueue] = [1, {}] " set running flat
-    cal jobstart(cmd, {'on_exit': {jobId, data, event -> execute('let g:refreshFlag = 0|redrawtabline')}})
+    cal jobstart(cmd, {'on_exit': {jobId, data, event -> execute('let g:refreshFlag = 0|redrawtabline')}, 'detach':v:true})
 endfunction
 au BufReadPost,BufWritePost * if filereadable(bufname(bufnr())) && !has_key(g:serviceBlackList, bufname(bufnr())) 
             \| let g:pathQueue[expand('%:p').':'.getbufvar(bufnr(), "&enc")] = 1 | en
@@ -357,7 +357,7 @@ au CursorMovedI * sil redraw | cal RefreshCandidates()
 " au CursorMovedI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
 fu! PostComplete()
     if exists("v:completed_item['word']")
-        cal jobstart(SendService((g:jpIme ? '-chosen_d' : '-chosen'), v:completed_item['word'].' '.g:inserted), {}) 
+        cal jobstart(SendService((g:jpIme ? '-chosen_d' : '-chosen'), v:completed_item['word'].' '.g:inserted), {'detach':v:true}) 
         let g:exAnonExpand = ''
     en
 endf
@@ -394,7 +394,7 @@ fu! AddYankHist(toAdd)
     cal add(tmpl, a:toAdd)
     let g:yankHistory = len(tmpl) > 100 ? tmpl[-100:] : tmpl
     if match(a:toAdd, '^\i*$') >= 0
-        cal jobstart(SendService('-chosen', a:toAdd), {}) | en
+        cal jobstart(SendService('-chosen', a:toAdd), {'detach':v:true}) | en
     let g:YankHistorySave = string(filter(copy(g:yankHistory), {_,his -> stridx(his, "\n") == -1}))
 endf
 fu! PutYankHist(target)
