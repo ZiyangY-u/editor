@@ -397,6 +397,17 @@ fu! AddYankHist(toAdd)
         cal jobstart(SendService('-chosen', a:toAdd), {}) | en
     let g:YankHistorySave = string(filter(copy(g:yankHistory), {_,his -> stridx(his, "\n") == -1}))
 endf
+fu! PutYankHist(target)
+    if len(a:target) == 1
+        let @" = a:target[0]
+    else
+        echoh MoreMsg | echo 'delimiter (one char):' | echoh None
+        let delimiter = nr2char(getchar())
+        let @" = join(a:target, (delimiter == "\<cr>" ? "\n" : delimiter))
+    endif
+    norm p
+    cal AddYankHist(getreg('"'))
+endf
 au SessionLoadPost * exe 'let g:yankHistory = ' . g:YankHistorySave
 fu! FzfFloatWin()
     let fzfCurOpts = {'width':55, 'height': 15,
@@ -404,7 +415,7 @@ fu! FzfFloatWin()
                 \ 'yoffset': (winline()*1.0)/winheight(0) + 0.2}
     retu {'source':reverse(copy(g:yankHistory)), 'options':g:MfzfOpts, 'window':fzfCurOpts}
 endf
-nn <c-p> :cal fzf#run(extend({'sink': {t -> execute(['let @" = "'.substitute(t,'"','\\"','g').'"', 'norm p', "cal AddYankHist(getreg('".'"'."'))"])}}, FzfFloatWin()))<cr>
+nn <c-p> :cal fzf#run(extend({'sinklist': function('PutYankHist')}, FzfFloatWin()))<cr>
 ino <expr> <c-p> fzf#vim#complete(extend(FzfFloatWin(), {'source':reverse(filter(copy(g:yankHistory), {_,his -> stridx(his, "\n") == -1}))}))
 
 " }}}
