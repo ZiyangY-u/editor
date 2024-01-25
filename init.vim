@@ -404,7 +404,7 @@ fu! FzfFloatWin()
                 \ 'yoffset': (winline()*1.0)/winheight(0) + 0.2}
     retu {'source':reverse(copy(g:yankHistory)), 'options':g:MfzfOpts, 'window':fzfCurOpts}
 endf
-nn <c-p> :cal fzf#run(extend({'sink': {t -> execute(['let @" = "'.t.'"', 'norm p', "cal AddYankHist(getreg('".'"'."'))"])}}, FzfFloatWin()))<cr>
+nn <c-p> :cal fzf#run(extend({'sink': {t -> execute(['let @" = "'.substitute(t,'"','\\"','g').'"', 'norm p', "cal AddYankHist(getreg('".'"'."'))"])}}, FzfFloatWin()))<cr>
 ino <expr> <c-p> fzf#vim#complete(extend(FzfFloatWin(), {'source':reverse(filter(copy(g:yankHistory), {_,his -> stridx(his, "\n") == -1}))}))
 
 " }}}
