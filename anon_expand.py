@@ -3,8 +3,6 @@ import sys
 import re
 import subprocess
 
-from jpn_ime_server import romaji_to_hirakana
-
 ESCAPE = {
         'a' : '[aäáAÄÁ]',
         'i' : '[iïíIÏÍ]',
@@ -84,6 +82,8 @@ def java_variable(word:str):
 def sql_expand(word:str):
     if re.compile(r'sel\d*').match(word):
         return 'select top ' + word[3:] + ' * from $1'
+    if re.compile(r't\d*').match(word):
+        return 'top ' + word[1:]
     return ''
 
 def count_mark(word):
@@ -120,7 +120,6 @@ def common_expand(word:str):
     if re.compile(r'\w+[A-Z]\w+').match(word): # camel to snake
         return re.sub(r'(?<!^)(?=[A-Z])', '_', word).lower()
     if word == 'ret': return 'return'
-    # return romaji_to_hirakana(word)
     return ''
 
 if __name__ == '__main__':
