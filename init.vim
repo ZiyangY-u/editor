@@ -307,7 +307,7 @@ set cot=menu,menuone,noselect ssop+=globals
 "   auto completion
 let [g:completingId, g:jpIme, g:inserted, g:refreshFlag, g:pathQueue, g:omniExclude, g:serviceBlackList] = [0, 0, '', 0, {}, {}, {}]
 fu! SendService(arg1, arg2)
-    let cmd = ['~/OneDrive/ultisnips/complete_service.py', a:arg1, a:arg2]
+    let cmd = ['~/.config/nvim/complete_service.py', a:arg1, a:arg2]
     retu join(cmd, ' ')
 endf
 let g:completeKinds = {1:' Text',2:' Method',3:'󰊕 Function',4:' Constructor',5:' Field',6:'󰫧 Variable',7:' Class',8:' Interface',9:'󰕳 Module',10:' Property',11:'Unit',12:'Value',13:'Enum',14:' Keyword',15:' Snippet',16:'Color',17:'File',18:'Reference',19:'Folder',20:'EnumMember',21:' Constant',22:'Struct',23:'Event',24:' Operator',25:'TypeParameter',}
@@ -885,7 +885,7 @@ endf
 fu! AnonRefresh()
     let cw = InsertingWord()
     if cw == '' | retu | en
-    let cmd = g:jpIme ? ("~/OneDrive/ultisnips/romaji_hirakana '".substitute(cw, '^\\', '', '')."'") : ('~/OneDrive/ultisnips/anon_expand.py '.cw.' '.&ft)
+    let cmd = g:jpIme ? ("~/.config/nvim/romaji_hirakana '".substitute(cw, '^\\', '', '')."'") : ('~/.config/nvim/anon_expand.py '.cw.' '.&ft)
     let g:expandingId = jobstart(cmd, {'on_stdout': function('s:GetExpanded'), 'stdout_buffered':v:true})
 endf
 fu! AnonExpand() " Anon Expand: regex match and regex replace and expand!
