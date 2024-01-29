@@ -61,7 +61,8 @@ endf
 
 set stl=%!ActStl(1)
 au WinNew,WinEnter,BufWinEnter * setl stl=%!ActStl(1) cuc cul
-au WinLeave * setl stl=%!ActStl(0) nocuc nocul
+au WinLeave * setl stl=%!ActStl(0) nocuc
+au WinLeave * if !nvim_get_option_value('diff', {'scope':'local'}) | setl nocul | en
 
 " Non-text display
 set lcs=eol:$,tab:>-,lead:∙,space:•,trail:●
@@ -283,14 +284,14 @@ hi DiffText ctermbg=88
 hi DiffChange ctermbg=none
 hi DiffDelete ctermbg=245
 hi DiffAdd ctermbg=86 ctermfg=black
-fu! Diffboth()
+fu! Diffthese()
     let [curr, wins] = [win_getid(), gettabinfo(tabpagenr())[0]['windows']]
     for winId in wins
         cal win_gotoid(winId) | diffthis
     endfor
     cal win_gotoid(curr)
 endf
-com! -nargs=0 Dfboth :cal Diffboth()
+com! -nargs=0 Dfthese :cal Diffthese()
 " }}}
 " => Automatic -------------------- {{{
 " au InsertLeave * :execute 'sil! .s/\s\+$//'
