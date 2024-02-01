@@ -440,9 +440,9 @@ nn <Up> <c-u>
 "   FZF moving
 nn <leader>m :Marks!<CR>
 nn <leader>l @=(&filetype=='ark'?':cal IndoEuropeanFZF()':':Lines!')<CR><CR>
-vn <leader>l y:let@"=@0\|Lines! <C-R>v<CR>
+vn <leader>l "vy:let@"=@0\|Lines! <C-R>v<CR>
 nn ,l :BLines!<CR>
-vn ,l y:let@"=@0\|BLines! <C-R>v<CR>
+vn ,l "vy:let@"=@0\|BLines! <C-R>v<CR>
 "   enhanced jump back
 fu! BufJumpBack()
     let curBufName = expand('%:p')
