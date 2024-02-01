@@ -375,6 +375,7 @@ im <silent><expr> <c-l> (g:canSnipExpand \|\| UltiSnips#CanExpandSnippet()) ? "\
             \ ""
 "   FZF integration
 ino <expr> <c-x><c-k> fzf#vim#complete(extend(FzfFloatWin(), {'source':'cat /usr/share/dict/en /usr/share/dict/esp /usr/share/dict/ngerman'}))
+ino <expr> <c-x><c-f> fzf#vim#complete#path('find')
 ino <expr> <c-x><c-l> fzf#vim#complete#line({}, 1)
 ino <expr> <c-x><c-h> fzf#vim#complete#buffer_line({}, 1)
 nn <F1> :Helptags!<CR>
