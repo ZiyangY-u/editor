@@ -371,7 +371,7 @@ im <silent><expr> <space> (pumvisible() && g:jpIme) ? "\<tab>" : "\<space>"
 "   snip expand
 im <silent><expr> <c-l> (g:canSnipExpand \|\| UltiSnips#CanExpandSnippet()) ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'i', '', {})<cr>" :
-            \UltiSnips#CanJumpForwards() ? "\<c-k>" :
+            \ UltiSnips#CanJumpForwards() ? "\<c-k>" :
             \ ""
 "   FZF integration
 ino <expr> <c-x><c-k> fzf#vim#complete(extend(FzfFloatWin(), {'source':'cat /usr/share/dict/en /usr/share/dict/esp /usr/share/dict/ngerman'}))
@@ -439,9 +439,9 @@ nn <Up> <c-u>
 "   FZF moving
 nn <leader>m :Marks!<CR>
 nn <leader>l @=(&filetype=='ark'?':cal IndoEuropeanFZF()':':Lines!')<CR><CR>
-vn <leader>l "vy:let@"=@0\|Lines! <C-R>v<CR>
+vn <leader>l y:let@"=@0\|Lines! <C-R>v<CR>
 nn ,l :BLines!<CR>
-vn ,l "vy:let@"=@0\|BLines! <C-R>v<CR>
+vn ,l y:let@"=@0\|BLines! <C-R>v<CR>
 "   enhanced jump back
 fu! BufJumpBack()
     let curBufName = expand('%:p')
