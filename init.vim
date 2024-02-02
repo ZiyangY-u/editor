@@ -161,7 +161,7 @@ fu GDelAttach(pattern)
     exe printf('syntax clear pat_%s', sha256(a:pattern))
 endf
 au SessionLoadPost,BufWinEnter * cal RecoverGAttach()
-let MColors = {'': 196, 'red':196, 'green':118, 'blue':33, 'yellow':220, 'purple':135, 'white':255, 'aqua':45}
+let MColors = {'': 196, 'red':196, 'green':118, 'blue':33, 'yellow':220, 'purple':135, 'white':255, 'aqua':45, 'orange':202}
 for color in keys(MColors)
     exe printf('hi MVText%s cterm=bold ctermfg=%d', color, MColors[color])
     exe printf('com! -nargs=* SEMark%s :cal SetExMark(bufnr(""), line(".")-1, "MVText%s", <f-args>)', color, color)
