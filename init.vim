@@ -375,7 +375,6 @@ im <silent><expr> <c-l> (g:canSnipExpand \|\| UltiSnips#CanExpandSnippet()) ? "\
             \ ""
 "   FZF integration
 ino <expr> <c-x><c-k> fzf#vim#complete(extend(FzfFloatWin(), {'source':'cat /usr/share/dict/en /usr/share/dict/esp /usr/share/dict/ngerman'}))
-ino <expr> <c-x><c-f> fzf#vim#complete#path('find')
 ino <expr> <c-x><c-l> fzf#vim#complete#line({}, 1)
 ino <expr> <c-x><c-h> fzf#vim#complete#buffer_line({}, 1)
 nn <F1> :Helptags!<CR>
@@ -1208,7 +1207,7 @@ nn <silent> ,<tab>o o<esc>:cal TranslitMode()<CR>
 nn <silent> ,<tab>l :let g:TransMode='Latin'<CR>
 nn <silent> ,<tab>g :let g:TransMode='Greek'<CR>
 ino <silent> jj <c-\><c-o>:let g:jpIme = (g:jpIme == 1 ? 0 : 1)\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
-im <silent><expr> <cr> (g:jpIme && (AnonExpand() != '' \|\| UltiSnips#CanExpandSnippet()) && complete_info().selected == -1) ? "<c-l>" : "<cr>"
+im <silent><expr> <cr> (g:jpIme && complete_info().selected == -1) ? "<c-l>" : "<cr>"
 " -------------------- Calc Misc -----------------------
 fu! NumTrans(fmt, num)
     let fmtMap = {'x': '0x%X', 'b': '0b%08b', 'd': '%d'}
