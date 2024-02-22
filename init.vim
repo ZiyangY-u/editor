@@ -174,13 +174,13 @@ com! -range -nargs=0 GDAttach :cal GDelAttach(Selected())
 
 " Vertical Quick Scope
 let g:vertLineMark = nvim_create_namespace('vertLineMark')
-fu! RenderVerticalScope(start, dense)
+fu! RenderVerticalScope(start, dense, end, col, direct)
     cal ClearVirtualTxt()
     let offset = a:start
-    while offset <= winheight(0)
+    while offset <= (a:end == -1 ? winheight(0) : a:end)
         let [txt, hl] = [string(offset), 'QuickScopePrimary']
-        cal VirtualMarkWrapper(line('.')-offset-1, virtcol('.')-1, txt, hl)
-        cal VirtualMarkWrapper(line('.')+offset-1, virtcol('.')-1, txt, hl)
+        if !empty(matchstr(a:direct, 'up')) | cal VirtualMarkWrapper(line('.')-offset-1, a:col, txt, hl) | endif
+        if !empty(matchstr(a:direct, 'down')) | cal VirtualMarkWrapper(line('.')+offset-1, a:col, txt, hl) | endif
         let offset += a:dense
     endwhile
 endf
@@ -195,14 +195,14 @@ fu! IsBlankLine()
     let ln = getline(line('.'))
     retu len(substitute(ln, '\s', '', 'g')) == 0
 endf
-nn <silent> d :let b:reg_name = IsBlankLine() ? '_' : v:register<cr>:cal RenderVerticalScope(1,1)<cr>@=('"'.b:reg_name.'d')<cr>
-nn <silent> y :let b:reg_name = v:register<cr>:cal RenderVerticalScope(1,1)<cr>@=('"'.b:reg_name.'y')<cr>
-nn <silent> c :let b:reg_name = IsBlankLine() ? '_' : v:register<cr>:cal RenderVerticalScope(1,1)<cr>@=('"'.b:reg_name.'c')<cr>
-nn = :cal RenderVerticalScope(1,1)<cr>=
-nn zf :cal RenderVerticalScope(1,1)<cr>zf
-nn V :cal RenderVerticalScope(1,1)<cr>V
-nn <c-v> :cal RenderVerticalScope(1,1)<cr><c-v>
-au CursorMoved * if index(['V','v',"\<C-V>"], mode())>=0|sil cal RenderVerticalScope(1,1)|en
+nn <silent> d :let b:reg_name = IsBlankLine() ? '_' : v:register<cr>:cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr>@=('"'.b:reg_name.'d')<cr>
+nn <silent> y :let b:reg_name = v:register<cr>:cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr>@=('"'.b:reg_name.'y')<cr>
+nn <silent> c :let b:reg_name = IsBlankLine() ? '_' : v:register<cr>:cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr>@=('"'.b:reg_name.'c')<cr>
+nn = :cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr>=
+nn zf :cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr>zf
+nn V :cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr>V
+nn <c-v> :cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr><c-v>
+au CursorMoved * if index(['V','v',"\<C-V>"], mode())>=0|sil cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')|en
 au CursorMoved,TextChanged,InsertEnter,TextYankPost * if index(['V','v',"\<C-V>"], mode())<0|sil cal ClearVirtualTxt()|en
 
 " Roadmap
@@ -338,6 +338,7 @@ fu! s:GotCandidates(jobId, data, event)
         endif
         cal extend(com_items, map(candidates, function('RenderCandidate')))
         cal complete(col('.') - len(InsertingWord()), com_items)
+        cal RenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-3, 'updown')
     endif
 endf
 fu! RefreshCandidates()
@@ -355,7 +356,7 @@ endfunction
 au BufReadPost,BufWritePost * if filereadable(bufname(bufnr())) && !has_key(g:serviceBlackList, bufname(bufnr())) 
             \| let g:pathQueue[expand('%:p').':'.getbufvar(bufnr(), "&enc")] = 1 | en
 cal timer_start(1500, 'RefreshService', {'repeat': -1})
-au CursorMovedI * sil redraw | cal RefreshCandidates()
+au CursorMovedI * sil redraw | cal RefreshCandidates() | cal ClearVirtualTxt()
 " au CursorMovedI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
 fu! PostComplete()
     if exists("v:completed_item['word']")
@@ -364,10 +365,12 @@ fu! PostComplete()
     en
 endf
 au CompleteDone * sil redraw | cal PostComplete()
-"   <tab> for select candidate, <space> for quick select in jpIme
+"   <tab> for select candidate, j+n for quick selection
 ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
-im <silent><expr> <space> (pumvisible() && g:jpIme) ? "\<tab>" : "\<space>"
+for i in range(1, 9)
+    exe printf("im j%d %s<cr>", i, repeat("<tab>", i))
+endfor
 "   snip expand
 im <silent><expr> <c-l> (g:canSnipExpand \|\| UltiSnips#CanExpandSnippet()) ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'i', '', {})<cr>" :
@@ -830,7 +833,7 @@ cal plug#end()
 " => Plugin-configs -------------------- {{{
 " commentary
 au VimEnter * if exists('*commentary')|unmap gcc|en
-nn gc :cal RenderVerticalScope(1,1)<cr><Plug>Commentary
+nn gc :cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr><Plug>Commentary
 " emmet
 let g:user_emmet_install_global = 0
 let g:user_emmet_leader_key = '<c-y>'
@@ -934,7 +937,7 @@ ca gps Git push
 ca gm Git merge
 " vim-easy-align
 xn g= <Plug>(EasyAlign)
-nn g= :cal RenderVerticalScope(1,1)<cr><Plug>(EasyAlign)
+nn g= :cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr><Plug>(EasyAlign)
 let g:easy_align_delimiters = {
             \ '>': { 'pattern': '>>\|=>\|>' },
             \ '/': { 'pattern': '//\+\|/\*\|\*/', 'delimiter_align': 'l', 'ignore_groups':   ['!Comment'] },
