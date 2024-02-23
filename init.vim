@@ -371,6 +371,7 @@ ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
 for i in range(1, 9)
     exe printf("im j%d %s<cr>", i, repeat("<tab>", i))
 endfor
+exe printf("im j%d %s<cr>", 0, repeat("<tab>", 10))
 "   snip expand
 im <silent><expr> <c-l> (g:canSnipExpand \|\| UltiSnips#CanExpandSnippet()) ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'i', '', {})<cr>" :
