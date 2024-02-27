@@ -174,13 +174,23 @@ com! -range -nargs=0 GDAttach :cal GDelAttach(Selected())
 
 " Vertical Quick Scope
 let g:vertLineMark = nvim_create_namespace('vertLineMark')
-fu! RenderVerticalScope(start, dense, end, col, direct)
+fu! RenderVerticalScope(start, dense, end, col)
     cal ClearVirtualTxt()
+    if pumvisible()
+        let pumHeight = float2nr(pum_getpos()['height'])
+        echo pumHeight
+        for i in range(1, pumHeight)
+            let [txt, hl] = [string(i), 'QuickScopePrimary']
+            cal VirtualMarkWrapper(line('.')-pumHeight+i-2, a:col, txt, hl)
+            cal VirtualMarkWrapper(line('.')+i-1, a:col, txt, hl)
+        endfor
+        retu
+    endif
     let offset = a:start
     while offset <= (a:end == -1 ? winheight(0) : a:end)
         let [txt, hl] = [string(offset), 'QuickScopePrimary']
-        if !empty(matchstr(a:direct, 'up')) | cal VirtualMarkWrapper(line('.')-offset-1, a:col, txt, hl) | endif
-        if !empty(matchstr(a:direct, 'down')) | cal VirtualMarkWrapper(line('.')+offset-1, a:col, txt, hl) | endif
+        cal VirtualMarkWrapper(line('.')-offset-1, a:col, txt, hl)
+        cal VirtualMarkWrapper(line('.')+offset-1, a:col, txt, hl)
         let offset += a:dense
     endwhile
 endf
@@ -195,14 +205,14 @@ fu! IsBlankLine()
     let ln = getline(line('.'))
     retu len(substitute(ln, '\s', '', 'g')) == 0
 endf
-nn <silent> d :let b:reg_name = IsBlankLine() ? '_' : v:register<cr>:cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr>@=('"'.b:reg_name.'d')<cr>
-nn <silent> y :let b:reg_name = v:register<cr>:cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr>@=('"'.b:reg_name.'y')<cr>
-nn <silent> c :let b:reg_name = IsBlankLine() ? '_' : v:register<cr>:cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr>@=('"'.b:reg_name.'c')<cr>
-nn = :cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr>=
-nn zf :cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr>zf
-nn V :cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr>V
-nn <c-v> :cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr><c-v>
-au CursorMoved * if index(['V','v',"\<C-V>"], mode())>=0|sil cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')|en
+nn <silent> d :let b:reg_name = IsBlankLine() ? '_' : v:register<cr>:cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>@=('"'.b:reg_name.'d')<cr>
+nn <silent> y :let b:reg_name = v:register<cr>:cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>@=('"'.b:reg_name.'y')<cr>
+nn <silent> c :let b:reg_name = IsBlankLine() ? '_' : v:register<cr>:cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>@=('"'.b:reg_name.'c')<cr>
+nn = :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>=
+nn zf :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>zf
+nn V :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>V
+nn <c-v> :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr><c-v>
+au CursorMoved * if index(['V','v',"\<C-V>"], mode())>=0|sil cal RenderVerticalScope(1,1,-1,virtcol('.')-1)|en
 au CursorMoved,TextChanged,InsertEnter,TextYankPost * if index(['V','v',"\<C-V>"], mode())<0|sil cal ClearVirtualTxt()|en
 
 " Roadmap
@@ -338,7 +348,7 @@ fu! s:GotCandidates(jobId, data, event)
         endif
         cal extend(com_items, map(candidates, function('RenderCandidate')))
         cal complete(col('.') - len(InsertingWord()), com_items)
-        cal RenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-3, 'updown')
+        cal RenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-4)
     endif
 endf
 fu! RefreshCandidates()
@@ -827,14 +837,13 @@ cal plug#begin('~/.vim/plugged')
     Plug 'wellle/targets.vim'
     Plug 'williamboman/nvim-lsp-installer'
     Plug 'yuezk/vim-js'
-    Plug 'zef/vim-cycle'
 
 cal plug#end()
 " }}}
 " => Plugin-configs -------------------- {{{
 " commentary
 au VimEnter * if exists('*commentary')|unmap gcc|en
-nn gc :cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr><Plug>Commentary
+nn gc :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr><Plug>Commentary
 " emmet
 let g:user_emmet_install_global = 0
 let g:user_emmet_leader_key = '<c-y>'
@@ -938,7 +947,7 @@ ca gps Git push
 ca gm Git merge
 " vim-easy-align
 xn g= <Plug>(EasyAlign)
-nn g= :cal RenderVerticalScope(1,1,-1,virtcol('.')-1,'updown')<cr><Plug>(EasyAlign)
+nn g= :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr><Plug>(EasyAlign)
 let g:easy_align_delimiters = {
             \ '>': { 'pattern': '>>\|=>\|>' },
             \ '/': { 'pattern': '//\+\|/\*\|\*/', 'delimiter_align': 'l', 'ignore_groups':   ['!Comment'] },
