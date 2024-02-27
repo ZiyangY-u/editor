@@ -944,6 +944,7 @@ ca gco cal fzf#run({'source':'git branch', 'dir':expand('%:p:h'), 'sink':{gb -> 
 ca gch Git checkout
 ca gps Git push
 ca gm Git merge
+ca gcmt Git blame --date=format-local:'%Y/%m/%d %H:%M:%S'
 " vim-easy-align
 xn g= <Plug>(EasyAlign)
 nn g= :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr><Plug>(EasyAlign)
