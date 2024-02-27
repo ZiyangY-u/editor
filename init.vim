@@ -178,8 +178,7 @@ fu! RenderVerticalScope(start, dense, end, col)
     cal ClearVirtualTxt()
     if pumvisible()
         let pumHeight = float2nr(pum_getpos()['height'])
-        echo pumHeight
-        for i in range(1, pumHeight)
+        for i in range(1, 9)
             let [txt, hl] = [string(i), 'QuickScopePrimary']
             cal VirtualMarkWrapper(line('.')-pumHeight+i-2, a:col, txt, hl)
             cal VirtualMarkWrapper(line('.')+i-1, a:col, txt, hl)
@@ -348,7 +347,7 @@ fu! s:GotCandidates(jobId, data, event)
         endif
         cal extend(com_items, map(candidates, function('RenderCandidate')))
         cal complete(col('.') - len(InsertingWord()), com_items)
-        cal RenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-4)
+        cal RenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-3)
     endif
 endf
 fu! RefreshCandidates()
