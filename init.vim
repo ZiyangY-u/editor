@@ -200,6 +200,8 @@ fu! ClearVirtualTxt()
         endfor
     endfor
 endf
+au OptionSet * if (!empty(matchstr(v:option_new, 'Op$')))
+            \| cal nvim_buf_set_extmark(bufnr(), g:vertLineMark, line(".")-1, 0, { "virt_text":[[v:option_new, 'SnipAnon']], "hl_mode":"combine" }) | en
 fu! IsBlankLine()
     let ln = getline(line('.'))
     retu len(substitute(ln, '\s', '', 'g')) == 0
