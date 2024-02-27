@@ -178,7 +178,7 @@ fu! RenderVerticalScope(start, dense, end, col)
     cal ClearVirtualTxt()
     if pumvisible()
         let pumHeight = float2nr(pum_getpos()['height'])
-        for i in range(1, 9)
+        for i in range(1, (pumHeight <= 9 ? pumHeight : 9))
             let [txt, hl] = [string(i), 'QuickScopePrimary']
             cal VirtualMarkWrapper(line('.')-pumHeight+i-2, a:col, txt, hl)
             cal VirtualMarkWrapper(line('.')+i-1, a:col, txt, hl)
