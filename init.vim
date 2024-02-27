@@ -377,10 +377,11 @@ au CompleteDone * sil redraw | cal PostComplete()
 "   <tab> for select candidate, j+n for quick selection
 ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
-for i in range(1, 9)
+for i in range(2, 9)
     exe printf("im j%d %s<cr>", i, repeat("<tab>", i))
 endfor
 exe printf("im j%d %s<cr>", 0, repeat("<tab>", 10))
+exe printf("im j<space> %s<cr>", "<tab>")
 "   snip expand
 im <silent><expr> <c-l> (g:canSnipExpand \|\| UltiSnips#CanExpandSnippet()) ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'i', '', {})<cr>" :
