@@ -10,12 +10,13 @@ import sys
 import re
 import sqlite3
 import logging
+import copy
 import subprocess
 from os import access, R_OK
 from os.path import isfile
 from thefuzz import process
 from thefuzz import fuzz
-from jpn_ime_service import romaji_to_hirakana
+from jpn_ime_service import romaji_to_hirakana, HIRAKANA
 
 COMPLETE_BUF_DB_PATH = '/root/.config/nvim/completion_buf.db'
 DICT_DB_PATH = '/root/.config/nvim/jp/completion.db'
@@ -47,20 +48,42 @@ MARKS = {
 
 GOBI = {
         'suru':'する',
-        'shite':'して',
-        'shimasu':'します',
-        'shitemasu':'してます',
-        'shiteimasu':'しています',
+        'shi':'し',
+        'masu':'ます',
+        'mashi':'まし',
+        'mora':'もら',
+        'masen':'ません',
+        'masenn':'ません',
+        'kudasai':'ください',
+        'nari':'なり',
+        'kure':'くれ',
+        'na':'な',
         'naru':'なる',
-        'narimasu':'なります',
-        'natte':'なって',
-        'natta':'なった',
+        'nai':'ない',
+        'deki':'でき',
+        'ike':'いけ',
         'wo':'を',
+        'kereba':'ければ',
+        'sou':'そう',
         'ku':'く',
+        'i':'い',
+        'u':'う',
+        'de':'で',
+        'se':'せ',
+        'ru':'る',
+        'sa':'さ',
         'te':'て',
+        'ta':'た',
         'ha':'は',
+        'ka':'か',
+        'mi':'み',
         'ga':'が',
         'ni':'に',
+        'taseba':'たせば',
+        'tte':'って',
+        'tta':'った',
+        'rare':'られ',
+        'rase':'らせ',
         }
 
 # logging.basicConfig(filename='./example.log', level=logging.DEBUG)
@@ -79,6 +102,12 @@ def query_with_decor(sql, indicate, use_dict:bool, tail_decor):
     cur.execute(sql)
     for item in cur.fetchall():
         print(item[0] + tail_decor, indicate)
+
+def query_and_inflect(sql, indicate, patch, tail_decor):
+    cur = con_dict.cursor()
+    cur.execute(sql)
+    for item in cur.fetchall():
+        print(item[0][:-1] + patch + tail_decor, indicate)
 
 def add_word(word:str, path:str):
     cur = con.cursor()
@@ -180,20 +209,47 @@ def print_marks(word:str):
         if word == w:
             prints(mks)
 
+def create_gobi(created_romaji, created_kana, romaji):
+    gobi_tmp = copy.deepcopy(GOBI)
+    for romaji_gobi, kana_gobi in gobi_tmp.items():
+        if romaji.endswith(romaji_gobi):
+            create_gobi(romaji_gobi + created_romaji, kana_gobi + created_kana, romaji[:-len(romaji_gobi)])
+        elif created_romaji != '':
+            GOBI[created_romaji] = created_kana
+
+
 def query_dict(word:str):
     order = ' ORDER BY CHOSEN DESC, LENGTH(WORD), LENGTH(PLAIN_TEXT) ASC, FREQUENCY DESC'
     to_query = word.replace('nn', 'n').replace('\\', '')
+    # non-chosen words
+    sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" {}'.format(to_query, order)
+    query(sql, '󰾹 match', True)
+    create_gobi('', '', word)
     # with 語尾
     for romaji_gobi, kana_gobi in GOBI.items():
         if word.endswith(romaji_gobi):
-            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT LIKE "{}" {}'.format(to_query[:-len(romaji_gobi)], order)
+            without_gobi = to_query[:-len(romaji_gobi)]
+            # 登る %-_u
+            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT LIKE "{}" and src like "%-_u" {} limit 20'.format(without_gobi[:-1] + 'u', order)
+            if without_gobi[-2:] in HIRAKANA.keys():
+                query_and_inflect(sql, '󰷫 Inf(_u)+語尾', HIRAKANA[without_gobi[-2:]], kana_gobi)
+            elif without_gobi[-1:] in HIRAKANA.keys():
+                query_and_inflect(sql, '󰷫 Inf(_u)+語尾', HIRAKANA[without_gobi[-1:]], kana_gobi)
+
+            # 買う %-u
+            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT LIKE "{}" and src like "%-u" {} limit 20'.format(without_gobi[:-2] + 'u', order)
+            if without_gobi[-2:] in HIRAKANA.keys():
+                query_and_inflect(sql, '󰷫 Inf(う)+語尾', HIRAKANA[without_gobi[-2:]], kana_gobi)
+            elif without_gobi[-1:] in HIRAKANA.keys():
+                query_and_inflect(sql, '󰷫 Inf(う)+語尾', HIRAKANA[without_gobi[-1:]], kana_gobi)
+
+            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT LIKE "{}" and src = "kunnyomi" {}'.format(without_gobi, order)
+            query_with_decor(sql, '󰷫 訓+語尾', True, kana_gobi)
+            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT LIKE "{}" and src <> "kunnyomi" {}'.format(without_gobi, order)
             query_with_decor(sql, '󰷫 語尾', True, kana_gobi)
     # chosen words
     sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT LIKE "{}%" AND CHOSEN > 0 {}'.format(to_query, order)
     query(sql, '󰂺 chosen', True)
-    # non-chosen words
-    sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" {}'.format(to_query, order)
-    query(sql, ' non-chosen', True)
     # special marks
     print_marks(word)
 
@@ -309,6 +365,6 @@ if __name__ == '__main__':
     if sys.argv[1] == '-create':
         create()
     if sys.argv[1] == '-test':
-        chosen_word, inserting = sys.argv[2:4]
-        print(get_romaji_from_inserting(chosen_word, inserting))
+        create_gobi('', '', 'atukunakunarimashita')
+        print(GOBI)
 

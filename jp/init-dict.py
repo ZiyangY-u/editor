@@ -40,9 +40,6 @@ ROMAON = {
 frequency_table = {}
 word_frequency_table = {}
 
-URL = 'https://www.edrdg.org/jmwsgi/srchres.py?s1=1&y1=1&t1={}&src=1&search=Search&svc=jmdict&sid=xxx'
-TIMEOUT = httpx.Timeout(120.0, connect=120.0)
-
 con = sqlite3.connect('./completion.db')
 cur = con.cursor()
 
@@ -105,6 +102,25 @@ for kana, romaji in ROMAON.items():
     cur.execute(insert_sql(romaji, kana, 'romaji'))
 print('romaji loaded')
 
+def decor_src(word, origin_src):
+    if word.endswith('る'):
+        if len(word) >= 2 and word[-2] in ROMAON.keys():
+            return origin_src + '-eru'
+        else:
+            return origin_src + '-ru'
+    if word.endswith('う'):
+        return origin_src + '-u'
+    if word.endswith('く'):
+        return origin_src + '-ku'
+    if word.endswith('つ'):
+        return origin_src + '-tu'
+    if word.endswith('す'):
+        return origin_src + '-su'
+    if word.endswith('ぬ'):
+        return origin_src + '-nu'
+    if word.endswith('む'):
+        return origin_src + '-mu'
+
 print('loading from dict...')
 with open('./edict-utf8.txt') as df:
     pat1 = re.compile(r'^.*\[.*\] /.*/$')
@@ -116,11 +132,11 @@ with open('./edict-utf8.txt') as df:
                 kanji = re.compile(r'^.*?(?<= )').findall(l)[0].rstrip()
                 kana = re.compile(r'(?=\[).*?(?<=\])').findall(l)[0][1:-1]
                 romaji = romkan.to_roma(kana).replace("'", '').replace('tsu', 'tu')
-                cur.execute(insert_sql(romaji, kanji, 'edict-utf8.txt'))
+                cur.execute(insert_sql(romaji, kanji, decor_src(kanji, 'edict-utf8.txt')))
             elif pat2.match(l.rstrip()):
                 kana = re.compile(r'^.*?(?<= )').findall(l)[0].rstrip()
                 romaji = romkan.to_roma(kana.replace('・', '')).replace("'", '').replace('tsu', 'tu')
-                cur.execute(insert_sql(romaji, kana, 'edict-utf8.txt'))
+                cur.execute(insert_sql(romaji, kana, decor_src(kanji, 'edict-utf8.txt')))
         except:
             print(kana, romaji)
 
