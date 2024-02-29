@@ -556,8 +556,9 @@ xn <expr> <Up> { 'V':repeat('k', winheight(0)/3) }[mode()]
 xn <expr> <Down> { 'V':repeat('j', winheight(0)/3) }[mode()]
 xn <silent>x :<C-U>call cursor(line("'}")-1,col("'>"))<CR>`<1v``
 " Quick back to normal mode
-let g:AutoQuitIme = 1
-ino <silent> jk <esc>:if g:AutoQuitIme==1 \| let g:jpIme = 0 \|en<cr>
+let g:PreferQuitIme = 1
+ino <silent> jk <esc>:if g:PreferQuitIme==1 \| let g:jpIme = 0 \|en<cr>
+ino <silent> jK <esc>:if g:PreferQuitIme==0 \| let g:jpIme = 0 \|en<cr>
 cno <expr> jk getcmdtype() == ':' ? '<c-u><esc>' : 'jk'
 tno jk <c-\><c-n>
 xn JK <esc>
