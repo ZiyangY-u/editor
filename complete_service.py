@@ -14,8 +14,6 @@ import copy
 import subprocess
 from os import access, R_OK
 from os.path import isfile
-from thefuzz import process
-from thefuzz import fuzz
 from jpn_ime_service import romaji_to_hirakana, HIRAKANA
 
 COMPLETE_BUF_DB_PATH = '/root/.config/nvim/completion_buf.db'
@@ -47,43 +45,73 @@ MARKS = {
         }
 
 GOBI = {
-        'suru':'する',
-        'shi':'し',
-        'masu':'ます',
-        'mashi':'まし',
-        'mora':'もら',
-        'masen':'ません',
-        'masenn':'ません',
-        'kudasai':'ください',
-        'nari':'なり',
-        'kure':'くれ',
-        'na':'な',
-        'naru':'なる',
-        'nai':'ない',
-        'deki':'でき',
-        'ike':'いけ',
-        'wo':'を',
-        'kereba':'ければ',
-        'sou':'そう',
-        'ku':'く',
-        'i':'い',
-        'u':'う',
-        'de':'で',
-        'se':'せ',
-        'ru':'る',
-        'sa':'さ',
-        'te':'て',
-        'ta':'た',
-        'ha':'は',
-        'ka':'か',
-        'mi':'み',
-        'ga':'が',
-        'ni':'に',
-        'taseba':'たせば',
+        # 動詞形
         'tte':'って',
         'tta':'った',
-        'rare':'られ',
-        'rase':'らせ',
+        'ite':'いて',
+        'ita':'いた',
+        'nde':'んで',
+        'nda':'んだ',
+        'nai':'ない',
+        'shite':'して',
+        'shita':'した',
+        'masu':'ます',
+        'mashi':'まし',
+        'masen':'ません',
+        'masenn':'ません',
+        'nasai':'なさい',
+        'desu':'です',
+        'deshita':'でした',
+        'reba':'れば',
+
+        # 別の動詞
+        'age':'あげ',
+        'deki':'でき',
+        'ike':'いけ',
+        'shima':'しま',
+        'sare':'され',
+        'mi':'み',
+        'kure':'くれ',
+        'itada':'いただ',
+        'mora':'もら',
+        'na':'な', # なる、なり、ない
+        'kudasai':'ください',
+        'deki':'でき',
+
+        # 単なる語尾
+        'nara':'なら',
+        'sou':'そう',
+        'tara':'たら',
+
+        # 単なる仮名
+        'u':'う',
+        'i':'い',
+        'shi':'し',
+        'zu':'ず',
+        'ri':'り',
+        're':'れ',
+        'ke':'け',
+        'de':'で',
+        'ra':'ら',
+        'se':'せ',
+        'ba':'ば',
+        'te':'て',
+        'ku':'く',
+        'ru':'る',
+        'ta':'た',
+        
+        # 助詞
+        'wo':'を',
+        'ha':'は',
+        'ga':'が',
+        'to':'と',
+        'de':'で',
+        'ni':'に',
+        'no':'の',
+        'ka':'か',
+        'darou':'だろう',
+        'deshou':'でしょう',
+
         }
 
 # logging.basicConfig(filename='./example.log', level=logging.DEBUG)
@@ -106,6 +134,7 @@ def query_with_decor(sql, indicate, use_dict:bool, tail_decor):
 def query_and_inflect(sql, indicate, patch, tail_decor):
     cur = con_dict.cursor()
     cur.execute(sql)
+    logging.debug(sql)
     for item in cur.fetchall():
         print(item[0][:-1] + patch + tail_decor, indicate)
 
@@ -148,16 +177,19 @@ def add_words(path:str, enc:str):
         cur.execute('insert into path_history values ("' + path + '", "' + hashcode + '")') # add path to history
         con.commit()
 
-def query_word(word:str):
+def query_word(word:str, src:str):
     like_pat = '%' + '%'.join((ch for ch in word)) + '%'
     # recent hot words
     sql = '''SELECT DISTINCT WORD FROM WORDS WHERE
             LENGTH(WORD) < 100 AND WORD LIKE "''' + like_pat + '''" COLLATE NOCASE 
             AND RECENT_CHOSEN_TIME IS NOT NULL
             AND RECENT_CHOSEN_TIME >= DATETIME("NOW", "-2 HOUR")
-            ORDER BY RECENT_CHOSEN_TIME DESC, CHOSEN DESC LIMIT 15'''
+            ORDER BY RECENT_CHOSEN_TIME DESC, CHOSEN DESC LIMIT 5'''
     query(sql, '󰈸 hot data', False)
 
+    # from current file
+    sql = 'SELECT DISTINCT WORD FROM WORDS WHERE SRC="' + src + '" AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ORDER BY CHOSEN DESC LIMIT 5'
+    query(sql, '󰈝 this file', False)
     # chosen history
     sql = 'SELECT DISTINCT WORD FROM WORDS WHERE CHOSEN > 0 AND LENGTH(WORD) < 100 AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ORDER BY CHOSEN DESC LIMIT 15'
     query(sql, '󱈅 chosen history', False)
@@ -219,7 +251,7 @@ def create_gobi(created_romaji, created_kana, romaji):
 
 
 def query_dict(word:str):
-    order = ' ORDER BY CHOSEN DESC, LENGTH(WORD), LENGTH(PLAIN_TEXT) ASC, FREQUENCY DESC'
+    order = ' ORDER BY CHOSEN DESC, FREQUENCY DESC, LENGTH(WORD), LENGTH(PLAIN_TEXT) ASC'
     to_query = word.replace('nn', 'n').replace('\\', '')
     # non-chosen words
     sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" {}'.format(to_query, order)
@@ -230,23 +262,49 @@ def query_dict(word:str):
         if word.endswith(romaji_gobi):
             without_gobi = to_query[:-len(romaji_gobi)]
             # 登る %-_u
-            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT LIKE "{}" and src like "%-_u" {} limit 20'.format(without_gobi[:-1] + 'u', order)
+            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi[:-1] + 'u', order)
             if without_gobi[-2:] in HIRAKANA.keys():
                 query_and_inflect(sql, '󰷫 Inf(_u)+語尾', HIRAKANA[without_gobi[-2:]], kana_gobi)
             elif without_gobi[-1:] in HIRAKANA.keys():
                 query_and_inflect(sql, '󰷫 Inf(_u)+語尾', HIRAKANA[without_gobi[-1:]], kana_gobi)
+            # んで
+            if romaji_gobi.startswith('nd'):
+                sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'mu', order)
+                query_and_inflect(sql, '󰷫 Inf(む)+語尾', '', kana_gobi)
+                sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'bu', order)
+                query_and_inflect(sql, '󰷫 Inf(ぶ)+語尾', '', kana_gobi)
+                sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'nu', order)
+                query_and_inflect(sql, '󰷫 Inf(ぬ)+語尾', '', kana_gobi)
+            # して
+            if romaji_gobi.startswith('shit'):
+                sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'su', order)
+                query_and_inflect(sql, '󰷫 Inf(す)+語尾', '', kana_gobi)
+            # いて
+            if romaji_gobi.startswith('it'):
+                sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'tu', order)
+                query_and_inflect(sql, '󰷫 Inf(つ)+語尾', '', kana_gobi)
+                sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'ku', order)
+                query_and_inflect(sql, '󰷫 Inf(く)+語尾', '', kana_gobi)
+            # って
+            if romaji_gobi.startswith('tt'):
+                sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'ru', order)
+                query_and_inflect(sql, '󰷫 Inf(る)+語尾', '', kana_gobi)
+                sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-u" {} limit 20'.format(without_gobi + 'u', order)
+                query_and_inflect(sql, '󰷫 Inf(う)+語尾', '', kana_gobi)
 
             # 買う %-u
-            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT LIKE "{}" and src like "%-u" {} limit 20'.format(without_gobi[:-2] + 'u', order)
+            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-u" {} limit 20'.format(without_gobi[:-2] + 'u', order)
             if without_gobi[-2:] in HIRAKANA.keys():
-                query_and_inflect(sql, '󰷫 Inf(う)+語尾', HIRAKANA[without_gobi[-2:]], kana_gobi)
-            elif without_gobi[-1:] in HIRAKANA.keys():
-                query_and_inflect(sql, '󰷫 Inf(う)+語尾', HIRAKANA[without_gobi[-1:]], kana_gobi)
+                query_and_inflect(sql, '󰷫 Inf(u)+語尾', HIRAKANA[without_gobi[-2:]], kana_gobi)
 
-            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT LIKE "{}" and src = "kunnyomi" {}'.format(without_gobi, order)
+            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-adj" {}'.format(without_gobi + 'i', order)
+            query_and_inflect(sql, '󰷫 い形容詞 語尾', '', kana_gobi)
+            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src = "kunnyomi" {} LIMIT 5'.format(without_gobi, order)
             query_with_decor(sql, '󰷫 訓+語尾', True, kana_gobi)
-            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT LIKE "{}" and src <> "kunnyomi" {}'.format(without_gobi, order)
+            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src <> "kunnyomi" {}'.format(without_gobi, order)
             query_with_decor(sql, '󰷫 語尾', True, kana_gobi)
+
+    order = ' ORDER BY CHOSEN DESC, LENGTH(WORD), LENGTH(PLAIN_TEXT) ASC, FREQUENCY DESC'
     # chosen words
     sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT LIKE "{}%" AND CHOSEN > 0 {}'.format(to_query, order)
     query(sql, '󰂺 chosen', True)
@@ -350,7 +408,8 @@ if __name__ == '__main__':
 
     if sys.argv[1] == '-query':
         word = sys.argv[2]
-        query_word(word)
+        src = sys.argv[3]
+        query_word(word, src)
     if sys.argv[1] == '-chosen':
         chosen_word = sys.argv[2]
         choose(chosen_word)
@@ -359,7 +418,6 @@ if __name__ == '__main__':
         word = sys.argv[2]
         query_dict(word)
     if sys.argv[1] == '-chosen_d':
-        # logging.debug(sys.argv)
         chosen_word, inserting = sys.argv[2:4]
         choose_dict(chosen_word, inserting.replace(DELIMITATOR, ''))
     if sys.argv[1] == '-create':

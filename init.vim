@@ -356,7 +356,7 @@ fu! RefreshCandidates()
     let cw = InsertingWord()
     if len(cw) < 1 | retu | en
     let query = g:jpIme ? '-query_d' : '-query'
-    let g:completingId = jobstart(SendService(query, '"'.cw.'"'), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
+    let g:completingId = jobstart(SendService(query, '"'.cw.'" "'.expand('%p').'"'), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
 endf
 fu! RefreshService(timer)
     if g:refreshFlag == 1 || empty(g:pathQueue) | retu | en

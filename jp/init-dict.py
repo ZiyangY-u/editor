@@ -92,17 +92,19 @@ def insert_sql(romaji, word, src):
 
 cur.execute('drop table if exists jp_dict;')
 cur.execute('drop table if exists jp_create_tmp;')
+cur.execute('drop table if exists jp_gobi;')
 
 cur.execute('create table jp_dict (plain_text text, word text, chosen int, src text, frequency numeric);')
 cur.execute('create index jp_idx on jp_dict (plain_text);')
 cur.execute('create table jp_create_tmp (id integer primary key autoincrement, plain text, word text);')
+cur.execute('create table jp_gobi (romaji text primary key, kana text);')
 print('table recreated!')
 
 for kana, romaji in ROMAON.items():
     cur.execute(insert_sql(romaji, kana, 'romaji'))
 print('romaji loaded')
 
-def decor_src(word, origin_src):
+def decor_src(word, origin_src, plain_line):
     if word.endswith('る'):
         if len(word) >= 2 and word[-2] in ROMAON.keys():
             return origin_src + '-eru'
@@ -120,6 +122,11 @@ def decor_src(word, origin_src):
         return origin_src + '-nu'
     if word.endswith('む'):
         return origin_src + '-mu'
+    if word.endswith('ぶ'):
+        return origin_src + '-bu'
+
+    if 'adj' in plain_line:
+        return origin_src + '-adj'
 
 print('loading from dict...')
 with open('./edict-utf8.txt') as df:
@@ -132,11 +139,11 @@ with open('./edict-utf8.txt') as df:
                 kanji = re.compile(r'^.*?(?<= )').findall(l)[0].rstrip()
                 kana = re.compile(r'(?=\[).*?(?<=\])').findall(l)[0][1:-1]
                 romaji = romkan.to_roma(kana).replace("'", '').replace('tsu', 'tu')
-                cur.execute(insert_sql(romaji, kanji, decor_src(kanji, 'edict-utf8.txt')))
+                cur.execute(insert_sql(romaji, kanji, decor_src(kanji, 'edict-utf8.txt', l)))
             elif pat2.match(l.rstrip()):
                 kana = re.compile(r'^.*?(?<= )').findall(l)[0].rstrip()
                 romaji = romkan.to_roma(kana.replace('・', '')).replace("'", '').replace('tsu', 'tu')
-                cur.execute(insert_sql(romaji, kana, decor_src(kanji, 'edict-utf8.txt')))
+                cur.execute(insert_sql(romaji, kana, decor_src(kanji, 'edict-utf8.txt', l)))
         except:
             print(kana, romaji)
 
