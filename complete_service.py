@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 
 # completion_buf.db schema:
-# create table words (word text, chosen int, src, recent_chosen_time datetime);
+# create table words (word text, chosen int, src, recent_chosen_time datetime, import_date datetime);
 # create index idx_words on words(word, chosen);
-# create table path_history (path text, hash text);
+# create table path_history (path text, hash text, import_date datetime);
 # create index idx_path_history on path_history(path, hash);
 
 import sys
@@ -143,7 +143,7 @@ def add_word(word:str, path:str):
     cur.execute('select count(1) from words where word = "' + word + '"')
     cnt = cur.fetchall()[0][0]
     if cnt == 0:
-        cur.execute('insert into words values ("' + word + '", 0, "' + path + '", datetime("now"))')
+        cur.execute('insert into words values ("' + word + '", 0, "' + path + '", datetime("now"), datetime("now"))')
     con.commit()
 
 # return True if has history, False if no history
@@ -173,9 +173,10 @@ def add_words(path:str, enc:str):
             cur.execute('select count(1) from words where word = "' + w + '"')
             cnt = cur.fetchall()[0][0]
             if cnt == 0:
-                cur.execute('insert into words values ("' + w + '", 0, "' + path + '", null)')
-        cur.execute('insert into path_history values ("' + path + '", "' + hashcode + '")') # add path to history
+                cur.execute('insert into words values ("' + w + '", 0, "' + path + '", null, datetime("now"))')
+        cur.execute('insert into path_history values ("' + path + '", "' + hashcode + '", datetime("now"))') # add path to history
         con.commit()
+
 
 def query_word(word:str, src:str):
     like_pat = '%' + '%'.join((ch for ch in word)) + '%'
@@ -401,6 +402,12 @@ if __name__ == '__main__':
             print('adding path:', path_enc)
             path, enc = path_enc.split(':')
             add_words(path, enc)
+        # clear not chosen words imported 7 days ago
+        # and they will be recruited next time the file involved
+        cur = con.cursor()
+        cur.execute('delete from words where chosen = 0 and import_date < datetime("now", "-7 day")')
+        cur.execute('delete from path_history where import_date < datetime("now", "-7 day")')
+        con.commit()
     if sys.argv[1] == '-add_word':
         word = sys.argv[2]
         path = sys.argv[3]

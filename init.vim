@@ -364,8 +364,8 @@ fu! RefreshService(timer)
     let [g:refreshFlag, g:pathQueue] = [1, {}] " set running flat
     cal jobstart(cmd, {'on_exit': {jobId, data, event -> execute('let g:refreshFlag = 0|redrawtabline')}, 'detach':v:true})
 endfunction
-au BufReadPost,BufWritePost * if filereadable(bufname(bufnr())) && !has_key(g:serviceBlackList, bufname(bufnr())) 
-            \| let g:pathQueue[expand('%:p').':'.getbufvar(bufnr(), "&enc")] = 1 | en
+au BufReadPost,BufWritePost,BufEnter * if filereadable(bufname(bufnr())) && !has_key(g:serviceBlackList, bufname(bufnr())) 
+            \| let g:pathQueue[expand('%:p').':'.getbufvar(bufnr(), "&fenc")] = 1 | en
 cal timer_start(1500, 'RefreshService', {'repeat': -1})
 au CursorMovedI * sil redraw | cal RefreshCandidates() | cal ClearVirtualTxt()
 " au CursorMovedI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
@@ -381,6 +381,7 @@ ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
 for i in range(2, 9)
     exe printf("im j%d %s<cr>", i, repeat("<tab>", i))
+    exe printf("im J%d %s", i, repeat("<tab>", i))
 endfor
 exe printf("im j%d %s<cr>", 0, repeat("<tab>", 10))
 exe printf("im j<space> %s<cr>", "<tab>")
