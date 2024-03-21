@@ -195,7 +195,7 @@ def query_word(word:str, src:str):
     sql = 'SELECT DISTINCT WORD FROM WORDS WHERE CHOSEN > 0 AND LENGTH(WORD) < 100 AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ORDER BY CHOSEN DESC LIMIT 15'
     query(sql, '󱈅 chosen history', False)
     # unchosen words
-    sql = 'SELECT DISTINCT WORD FROM WORDS WHERE LENGTH(WORD) < 100 AND WORD LIKE "' + like_pat + '" COLLATE NOCASE LIMIT 20'
+    sql = 'SELECT DISTINCT WORD FROM WORDS WHERE LENGTH(WORD) < 100 AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ORDER BY LENGTH(WORD) LIMIT 20'
     query(sql, '󰄮 unchosen', False)
 
 def choose(word:str):
@@ -405,8 +405,8 @@ if __name__ == '__main__':
         # clear not chosen words imported 7 days ago
         # and they will be recruited next time the file involved
         cur = con.cursor()
-        cur.execute('delete from words where chosen = 0 and import_date < datetime("now", "-7 day")')
-        cur.execute('delete from path_history where import_date < datetime("now", "-7 day")')
+        cur.execute('delete from words where chosen = 0 and import_date < datetime("now", "-1 day")')
+        cur.execute('delete from path_history where import_date < datetime("now", "-1 day")')
         con.commit()
     if sys.argv[1] == '-add_word':
         word = sys.argv[2]

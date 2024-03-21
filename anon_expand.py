@@ -81,9 +81,9 @@ def java_variable(word:str):
 
 def sql_expand(word:str):
     if re.compile(r'sel\d*').match(word):
-        return 'select top ' + word[3:] + ' * from $1'
+        return 'SELECT TOP ' + word[3:] + ' * from $1'
     if re.compile(r't\d*').match(word):
-        return 'top ' + word[1:]
+        return 'TOP ' + word[1:]
     return ''
 
 def count_mark(word):

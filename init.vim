@@ -79,8 +79,8 @@ hi Pmenu ctermfg=white ctermbg=239
 hi CursorLine cterm=none ctermbg=DarkGray
 hi LineNrAbove ctermfg=blue
 hi CursorLineNr cterm=bold ctermfg=white
-au InsertLeave * hi CursorLine cterm=NONE ctermbg=DarkGray
-au InsertEnter * cal HlInsertRow()
+au InsertLeave * hi CursorLine cterm=NONE ctermbg=DarkGray | setl cuc
+au InsertEnter * cal HlInsertRow() | setl nocuc
 fu! HlInsertRow()
     hi CursorLine cterm=bold ctermbg=52
     if UltiSnips#CanJumpForwards() || UltiSnips#CanJumpBackwards() | hi CursorLine ctermbg=22
