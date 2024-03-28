@@ -155,7 +155,7 @@ def has_path_history(path, hashcode):
 
 def add_words(path:str, enc:str):
     global words
-    if not isfile(path) or not access(path, R_OK):
+    if not isfile(path) or not access(path, R_OK) or path.endswith('.log'):
         return
     result = subprocess.run(['sha1sum', path], stdout=subprocess.PIPE)
     hashcode = result.stdout.decode('utf8').split(' ')[0]
@@ -399,7 +399,7 @@ if __name__ == '__main__':
     if sys.argv[1] == '-add_path':
         paths = sys.argv[2:]
         for path_enc in set(dict.fromkeys(paths)):
-            print('adding path:', path_enc)
+            # print('adding path:', path_enc)
             path, enc = path_enc.split(':')
             add_words(path, enc)
         # clear not chosen words imported 7 days ago

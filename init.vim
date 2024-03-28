@@ -710,13 +710,13 @@ nn S :cal DeSurroundOp()<cr>
 "   change current letter by its next (for quick fix misspell)
 nn <expr> <BS> col(".") == (col("$")-1) ? 'xP' : 'xhP'
 "   replace content
-nn ,r r
+nn <leader>r r
 nn <silent> r :let b:reg_name = v:register<cr>:set opfunc=ReplaceOp<cr>g@
-nn <silent> <leader>r :set opfunc=ReplaceOpFzf<cr>g@
+nn <silent> ,r :set opfunc=ReplaceOpFzf<cr>g@
 nm <silent> rr Vr
-vn ,r r
+vn <leader>r r
 vn r :<c-u>let b:reg_name = v:register<cr>:cal ReplaceOp(visualmode())<cr>
-vn <leader>r :cal ReplaceOpFzf(visualmode())<cr>
+vn ,r :cal ReplaceOpFzf(visualmode())<cr>
 "   fzf commands
 nn ,c :Commands!<cr>
 "   compensate for Visual Edition
