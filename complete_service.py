@@ -3,6 +3,7 @@
 # completion_buf.db schema:
 # create table words (word text, chosen int, src, recent_chosen_time datetime, import_date datetime);
 # create index idx_words on words(word, chosen);
+# create index idx_words_src on words(src);
 # create table path_history (path text, hash text, import_date datetime);
 # create index idx_path_history on path_history(path, hash);
 
@@ -99,7 +100,7 @@ GOBI = {
         'ku':'く',
         'ru':'る',
         'ta':'た',
-        
+
         # 助詞
         'wo':'を',
         'ha':'は',
@@ -119,13 +120,26 @@ GOBI = {
 con = sqlite3.connect(COMPLETE_BUF_DB_PATH)
 con_dict = sqlite3.connect(DICT_DB_PATH)
 
-def query(sql, indicate, use_dict:bool):
+def query(sql:str, indicate:str, use_dict:bool) -> None:
+    """
+    query from completion db and print result
+    :param sql: sql for query
+    :param indicate: indicator print after every result
+    :param use_dict: use Japanese dictionary if True
+    """
     cur = con.cursor() if not use_dict else con_dict.cursor()
     cur.execute(sql)
     for item in cur.fetchall():
         print(item[0], indicate)
 
-def query_with_decor(sql, indicate, use_dict:bool, tail_decor):
+def query_with_decor(sql:str, indicate:str, use_dict:bool, tail_decor:str) -> None:
+    """
+    query from completion db and add decoration in tail of every result
+    :param sql: sql for query
+    :param indicate: indicator print after every result
+    :param use_dict: use Japanese dictionary if True
+    :param tail_decor: tail decoration
+    """
     cur = con.cursor() if not use_dict else con_dict.cursor()
     cur.execute(sql)
     for item in cur.fetchall():
@@ -134,11 +148,16 @@ def query_with_decor(sql, indicate, use_dict:bool, tail_decor):
 def query_and_inflect(sql, indicate, patch, tail_decor):
     cur = con_dict.cursor()
     cur.execute(sql)
-    logging.debug(sql)
+    # logging.debug(sql)
     for item in cur.fetchall():
         print(item[0][:-1] + patch + tail_decor, indicate)
 
-def add_word(word:str, path:str):
+def add_word(word:str, path:str) -> None:
+    """
+    add word to words table.
+    :param word: word to add
+    :param path: word source path
+    """
     cur = con.cursor()
     cur.execute('select count(1) from words where word = "' + word + '"')
     cnt = cur.fetchall()[0][0]
@@ -146,14 +165,28 @@ def add_word(word:str, path:str):
         cur.execute('insert into words values ("' + word + '", 0, "' + path + '", datetime("now"), datetime("now"))')
     con.commit()
 
-# return True if has history, False if no history
-def has_path_history(path, hashcode):
+def has_path_history(path:str, hashcode:str) -> bool:
+    """
+    return True if has history, False if no history.
+    :param path: target file path
+    :param hashcode: file's hash code
+    """
     cur = con.cursor()
     cur.execute('select count(1) from path_history where path = "' + path + '" and hash = "' + hashcode + '"')
     cnt = cur.fetchall()[0][0]
     return cnt != 0
 
-def add_words(path:str, enc:str):
+def add_words(path:str, enc:str) -> None:
+    """
+    retrieve words from file and add to complition db
+    Parameters
+    ==========
+    path: target file path
+    enc: file encoding
+    Returns
+    ==========
+    None
+    """
     global words
     if not isfile(path) or not access(path, R_OK) or path.endswith('.log'):
         return
@@ -178,11 +211,17 @@ def add_words(path:str, enc:str):
         con.commit()
 
 
-def query_word(word:str, src:str):
+def query_word(word:str, src:str) -> None:
+    """
+    get candidates from word complition
+    :param word: word to query
+    :param src: source path indication
+    """
+    # create like pattern: query -> %q%u%e%r%y%
     like_pat = '%' + '%'.join((ch for ch in word)) + '%'
-    # recent hot words
+    # recent hot words, recent 2 hours chosen
     sql = '''SELECT DISTINCT WORD FROM WORDS WHERE
-            LENGTH(WORD) < 100 AND WORD LIKE "''' + like_pat + '''" COLLATE NOCASE 
+            LENGTH(WORD) < 100 AND WORD LIKE "''' + like_pat + '''" COLLATE NOCASE
             AND RECENT_CHOSEN_TIME IS NOT NULL
             AND RECENT_CHOSEN_TIME >= DATETIME("NOW", "-2 HOUR")
             ORDER BY RECENT_CHOSEN_TIME DESC, CHOSEN DESC LIMIT 5'''
@@ -198,7 +237,11 @@ def query_word(word:str, src:str):
     sql = 'SELECT DISTINCT WORD FROM WORDS WHERE LENGTH(WORD) < 100 AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ORDER BY LENGTH(WORD) LIMIT 20'
     query(sql, '󰄮 unchosen', False)
 
-def choose(word:str):
+def choose(word:str) -> None:
+    """
+    add chosen :param word: count in complition db.
+    if word not exists add it
+    """
     cur = con.cursor()
     cur.execute('select chosen from words where word = "' + word + '" limit 1')
     chosen_cnt = cur.fetchall()
@@ -210,7 +253,10 @@ def choose(word:str):
     else:
         add_word(word, '-')
 
-def prints(marks):
+def prints(marks:list) -> None:
+    """
+    prints marks in a list.
+    """
     for mk in marks:
         print(mk)
 
@@ -238,6 +284,9 @@ DIGIT_MARKS = {
         }
 
 def print_marks(word:str):
+    """
+    print marks from DIGIT_MARKS, indicated by :param word:.
+    """
     for w, mks in DIGIT_MARKS.items():
         if word == w:
             prints(mks)
@@ -252,6 +301,10 @@ def create_gobi(created_romaji, created_kana, romaji):
 
 
 def query_dict(word:str):
+    """
+    query candidates from Japanese dictionary complition.
+    :param word: word to query
+    """
     order = ' ORDER BY CHOSEN DESC, FREQUENCY DESC, LENGTH(WORD), LENGTH(PLAIN_TEXT) ASC'
     to_query = word.replace('nn', 'n').replace('\\', '')
     # non-chosen words
@@ -362,7 +415,7 @@ def add_chosen_cnt(word:str, plain:str):
         cur.execute('insert into jp_dict values("{}", "{}", 1, "create", 0)'.format(plain, word))
         con_dict.commit()
 
-def get_romaji_from_inserting(word, inserting):
+def get_romaji_from_inserting(word:str, inserting:str) -> list:
     tail = re.compile(r'[-a-z]*$').findall(word)[0]
     if tail:
         return [word[:-len(tail)], inserting[:-len(tail)]]
@@ -402,7 +455,7 @@ if __name__ == '__main__':
             # print('adding path:', path_enc)
             path, enc = path_enc.split(':')
             add_words(path, enc)
-        # clear not chosen words imported 7 days ago
+        # clear not chosen words imported 1 days ago
         # and they will be recruited next time the file involved
         cur = con.cursor()
         cur.execute('delete from words where chosen = 0 and import_date < datetime("now", "-1 day")')

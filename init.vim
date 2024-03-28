@@ -364,14 +364,14 @@ fu! RefreshService(timer)
     let [g:refreshFlag, g:pathQueue] = [1, {}] " set running flat
     cal jobstart(cmd, {'on_exit': {jobId, data, event -> execute('let g:refreshFlag = 0|redrawtabline')}, 'detach':v:true})
 endfunction
-au BufReadPost,BufWritePost,BufEnter * if filereadable(bufname(bufnr())) && !has_key(g:serviceBlackList, bufname(bufnr())) 
+au BufReadPost,BufWritePost,BufEnter * if filereadable(bufname(bufnr())) && !has_key(g:serviceBlackList, bufname(bufnr()))
             \| let g:pathQueue[expand('%:p').':'.getbufvar(bufnr(), "&fenc")] = 1 | en
 cal timer_start(1500, 'RefreshService', {'repeat': -1})
 au CursorMovedI * sil redraw | cal RefreshCandidates() | cal ClearVirtualTxt()
 " au CursorMovedI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
 fu! PostComplete()
     if exists("v:completed_item['word']")
-        cal jobstart(SendService((g:jpIme ? '-chosen_d' : '-chosen'), v:completed_item['word'].' '.g:inserted), {'detach':v:true}) 
+        cal jobstart(SendService((g:jpIme ? '-chosen_d' : '-chosen'), v:completed_item['word'].' '.g:inserted), {'detach':v:true})
         let g:exAnonExpand = ''
     en
 endf
@@ -910,7 +910,11 @@ fu! InsertingWord()
     if !g:jpIme
         retu trim(matchstr(frontText, '[-&:[:ident:]]*$'))
     else
-        retu frontText[len(frontText)-1] =~ '\C[a-z]' ? trim(matchstr(frontText, '\\\?[-/[:lower:]]*$')) : trim(matchstr(frontText, '[\x00-\x1F\x21-\x7F]*$'))
+        if frontText[len(frontText)-1] =~ '\C[a-z]'
+            retu trim(matchstr(frontText, '\\\?[-/[:lower:]]*$'))
+        else " do not involve Japanese characters
+            retu trim(matchstr(frontText, '[\x00-\x1F\x21-\x7F]*$'))
+        endif
     en
 endf
 fu! AnonRefresh()
@@ -1152,6 +1156,8 @@ fu! WebSearch(content, url, escapeMap)
         let resultTarget .= get(a:escapeMap, ch, ch)
     endfor
     exe 'sil !msedge.exe '. a:url . resultTarget . ' &' | redraw!
+    let g:LastWebSearchURL = substitute(a:url . resultTarget, ' ', '%20', 'g')
+    doautocmd User PostWebSearch
 endf
 
 let g:WikiTag = ''
