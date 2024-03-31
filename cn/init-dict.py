@@ -3,6 +3,7 @@
 import sqlite3
 import xpinyin
 import pandas as pd
+import re
 from rich.progress import track
 from datetime import datetime
 
@@ -64,3 +65,18 @@ for i, row in track(ch_df.iterrows(), description='import 漢字'):
     cur.execute(insert_character_sql(word, freq, pinyin))
 
 con.commit()
+
+def not_need_word(word:str) -> bool:
+    if len(word) < 2:
+        return True
+    if re.match(r'[0-9a-zA-Z-]+', word):
+        return True
+    return False
+
+with open('./blogs_wordfreq.release_UTF-8.txt') as f:
+    for line in f:
+        word, freq = line.split('	')
+        if not_need_word(word):
+            continue
+        else:
+            pass
