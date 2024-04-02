@@ -506,6 +506,7 @@ def query_cn_dict(word):
 def insert_new_cn_word(word, cursor):
     cnt = cursor.execute('select count(1) from cn_dict where word = "{}"'.format(word)).fetchall()
     if cnt[0][0] != 0:
+        add_cn_chosen_cnt(word)
         return
     from xpinyin import Pinyin
     p = Pinyin()
