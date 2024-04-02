@@ -29,9 +29,6 @@ def insert_character_sql(word, freq, pinyin):
     for pin in pinyin_list:
         pin_plain = ''.join([c for c in pin if not c.isdigit()])
         sqls.append(f'insert into pinyin_plain values ("{word}", "{pin_plain}");')
-        if 'ng' in pin_plain:
-            pin_without_hby = pin_plain.replace('ng', 'n') # 去掉后鼻音
-            sqls.append(f'insert into pinyin_plain values ("{word}", "{pin_without_hby}");')
         if 'u' in pin_plain:
             pin_replace_v = pin_plain.replace('u', 'v')
             sqls.append(f'insert into pinyin_plain values ("{word}", "{pin_replace_v}");')
@@ -50,9 +47,6 @@ def insert_word_sql(word, freq, src):
     for pin in pin_plains:
         pin_without_half = pin.replace('-', '')
         sqls.append(f'insert into pinyin_plain values ("{word}", "{pin_without_half}");')
-        if 'ng' in pin_without_half:
-            pin_without_hby = pin_without_half.replace('ng', 'n') # 去掉后鼻音
-            sqls.append(f'insert into pinyin_plain values ("{word}", "{pin_without_hby}");')
         if 'u' in pin_without_half:
             pin_replace_v = pin_without_half.replace('u', 'v')
             sqls.append(f'insert into pinyin_plain values ("{word}", "{pin_replace_v}");')

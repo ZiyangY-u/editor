@@ -483,16 +483,25 @@ def query_cn_dict(word):
 
     cur = con_cn_dict.cursor()
     # if '/' given then use it as delimiter
+    candidiates = []
+    sql_pinyin_create = '''
+    SELECT DISTINCT D.WORD, P.PINYIN FROM CN_DICT D JOIN PINYIN_PLAIN P ON D.WORD = P.WORD
+    WHERE P.PINYIN IN ({}) ORDER BY D.CHOSEN DESC, D.FREQUENCY DESC, LENGTH(D.WORD) ASC
+    '''
     for i in reversed(range(1, len(to_query))):
         if to_query[i] not in 'qwrtypsdfghjklzxcvbnm': continue
         if re.compile(r'.*' + DELIMITATOR + '.*').match(to_query):
-            l, r = to_query.split(DELIMITATOR, maxsplit=1)
+            l, _ = to_query.split(DELIMITATOR, maxsplit=1)
         else:
-            l, r = to_query[:i], to_query[i:]
-        rst = cur.execute(query_cn_wrap(sql_pinyin, sql_init, l) + ' LIMIT 15').fetchall()
-        if rst:
-            for item in rst:
-                print(item[0] + r, '󰎔')
+            l, _ = to_query[:i], to_query[i:]
+        candidiates.append(l)
+    rst = cur.execute(sql_pinyin_create.format(','.join([f'"{c}"' for c in candidiates]))).fetchall()
+    for item in rst:
+        word, pin = (item[0], item[1])
+        r = to_query[len(pin):]
+        if r.startswith(DELIMITATOR): # remove start delimitator
+            r = r[1:]
+        print(item[0] + r, '󰎔')
 
 def insert_new_cn_word(word, cursor):
     cnt = cursor.execute('select count(1) from cn_dict where word = "{}"'.format(word)).fetchall()
