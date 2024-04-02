@@ -86,6 +86,7 @@ fu! HlInsertRow()
     if UltiSnips#CanJumpForwards() || UltiSnips#CanJumpBackwards() | hi CursorLine ctermbg=22
     elseif v:insertmode == 'r' | hi CursorLine ctermbg=54
     elseif g:jpIme | hi CursorLine ctermbg=18
+    elseif g:cnIme | hi CursorLine ctermbg=16
     en
 endf
 
@@ -318,7 +319,7 @@ set dict+=/usr/share/dict/esp
 set cot=menu,menuone,noselect ssop+=globals
 
 "   auto completion
-let [g:completingId, g:jpIme, g:inserted, g:refreshFlag, g:pathQueue, g:omniExclude, g:serviceBlackList] = [0, 0, '', 0, {}, {}, {}]
+let [g:completingId, g:jpIme, g:cnIme, g:inserted, g:refreshFlag, g:pathQueue, g:omniExclude, g:serviceBlackList] = [0, 0, 0, '', 0, {}, {}, {}]
 fu! SendService(arg1, arg2)
     let cmd = ['~/.config/nvim/complete_service.py', a:arg1, a:arg2]
     retu join(cmd, ' ')
@@ -339,7 +340,7 @@ endf
 fu! s:GotCandidates(jobId, data, event)
     if a:jobId == g:completingId && mode() == 'i'
         let [candidates, com_items, g:inserted] = [filter(a:data, {_,item -> item != ''}), [], InsertingWord()]
-        if &omnifunc != '' && !g:jpIme && !has_key(g:omniExclude, &ft) " blocking request
+        if &omnifunc != '' && !g:jpIme && !g:cnIme && !has_key(g:omniExclude, &ft) " blocking request
             let luacmd = "vim.lsp.buf_request_sync(".bufnr().",'textDocument/completion', vim.lsp.util.make_position_params(), 500)"
             try
                 let _clientId = luaeval("next(".luacmd.")")
@@ -355,7 +356,7 @@ endf
 fu! RefreshCandidates()
     let cw = InsertingWord()
     if len(cw) < 1 | retu | en
-    let query = g:jpIme ? '-query_d' : '-query'
+    let query = g:jpIme ? '-query_jp' : (g:cnIme ? '-query_cn' : '-query')
     let g:completingId = jobstart(SendService(query, '"'.cw.'" "'.expand('%p').'"'), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
 endf
 fu! RefreshService(timer)
@@ -371,7 +372,7 @@ au CursorMovedI * sil redraw | cal RefreshCandidates() | cal ClearVirtualTxt()
 " au CursorMovedI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
 fu! PostComplete()
     if exists("v:completed_item['word']")
-        cal jobstart(SendService((g:jpIme ? '-chosen_d' : '-chosen'), v:completed_item['word'].' '.g:inserted), {'detach':v:true})
+        cal jobstart(SendService((g:jpIme ? '-chosen_jp' : (g:cnIme ? '-chosen_cn' : '-chosen')), v:completed_item['word'].' '.g:inserted), {'detach':v:true})
         let g:exAnonExpand = ''
     en
 endf
@@ -558,8 +559,8 @@ xn <expr> <Down> { 'V':repeat('j', winheight(0)/3) }[mode()]
 xn <silent>x :<C-U>call cursor(line("'}")-1,col("'>"))<CR>`<1v``
 " Quick back to normal mode
 let g:PreferQuitIme = 0
-ino <silent> jk <esc>:if g:PreferQuitIme==1 \| let g:jpIme = 0 \|en<cr>
-ino <silent> jK <esc>:if g:PreferQuitIme==0 \| let g:jpIme = 0 \|en<cr>
+ino <silent> jk <esc>:if g:PreferQuitIme==1 \| let [g:jpIme, g:cnIme] = [0, 0] \|en<cr>
+ino <silent> jK <esc>:if g:PreferQuitIme==0 \| let [g:jpIme, g:cnIme] = [0, 0] \|en<cr>
 cno <expr> jk getcmdtype() == ':' ? '<c-u><esc>' : 'jk'
 tno jk <c-\><c-n>
 xn JK <esc>
@@ -673,8 +674,7 @@ fu! ActTal()
     let tal .= "%{gutentags#statusline() == '' ? '' : ' 󱈢 '}"
     if g:refreshFlag == 1 | let tal .= "%#CSInfo#%{'[󱦟'.(empty(g:pathQueue) ? ']' : ' '.len(g:pathQueue).']')}" | en
     let tal .= "%#Git#%{FugitiveStatusline()}"
-    let tal .= "%#Trans#%{g:TransMode}"
-    let tal .= "%#Trans#%{g:jpIme ? '  󰗊 ' : ''}"
+    let tal .= "%#Trans#%{g:TransMode}%{g:jpIme||g:cnIme ? '  󰗊 ' : ''}"
     let tal .= "%#Obss#%{ObsessionStatus()}"
     retu tal
 endfu
@@ -907,11 +907,11 @@ fu! s:GetExpanded(jobId, data, event) abort
 endf
 fu! InsertingWord()
     let frontText = getline('.')[:col('.')-2]
-    if !g:jpIme
+    if !g:jpIme && !g:cnIme
         retu trim(matchstr(frontText, '[-&:[:ident:]]*$'))
     else
         if frontText[len(frontText)-1] =~ '\C[a-z]'
-            retu trim(matchstr(frontText, '\\\?[-/[:lower:]]*$'))
+            retu trim(matchstr(frontText, '\.\?[-/[:lower:]]*$'))
         else " do not involve Japanese characters
             retu trim(matchstr(frontText, '[\x00-\x1F\x21-\x7F]*$'))
         endif
@@ -1230,7 +1230,8 @@ nn <silent> ,<tab>i :cal TranslitMode()<CR>
 nn <silent> ,<tab>o o<esc>:cal TranslitMode()<CR>
 nn <silent> ,<tab>l :let g:TransMode='Latin'<CR>
 nn <silent> ,<tab>g :let g:TransMode='Greek'<CR>
-ino <silent> jj <c-\><c-o>:let g:jpIme = (g:jpIme == 1 ? 0 : 1)\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
+ino <silent> jj <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:jpIme == 1 ? [0,0] : [1,0])\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
+ino <silent> jc <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:cnIme == 1 ? [0,0] : [0,1])\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
 im <silent><expr> <cr> (g:jpIme && complete_info().selected == -1) ? "<c-l>" : "<cr>"
 " -------------------- Calc Misc -----------------------
 fu! NumTrans(fmt, num)
