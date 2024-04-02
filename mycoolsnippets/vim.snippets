@@ -1,0 +1,21 @@
+snippet hl "highlight"
+highlight ${VISUAL}$1 cterm= ctermfg= ctermbg=
+endsnippet
+
+snippet fu "viml function" w
+fu ${1}()
+endf
+endsnippet
+
+snippet if "if" w
+if $1
+en
+endsnippet
+
+snippet g "Description" w
+get`!v Cap(getreg('"'))`
+endsnippet
+
+snippet test "Description" w
+pos $1 pos $2 pos $3
+endsnippet
