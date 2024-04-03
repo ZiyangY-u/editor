@@ -512,7 +512,7 @@ def query_cn_dict(word):
 def insert_new_cn_word(word, cursor):
     cnt = cursor.execute('select count(1) from cn_dict where word = "{}"'.format(word)).fetchall()
     if cnt[0][0] != 0:
-        add_cn_chosen_cnt(word)
+        add_cn_chosen_cnt(word, cursor)
         return
     from xpinyin import Pinyin
     p = Pinyin()
@@ -556,20 +556,16 @@ def create_cn():
     cur.execute('delete from cn_create_tmp')
     con_cn_dict.commit()
 
-def add_cn_chosen_cnt(word:str):
+def add_cn_chosen_cnt(word:str, cursor):
     # add all words that match
-    con_cn_dict = sqlite3.connect(CN_DICT_DB_PATH)
-    cur = con_cn_dict.cursor()
-    cur.execute('select chosen from CN_DICT where word = "{}" limit 1'.format(word))
-    chosen_cnt = cur.fetchall()
+    cursor.execute('select chosen from CN_DICT where word = "{}" limit 1'.format(word))
+    chosen_cnt = cursor.fetchall()
     if len(chosen_cnt) == 1:
         cnt = chosen_cnt[0][0] + 1
         sql = 'update cn_dict set chosen = {} where word = "{}"'.format(cnt, word)
-        cur.execute(sql)
+        cursor.execute(sql)
     elif len(chosen_cnt) == 0: # create new one
-        insert_new_cn_word(word, cur)
-    con_cn_dict.commit()
-
+        insert_new_cn_word(word, cursor)
 
 if __name__ == '__main__':
     if sys.argv[1] == '-h':

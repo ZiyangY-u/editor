@@ -1,3 +1,13 @@
+snippet s "The snippet snippet" w
+snippet $1 "$2" w
+$0
+`echo endsnippet`
+endsnippet
+
+snippet r "vim register" w
+\`!v getreg('"')\`
+endsnippet
+
 snippet sync
 sync `date +%Y/%m/%d`.
 endsnippet

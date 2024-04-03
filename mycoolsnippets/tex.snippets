@@ -3,16 +3,121 @@ snippet doc "document" w
 \\usepackage[utf8]{inputenc}
 \\usepackage{tikz}
 \\usepackage{tkz-euclide}
-\\pagenumbering{gobble}
+\\usepackage{amssymb}
+\\usepackage{amsmath}
+\\usepackage{graphicx} % LaTeX package to import graphics
+\\usepackage[export]{adjustbox} % positioning figure and img
+\\graphicspath{{./}} % configuring the graphicx package
+\\pagenumbering{gobble} % not showing page number
+\\title{document at `date +%Y/%m/%d`}
+\\author{余子杨}
+\\date{`date +%Y/%m/%d`}
 
 \\begin{document}
+\\maketitle
 \\end{document}
 endsnippet
 
 snippet begin "begin end" 
 \\begin{$1}
+$0
 \\end{$1}
 endsnippet
+
+# text appearance
+snippet bf "bold text" w
+\\textbf{${VISUAL}$0}
+endsnippet
+snippet it "italic text" w
+\\textit{${VISUAL}$0}
+endsnippet
+snippet ul "underline" w
+\\underline{${VISUAL}$0}
+endsnippet
+snippet emph "emphasize" w
+\\emph{${VISUAL}$0}
+endsnippet
+
+# images
+snippet img "include image" w
+\\includegraphics[width=0.5\textwidth]{./$1}
+endsnippet
+snippet fig "figure" w
+\\begin{figure}[h]
+$0
+\\end{figure}
+endsnippet
+
+# list
+snippet ol "ordered list" w
+\\begin{enumerate}
+    \\item $0
+\\end{enumerate}
+endsnippet
+snippet uol "unordered list" w
+\\begin{itemize}
+    \\item $0
+\\end{itemize}
+endsnippet
+
+# math
+snippet ff "one line formula" w
+\\[ $0 \\]
+endsnippet
+snippet f "inline formula" w
+\$ $0 \$
+endsnippet
+# math - operator
+snippet * "乘以" w
+\\times
+endsnippet
+snippet / "除以" w
+\\div
+endsnippet
+snippet pm "正负" w
+\\pm
+endsnippet
+snippet sq "根号下" w
+\\sqrt{$0}
+endsnippet
+snippet pms "正负根号下" w
+\\pm\\sqrt{$0}
+endsnippet
+snippet ge "大于或等于" w
+\\geq
+endsnippet
+snippet le "小于或等于" w
+\\leq
+endsnippet
+snippet ne "不等于" w
+\\neq
+endsnippet
+snippet near "约等于" w
+\\approx
+endsnippet
+# math geometry
+snippet tria "三角形" w
+\\bigtriangleup
+endsnippet
+snippet pp "垂直 perpendicular" w
+\\bot
+endsnippet
+# math logic
+snippet bc "因为" w
+\\because 
+endsnippet
+snippet so "所以" w
+\\therefore 
+endsnippet
+
+# newline and newpage
+snippet nl "newline" w
+\\newline
+endsnippet
+snippet np "newpage" w
+\\newpage
+endsnippet
+
 
 snippet equation "equation" w
 \begin{equation}

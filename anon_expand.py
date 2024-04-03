@@ -103,6 +103,15 @@ def text_expand(word:str):
         return rst_word
     return ''
 
+def latex_expand(word:str):
+    if re.compile(r'\dsq').match(word): # sqrt n
+        return '\\sqrt[' + word[0] + ']{$0}'
+    if re.compile(r'tria\w\w\w').match(word): # triangle
+        return '\\bigtriangleup {}'.format(word[4:].upper())
+    if re.compile(r'\w\wpp\w\w').match(word): # perpendicular
+        return '{} \\bot {}'.format(word[:2].upper(), word[4:].upper())
+    return ''
+
 def css_expand(word:str):
     if re.compile(r'^[mp][trlb]\d*$').match(word): return margin_padding(word[0], word[1], word[2:])
     return ''
@@ -136,6 +145,8 @@ if __name__ == '__main__':
         expand = vim_expand(word)
     if ft == 'java':
         expand = java_expand(word)
+    if ft == 'tex':
+        expand = latex_expand(word)
     if ft == 'sql' or ft == 'xml':
         expand = sql_expand(word)
     if ft == 'text' or ft == 'ark':
