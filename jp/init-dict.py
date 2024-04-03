@@ -96,6 +96,7 @@ cur.execute('drop table if exists jp_gobi;')
 
 cur.execute('create table jp_dict (plain_text text, word text, chosen int, src text, frequency numeric);')
 cur.execute('create index jp_idx on jp_dict (plain_text);')
+cur.execute('create index jp_word_idx on jp_dict (word);')
 cur.execute('create table jp_create_tmp (id integer primary key autoincrement, plain text, word text);')
 cur.execute('create table jp_gobi (romaji text primary key, kana text);')
 print('table recreated!')

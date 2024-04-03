@@ -429,27 +429,33 @@ def get_romaji_from_inserting(word:str, inserting:str) -> list:
         return [word[:-len(tail)], inserting[:-len(tail)]]
     return [word, inserting]
 
+def get_romaji_from_word(word:str) -> str:
+    con_jp_dict = sqlite3.connect(JP_DICT_DB_PATH)
+    cur = con_jp_dict.cursor()
+    cur.execute(f'select plain_text from jp_dict where word = "{word}" limit 1')
+    rst = cur.fetchall()
+    return rst[0][0]
+
 
 def create_jp():
     con_jp_dict = sqlite3.connect(JP_DICT_DB_PATH)
     cur = con_jp_dict.cursor()
-    cur.execute('select word, plain from jp_create_tmp order by id asc')
-    history = [(item[0], item[1]) for item in cur.fetchall()]
-    last_item_word, last_item_plain = history[-1]
-    if re.compile(r'^[\u0080-\uFFFF]*$').match(last_item_word) and len(history) == 1: # just increase chosen cnt
-        add_jp_chosen_cnt(last_item_word, last_item_plain)
-    elif re.compile(r'^[\u0080-\uFFFF]*$').match(last_item_word) and len(history) > 1: # create new expression
-        word = ''
-        _, first_word_romaji = history[0]
-        for it in history:
-            _word, _plain = it
-            _wodr_to_add, _plain_to_add = get_romaji_from_inserting(_word, _plain)
-            add_jp_chosen_cnt(_wodr_to_add, _plain_to_add) # add cnt for every chosen word in history
-            word += re.compile(r'^[\u0080-\uFFFF]*').findall(_word)[0]
-        cnt = cur.execute('select count(1) from jp_dict where plain_text = "{}" and word = "{}"'.format(first_word_romaji, word)).fetchall()
-        if cnt[0][0] == 0:
-            cur.execute('insert into jp_dict values("{}", "{}", 1, "create", 0)'.format(first_word_romaji, word))
-            con_jp_dict.commit()
+    cur.execute('select word from jp_create_tmp order by id asc')
+    history = [item[0] for item in cur.fetchall()]
+    # import all sublist of history
+    n = len(history)
+    sublists = []
+    for start in range(n):
+        for end in range(start + 1, n + 1):
+            sublists.append(history[start:end])
+    for sub in sublists:
+        word, plain = '', ''
+        for it in sub:
+            _word = ''.join([c for c in it if not c.isascii()]) 
+            word += _word
+            plain += get_romaji_from_word(_word)
+            add_jp_chosen_cnt(word, plain)
+
     # clear history
     cur.execute('delete from jp_create_tmp')
     con_jp_dict.commit()
