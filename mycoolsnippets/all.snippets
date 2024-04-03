@@ -2,6 +2,13 @@ snippet sync
 sync `date +%Y/%m/%d`.
 endsnippet
 
+snippet time "date time" w
+`date +%Y.%m.%d-%H:%M:%S`
+endsnippet
+snippet date "date" w
+`date +%Y.%m.%d`
+endsnippet
+
 snippet , "jp-ime" "re.match('1', vim.eval('g:jpIme'))" ie
 、
 endsnippet
@@ -29,9 +36,12 @@ endsnippet
 snippet ] "jp-ime" "re.match('1', vim.eval('g:jpIme'))" ie
 」
 endsnippet
+snippet ( "jp-ime" "re.match('1', vim.eval('g:jpIme'))" ie
+（
+endsnippet
+snippet ) "jp-ime" "re.match('1', vim.eval('g:jpIme'))" ie
+）
+endsnippet
 snippet m1 "jp-ime" "re.match('1', vim.eval('g:jpIme'))" ie
 ①
-endsnippet
-snippet 1 "jp-ime" "re.match('1', vim.eval('g:jpIme'))" ie
-１
 endsnippet

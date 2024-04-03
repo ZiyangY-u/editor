@@ -1,0 +1,51 @@
+snippet if "if"
+<if test="$1">
+${VISUAL}
+</if>
+endsnippet
+
+snippet comment "comment" w
+<!-- ${VISUAL} -->
+endsnippet
+
+snippet t "simple tag"
+<${1:t}>
+${VISUAL}
+</${1:t}>
+endsnippet
+
+snippet select "mybatis select"
+<select id="$1" parameterType="" resultType="">
+${VISUAL}
+</select>
+endsnippet
+
+snippet choose "choose when otherwise"
+<choose>
+<when test="$1">
+</when>
+<otherwise>
+</otherwise>
+</choose>
+endsnippet
+
+snippet sql "sql"
+<sql id="$1">
+${VISUAL}
+</sql>
+endsnippet
+
+snippet include "include"
+<include refid="$1"/>
+endsnippet
+
+snippet cp "Const" w
+${@com.core.backend.common.Const@`!v getreg('"')`}
+endsnippet
+snippet ccp "CommonConst" w
+${@com.core.backend.common.CommonConst@`!v getreg('"')`}
+endsnippet
+
+snippet in "isnull" w
+ISNULL(`!v getreg('"')`, '') AS `!v substitute(getreg('"'), '^\w*\.', '', '')`
+endsnippet

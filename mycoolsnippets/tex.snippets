@@ -3,9 +3,9 @@ snippet doc "document" w
 \\usepackage[utf8]{inputenc}
 \\usepackage{tikz}
 \\usepackage{tkz-euclide}
+\\pagenumbering{gobble}
 
 \\begin{document}
-$1
 \\end{document}
 endsnippet
 
@@ -115,7 +115,7 @@ endsnippet
 snippet len "get length" w
 % get length of line $1-$2.
 \\tkzCalcLength($1,$2)
-\\tkzGetLength{l$1$2} % get length end
+\\tkzGetLength(r$1$2) % get length end
 endsnippet
 
 snippet mkln "mark line" w
@@ -128,40 +128,40 @@ snippet mkr "mark right angle" w
 \\tkzMarkRightAngle[size=.1]($1)
 endsnippet
 
-snippet k "above" iw
+snippet k "Richtung" w
 above
 endsnippet
-snippet j "below" w
+snippet j "Richtung" w
 below
 endsnippet
-snippet h "left" w
+snippet h "Richtung" w
 left
 endsnippet
-snippet l "right" w
+snippet l "Richtung" w
 right
 endsnippet
-snippet kh "above left" w
+snippet kh "" w
 above left
 endsnippet
-snippet hk "above left" w
+snippet hk "" w
 above left
 endsnippet
-snippet kl "above right" w
+snippet kl "" w
 above right
 endsnippet
-snippet lk "above right" w
+snippet lk "" w
 above right
 endsnippet
-snippet jh "below left" w
+snippet jh "" w
 below left
 endsnippet
-snippet hj "below left" w
+snippet hj "" w
 below left
 endsnippet
-snippet jl "below right" w
+snippet jl "" w
 below right
 endsnippet
-snippet lj "below right" w
+snippet lj "" w
 below right
 endsnippet
 

@@ -1,0 +1,165 @@
+snippet alt "description"
+ALTER TABLE HIST_D_HATSUREI ALTER COLUMN
+endsnippet
+
+snippet add "description"
+ALTER TABLE HIST_D_HATSUREI ADD COLUMN
+endsnippet
+
+snippet drop "description"
+ALTER TABLE HIST_D_HATSUREI DROP COLUMN
+endsnippet
+
+snippet recovery "description" w
+USE [$1]
+
+ -- 1、バックアップテーブル作成全件コピーする
+SELECT * INTO WKDB.DBO.`!v getreg('"')`_BAK_`date +%Y%m%d`_1 FROM $1.DBO.`!v getreg('"')`
+SELECT * INTO WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 FROM $1.DBO.`!v getreg('"')`
+ALTER TABLE WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 ADD R_DATE smalldatetime, U_FLAG smallint
+SELECT '`!v getreg('"')`', COUNT(1) FROM $1.DBO.`!v getreg('"')` union all
+SELECT '`!v getreg('"')`_BAK_`date +%Y%m%d`_1', COUNT(1) FROM WKDB.DBO.`!v getreg('"')`_BAK_`date +%Y%m%d`_1 union all
+SELECT '`!v getreg('"')`_WK_`date +%Y%m%d`_1', COUNT(1) FROM WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1
+ -- 問題があるデータを問い合わせ
+ -- ２、データリカバリー（ワークテーブル）
+ -- ワークテーブル更新前チェック
+SELECT
+...
+FROM WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 A
+...
+ -- ワークテーブル更新
+UPDATE A
+SET ...
+, A.U_FLAG = 1
+, A.R_DATE = getdate()
+, A.UPDATE_USER_ID = 9999
+, A.UPDATE_USER = 'システム管理者'
+, A.UPDATE_DATE_TIME = getdate()
+FROM WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 A
+...
+ -- ３、データリカバリー（本番テーブル）
+ -- 本番テーブル更新前チェック
+SELECT
+...
+, A.UPDATE_USER_ID
+, A.UPDATE_USER
+, A.UPDATE_DATE_TIME
+FROM $1.DBO.`!v getreg('"')` B,
+    WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 A
+WHERE A.U_FLAG = 1
+AND
+...
+ -- 本番テーブル更新
+UPDATE B
+SET
+...
+, B.UPDATE_USER_ID = A.UPDATE_USER_ID
+, B.UPDATE_USER = A.UPDATE_USER
+, B.UPDATE_DATE_TIME = A.UPDATE_DATE_TIME
+FROM $1.DBO.`!v getreg('"')` B,
+    WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 A
+WHERE A.U_FLAG = 1
+AND
+...
+endsnippet
+
+snippet chargeall "請求書まとめ" w
+SELECT * FROM TUR_CHARGE CRG WHERE CRG.CHARGE_NO IN ('$1')
+SELECT * FROM TUR_CHARGE_PRINT_HEAD HED
+JOIN TUR_CHARGE_PRINT_DETAIL DTL ON HED.CHARGE_NO = DTL.CHARGE_NO AND HED.ORIGINAL_KBN = DTL.ORIGINAL_KBN
+WHERE HED.CHARGE_NO IN ('$1')
+SELECT * FROM CHARGE_CSV CSV WHERE CSV.CHARGE_NO IN ('$1')
+endsnippet
+
+snippet cnt "description" w
+SELECT COUNT(1) FROM $1
+endsnippet
+
+snippet begin "begin end"
+BEGIN
+${VISUAL}
+END
+endsnippet
+
+snippet sel "SELECT" w
+SELECT * FROM 
+endsnippet
+
+snippet like "description" w
+LIKE '%${1}%'
+endsnippet
+
+snippet mci "MUR_CODE_ITEM" w
+MUR_CODE_ITEM
+endsnippet
+snippet umci "update MUR_CODE_ITEM" w
+UPDATE [DBO].[MUR_CODE_ITEM] SET ${1} = ${2} WHERE DIVISION = ${3} AND SEQ = ${4}
+endsnippet
+snippet smci "select MUR_CODE_ITEM" w
+SELECT * FROM [DBO].[MUR_CODE_ITEM] WHERE DIVISION IN (${1})
+endsnippet
+snippet apitoken "楽々api token" w
+UPDATE [DBO].[MUR_CODE_ITEM] SET NAME = '${1}' WHERE DIVISION = 70035 AND SEQ = 3
+endsnippet
+snippet us3 "S3テーブル" w
+ -- update MUR_S3_FILEPATH set parent_folder = 'c:\\webserver' where file_kbn_id = 48
+ -- update MUR_S3_FILEPATH set parent_folder = 'd:\\webserver' where file_kbn_id = 48
+endsnippet
+
+snippet mc "description" w
+MUR_COMPANY MC
+endsnippet
+
+snippet gd "getdate" w
+CONVERT(VARCHAR, GETDATE(), 121)
+endsnippet
+
+snippet openquery "openquery" w
+openquery([XONE_MT_READONLY], 'select * from ${1}')
+endsnippet
+
+snippet jo "JOIN" w
+JOIN $1 ON $2
+endsnippet
+snippet ljo "LEFT JOIN" w
+LEFT JOIN $1 ON $2
+endsnippet
+
+snippet od "ORDER BY ASC" w
+order by
+endsnippet
+snippet odd "ORDER BY DESC" w
+order by ${1} desc
+endsnippet
+
+post_expand "from UltiSnips import vim_helper; vim_helper.command('echom 1')"
+snippet gb "GROUP BY" w
+group by
+endsnippet
+
+snippet cmpxone "compare xone table and ag table" w
+select '`!v getreg('"')`' table_name, (select count(1) from `!v getreg('"')`) ag_cnt, (select count(1) from openquery([XONE_MT_READONLY], 'select * from extif_agcore.`!v getreg('"')`')) as xone_cnt
+endsnippet
+
+post_expand "snip.buffer[snip.snippet_end[0]+1:snip.snippet_end[0]+1] = ['']"
+snippet xonecontrol "xonecontrol" w
+ -- DELETE OPENQUERY ([XONE_MT_WRITEONLY], 'select proc_message from extif_agcore.m_sas_x1_proc_control where proc_kind=0')   
+ -- Insert OPENQUERY ([XONE_MT_WRITEONLY], 'select proc_kind ,proc_status ,proc_datetime ,proc_message from extif_agcore.m_sas_x1_proc_control ') select 0, 1, '2023/11/07 9:00:01', ''
+
+UPDATE OPENQUERY ([XONE_MT_WRITEONLY], 'select proc_status from extif_agcore.m_sas_x1_proc_control where proc_kind=1')
+SET proc_status = 0 -- ag
+UPDATE OPENQUERY ([XONE_MT_WRITEONLY], 'select proc_status from extif_agcore.m_sas_x1_proc_control where proc_kind=0')
+SET proc_status = 1 -- xone
+UPDATE OPENQUERY ([XONE_MT_WRITEONLY], 'select proc_datetime from extif_agcore.m_sas_x1_proc_control where proc_kind=1')
+SET proc_datetime = '2023/11/07 10:00:03' -- ag
+UPDATE OPENQUERY ([XONE_MT_WRITEONLY], 'select proc_datetime from extif_agcore.m_sas_x1_proc_control where proc_kind=0')
+SET proc_datetime = '2023/11/07 11:00:01' -- xone
+UPDATE OPENQUERY ([XONE_MT_WRITEONLY], 'select proc_message from extif_agcore.m_sas_x1_proc_control where proc_kind=1')
+SET proc_message = '' -- ag
+UPDATE OPENQUERY ([XONE_MT_WRITEONLY], 'select proc_message from extif_agcore.m_sas_x1_proc_control where proc_kind=0')
+SET proc_message = '' -- xone
+
+SELECT proc_kind, case proc_kind when 0 then 'Xone' when 1 then 'Ag' else '' end kind_name,
+proc_status, case proc_status when 0 then '実行中' when 1 then '正常終了' when 9 then '異常終了' else '' end status_name,
+proc_datetime, proc_message FROM OPENQUERY([XONE_MT_WRITEONLY], 'SELECT * from extif_agcore.M_SAS_X1_PROC_CONTROL where proc_kind in (0, 1)')
+endsnippet

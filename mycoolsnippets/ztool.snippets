@@ -1,0 +1,38 @@
+snippet test "description" w
+`!p snip.basename`
+endsnippet
+
+snippet wow
+${1:Text}`!p snip.rv = (75-2*len(t[1]))*' '+t[1].upper()`
+endsnippet
+
+snippet cp "description" w
+ `!v getreg('"')`
+endsnippet
+
+snippet mui "description" w
+INSERT INTO MUR_CODE_ITEM(DIVISION,SEQ,SORT_SEQ,NAME,NAME2,NAME3,OTHER_CHAR,OTHER_DECIMAL,REMARKS_OTHER_CHAR,REMARKS_OTHER_DECIMAL,DISPLAY_FLAG,LINK1_DIVISION,LINK1_SEQ)
+endsnippet
+
+snippet t "tab indente" w
+	`!v getreg('"')`
+endsnippet
+
+# snippet nb "excel not blank" w
+# NOT(ISBLANK(`!v getreg('"')`))
+# endsnippet
+# snippet l "excel len 0" w
+# len(`!v getreg('"')`)=0
+# endsnippet
+# snippet cnt "excel countif" w
+# `!v getreg('"')`
+# =countif(P:P, "`!v getreg('"')`")
+# endsnippet
+
+snippet c "concat" w
+CONCAT("'",$1,"'")
+endsnippet
+
+snippet nn "null" w
+if(lower(text(`!v getreg('"')`))="null", NULL, `!v getreg('"')`)
+endsnippet

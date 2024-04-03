@@ -1,0 +1,108 @@
+snippet logp "console log"
+console.log('`!v getreg('"')` =>', `!v getreg('"')`)
+endsnippet
+snippet log "console log"
+console.log($1)
+endsnippet
+
+snippet logc "log on change by useEffect" w
+useEffect(() => { console.log('`!v getreg('"')` =>', `!v getreg('"')`) }, [`!v getreg('"')`])
+endsnippet
+
+snippet box "react box tag"
+<Box>${1}
+${VISUAL}
+</Box>
+endsnippet
+
+snippet t "simple tag"
+<${1:Box}>
+${VISUAL}
+</$1>
+endsnippet
+
+snippet if "if clause"
+if ($1)
+endsnippet
+
+snippet el "else clause" w
+else {$1
+}
+endsnippet
+
+snippet fore "description" w
+forEach(ele => {$1
+})
+endsnippet
+
+snippet nn "not null" w
+`!v getreg('"')` ? `!v getreg('"')` : ''
+endsnippet
+snippet NN "not null" w
+${VISUAL} ? ${VISUAL} : ''
+endsnippet
+
+snippet iff "if else if clause"
+if (${1:===}) {
+} else if () {
+} else {
+}
+endsnippet
+
+snippet lbl "react label tag"
+<label>$1${VISUAL}</label>
+endsnippet
+
+snippet br "HTML br tag"
+<br />
+endsnippet
+
+snippet onch "onChange"
+onChange={e => {$1
+}}
+endsnippet
+snippet oncl "onClick" w
+onClick={e => {$1
+}}
+endsnippet
+
+snippet fu "const function"
+const ${1:fun} = () => {
+}
+endsnippet
+
+snippet req "javascript request"
+`!v getreg('"')`$1({})
+	.then(res => {
+		console.log('res =>', res.data)
+	})
+	.catch(e => { console.error(e) })
+endsnippet
+
+snippet useeff "react useEffect"
+useEffect(() => {
+${VISUAL}
+}, [$1])
+endsnippet
+
+snippet st "useState"
+const [${1:state}, set${1/\w/\u$0/}] = useState(false)
+endsnippet
+
+# below for react
+
+snippet arr "arrow function" iw
+() => {$1}
+endsnippet
+
+snippet sx "description"
+sx={{ ${VISUAL}$1 }}
+endsnippet
+
+snippet style "description"
+style={{ $1 }}
+endsnippet
+
+snippet tos "tostring" w
+toString()
+endsnippet

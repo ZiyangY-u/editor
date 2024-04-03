@@ -1,21 +1,15 @@
-snippet hl "highlight"
-highlight ${VISUAL}$1 cterm= ctermfg= ctermbg=
+snippet h "highlight"
+hi ${VISUAL}${1} cterm=bold ctermfg=red ctermbg=none
 endsnippet
 
-snippet fu "viml function" w
-fu ${1}()
+snippet fu "viml function"
+fu! ${1}()
 endf
 endsnippet
 
-snippet if "if" w
-if $1
-en
+snippet for "for loop" w
+for ${1} in ${2}
+	${3}
+endfor
 endsnippet
 
-snippet g "Description" w
-get`!v Cap(getreg('"'))`
-endsnippet
-
-snippet test "Description" w
-pos $1 pos $2 pos $3
-endsnippet

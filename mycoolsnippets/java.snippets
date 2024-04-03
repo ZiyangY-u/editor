@@ -1,0 +1,116 @@
+snippet main "main" w
+public static void main(String[] args){
+$1
+}
+endsnippet
+snippet systemprint "System.out.println" w
+System.out.println($1);
+endsnippet
+snippet { "{ bracket" w
+{
+$1${VISUAL}
+}
+endsnippet
+snippet if "if"
+if ($1)
+endsnippet
+snippet el "else" w
+else {$1
+}
+endsnippet
+snippet elif "else if" w
+else if ($1) {
+}
+endsnippet
+
+snippet fore "for each loop"
+for (var ele : `!v getreg('"')`) {
+}
+endsnippet
+snippet fori "for index loop"
+for (int i = 0; i < `!v getreg('"')`.size(); i++) {
+	`!v getreg('"')`.get(i);
+}
+endsnippet
+snippet form "for map loop" w
+for (var key : `!v getreg('"')`.keySet()) {
+	`!v getreg('"')`.get(key);
+}
+endsnippet
+
+snippet postmap "post mapping method"
+@PostMapping(value = "/uri")
+public CommonResult<todo> getCampInfo(@RequestBody String todo) {
+	return CommonResult.success("todo");
+}
+endsnippet
+
+snippet map "new hash map"
+Map<String, String> $1 = new HashMap<>();
+endsnippet
+snippet listp "new List"
+List<`!v getreg('"')`> `!v
+substitute(getreg('"'), '\<.', '\l&', '')`List = new ArrayList<>();
+endsnippet
+snippet new "new object from class"
+`!v getreg('"')` `!v substitute(getreg('"'), '\<.', '\l&', '')` = new `!v getreg('"')`();
+endsnippet
+
+snippet 2i "String to int" i
+Integer.parseInt(${VISUAL}$1)
+endsnippet
+snippet 2d "String to double" w
+Double.parseDouble(${VISUAL}$1)
+endsnippet
+snippet 2s "int to String" i
+Integer.toString(${VISUAL}$1)
+endsnippet
+snippet tos "toString()" i
+toString()
+endsnippet
+
+snippet ccp "CommonConst" i
+CommonConst.`!v getreg('"')`
+endsnippet
+snippet cp "description" w
+Const.`!v getreg('"')`
+endsnippet
+
+snippet nn "not null" w
+!StringUtil.isNullOrEmpty(`!v getreg('"')`)
+endsnippet
+snippet NN "not null in visual" w
+!StringUtil.isNullOrEmpty(${VISUAL})
+endsnippet
+
+snippet resource "Autowiring Injection" w
+@Resource
+private `!v getreg('"')` `!v substitute(getreg('"'), '\<.', '\l&', '')`;
+endsnippet
+snippet override "@Override" w
+@Override
+endsnippet
+snippet P "@Param" w
+@Param("$1") String $1
+endsnippet
+
+snippet get "getElement" w
+get`!v substitute(getreg('"'), '\<.', '\u&', '')`()
+endsnippet
+
+snippet debug "log.debug" w
+log.debug("");
+endsnippet
+
+snippet jdoc "java doc" w
+/**
+ * $1
+ *
+ * @param
+ * @return
+ */
+endsnippet
+
+snippet / "doc" w
+/** $1 */
+endsnippet

@@ -1,5 +1,9 @@
-snippet snip "The Snippet Snippet"
-snippet $1 "$2" w
-$0
+snippet s "The snippet snippet" w
+snippet ${1} "${2}" w
+${3}
 `echo endsnippet`
+endsnippet
+
+snippet r "vim register" w
+\`!v getreg('"')\`
 endsnippet
