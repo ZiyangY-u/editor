@@ -349,7 +349,11 @@ fu! s:GotCandidates(jobId, data, event)
             catch | endtry
         endif
         cal extend(com_items, map(candidates, function('RenderCandidate')))
-        cal complete(col('.') - len(InsertingWord()), com_items)
+        if count(expand("<cWORD>"), '/') >= 2
+            cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false)
+        else
+            cal complete(col('.') - len(InsertingWord()), com_items)
+        endif
         cal RenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-3)
     endif
 endf
@@ -376,6 +380,7 @@ fu! PostComplete()
         let g:exAnonExpand = ''
     en
 endf
+au CompleteDonePre * if complete_info(['mode'])['mode'] == 'files' | cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false) | en
 au CompleteDone * sil redraw | cal PostComplete()
 "   <tab> for select candidate, j+n for quick selection
 ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
