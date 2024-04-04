@@ -5,6 +5,7 @@ snippet doc "document" w
 \\usepackage{tkz-euclide}
 \\usepackage{amssymb}
 \\usepackage{amsmath}
+\\usepackage{fontawesome5}
 \\usepackage{graphicx} % LaTeX package to import graphics
 \\usepackage[export]{adjustbox} % positioning figure and img
 \\graphicspath{{./}} % configuring the graphicx package
@@ -37,6 +38,9 @@ endsnippet
 snippet emph "emphasize" w
 \\emph{${VISUAL}$0}
 endsnippet
+snippet tc "text color" w
+\\textcolor{$1}{${VISUAL}$0}
+endsnippet
 
 # images
 snippet img "include image" w
@@ -62,10 +66,10 @@ endsnippet
 
 # math
 snippet ff "one line formula" w
-\\[ $0 \\]
+\\[ ${VISUAL}$0 \\]
 endsnippet
 snippet f "inline formula" w
-\$ $0 \$
+\$ ${VISUAL}$0 \$
 endsnippet
 # math - operator
 snippet * "乘以" w
@@ -102,12 +106,21 @@ endsnippet
 snippet pp "垂直 perpendicular" w
 \\bot
 endsnippet
+snippet pl "平行 parallel" w
+\\parallel
+endsnippet
 # math logic
 snippet bc "因为" w
 \\because 
 endsnippet
 snippet so "所以" w
 \\therefore 
+endsnippet
+# math equation
+snippet fs "方程组 formula set" w
+\\left \\{ \\begin{aligned}
+${VISUAL}$0
+\\end{aligned} \\right.
 endsnippet
 
 # newline and newpage
@@ -116,12 +129,6 @@ snippet nl "newline" w
 endsnippet
 snippet np "newpage" w
 \\newpage
-endsnippet
-
-
-snippet equation "equation" w
-\begin{equation}
-\end{equation}
 endsnippet
 
 snippet dd "$$" w

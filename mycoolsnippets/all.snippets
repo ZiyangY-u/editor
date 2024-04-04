@@ -40,18 +40,43 @@ endsnippet
 snippet ; "jp-ime" "re.match('1', vim.eval('g:jpIme'))" ie
 ；
 endsnippet
-snippet [ "jp-ime" "re.match('1', vim.eval('g:jpIme'))" ie
-「
+snippet [ "jp-ime brackets shikaku" "re.match('1', vim.eval('g:jpIme'))" ie
+「${VISUAL}$0」
 endsnippet
-snippet ] "jp-ime" "re.match('1', vim.eval('g:jpIme'))" ie
-」
+snippet ( "jp-ime brackets maru" "re.match('1', vim.eval('g:jpIme'))" ie
+（${VISUAL}$0）
 endsnippet
-snippet ( "jp-ime" "re.match('1', vim.eval('g:jpIme'))" ie
-（
+snippet , "cn-ime 逗号" "re.match('1', vim.eval('g:cnIme'))" ie
+，
 endsnippet
-snippet ) "jp-ime" "re.match('1', vim.eval('g:jpIme'))" ie
-）
+snippet . "cn-ime 句号" "re.match('1', vim.eval('g:cnIme'))" ie
+。
 endsnippet
-snippet m1 "jp-ime" "re.match('1', vim.eval('g:jpIme'))" ie
-①
+snippet ; "cn-ime 分号" "re.match('1', vim.eval('g:cnIme'))" ie
+；
 endsnippet
+snippet : "cn-ime 冒号" "re.match('1', vim.eval('g:cnIme'))" ie
+：
+endsnippet
+snippet ' "cn-ime 单引号" "re.match('1', vim.eval('g:cnIme'))" ie
+‘${VISUAL}$0’
+endsnippet
+snippet " "cn-ime 双引号" "re.match('1', vim.eval('g:cnIme'))" ie
+“${VISUAL}$0”
+endsnippet
+snippet ? "cn-ime 问号" "re.match('1', vim.eval('g:cnIme'))" ie
+？
+endsnippet
+snippet ! "cn-ime 感叹号" "re.match('1', vim.eval('g:cnIme'))" ie
+！
+endsnippet
+snippet < "cn-ime bookmark 双书名号" "re.match('1', vim.eval('g:cnIme'))" ie
+《${VISUAL}$0》
+endsnippet
+snippet / "cn-ime 顿号" "re.match('1', vim.eval('g:cnIme'))" ie
+、
+endsnippet
+snippet [ "cn-ime bracket 双括号" "re.match('1', vim.eval('g:cnIme'))" ie
+【${VISUAL}$0】
+endsnippet
+

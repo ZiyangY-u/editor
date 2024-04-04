@@ -876,7 +876,7 @@ let g:UltiSnipsSnippetDirectories=["UltiSnips", "mycoolsnippets"]
 let g:UltiSnipsEditSplit="context"
 vn <c-l> :cal UltiSnips#SaveLastVisualSelection()<cr>:cal UltiExpand(1)<cr>
 nn <silent> <f4> :UltiSnipsEdit<cr>
-nn <silent> ,<f4> :to vsplit \|e /usr/share/nvim/runtime/mycoolsnippets/all.snippets<cr>
+nn <silent> ,<f4> :UltiSnipsEdit!<cr>
 let g:snipsMk = nvim_create_namespace('snippetMarks')
 hi SnipMark cterm=bold ctermfg=227
 hi SnipAnon cterm=bold ctermfg=198
@@ -989,6 +989,16 @@ let g:webdevicons_enable_nerdtree = 1
 " HighlightedYank
 let g:highlightedyank_highlight_duration = 150
 hi HighlightedyankRegion ctermbg=191
+" asyncrun.vim
+au User AsyncRunPre :let g:asyncCnt += 1
+fu! AsyncRunPost()
+    let g:asyncCnt -= 1
+    if g:texCompilePending == 1
+        exe printf('AsyncRun xelatex %s', expand('%:p'))
+        let g:texCompilePending = 0
+    endif
+endf
+au User AsyncRunStop :cal AsyncRunPost()
 " }}}
 " => File type Specific -------------------- {{{
 aug filetypes
@@ -1010,6 +1020,7 @@ aug filetypes
     " au BufWritePre * :sil! ClearTailBlank
     " auto save file to OneDrive
     au BufWritePost init.vim sil exe ':!cp ~/.config/nvim/init.vim ~/OneDrive'
+    au BufWritePost *.tex cal CompileTex()
 aug END
 " }}}
 " => Functions -------------------- {{{
@@ -1048,8 +1059,15 @@ fu! GetDefault(v, default)
     el | retu a:v
     en
 endf
+fu! CompileTex()
+    if g:asyncrun_status != 'running'
+        exe printf('AsyncRun xelatex %s', expand('%:p'))
+    else
+        let g:texCompilePending = 1 | en
+endf
 fu! QuickRun()
     if &ft == 'vim' | so %
+    elseif &ft == 'tex' | cal CompileTex()
     en
 endf
 nn <silent> <f5> :cal QuickRun()<cr>
@@ -1249,6 +1267,7 @@ com! -nargs=0 WSLview exe 'sil !wslview %'
 com! -nargs=0 Notepad exe 'sil !subl.exe -a '.WinPath(expand('%')).':'.line('.')
 com! -nargs=0 Directory exe 'sil !explorer.exe ' . substitute(WinPath(expand('%:p:h')), '/', '\\\\', 'g')
 " ------------------- Async Misc -----------------------
+let g:texCompilePending = 0
 "  qfSearchCmd { qfEntry : [jobId list] }
 "  qfListTobe { jobId : [qfResult] }
 "  let one qfEntry in qfSearchCmd hold multiple jobId
