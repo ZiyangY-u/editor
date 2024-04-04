@@ -1270,6 +1270,7 @@ fu WinPath(mntPath) " convert wsl mnt path to windows path
 endf
 com! -nargs=0 WSLview exe 'sil !wslview %'
 com! -nargs=0 Notepad exe 'sil !subl.exe -a '.WinPath(expand('%')).':'.line('.')
+com! -nargs=0 Pdf exe 'sil !SumatraPDF.exe '.WinPath(substitute(expand('%:p'), '.tex$', '.pdf', ''))
 com! -nargs=0 Directory exe 'sil !explorer.exe ' . substitute(WinPath(expand('%:p:h')), '/', '\\\\', 'g')
 " ------------------- Async Misc -----------------------
 let g:texCompilePending = 0
