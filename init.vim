@@ -913,7 +913,7 @@ endf
 fu! InsertingWord()
     let frontText = getline('.')[:col('.')-2]
     if !g:jpIme && !g:cnIme
-        retu trim(matchstr(frontText, '[-&:[:ident:]]*$'))
+        retu trim(matchstr(frontText, '[-&:;[:ident:]]*$'))
     else
         if frontText[len(frontText)-1] =~ '\C[a-z]'
             retu trim(matchstr(frontText, '\.\?[-/[:lower:]]*$'))
@@ -1272,6 +1272,8 @@ com! -nargs=0 WSLview exe 'sil !wslview %'
 com! -nargs=0 Notepad exe 'sil !subl.exe -a '.WinPath(expand('%')).':'.line('.')
 com! -nargs=0 Pdf exe 'sil !SumatraPDF.exe '.WinPath(substitute(expand('%:p'), '.tex$', '.pdf', ''))
 com! -nargs=0 Directory exe 'sil !explorer.exe ' . substitute(WinPath(expand('%:p:h')), '/', '\\\\', 'g')
+com! -nargs=0 EditComplete e ~/.config/nvim/complete_service.py
+com! -nargs=0 EditAnon e ~/.config/nvim/anon_expand.py
 " ------------------- Async Misc -----------------------
 let g:texCompilePending = 0
 "  qfSearchCmd { qfEntry : [jobId list] }

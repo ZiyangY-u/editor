@@ -110,6 +110,25 @@ def latex_expand(word:str):
         return '\\bigtriangleup {}'.format(word[4:].upper())
     if re.compile(r'\w\wpp\w\w').match(word): # perpendicular
         return '{} \\bot {}'.format(word[:2].upper(), word[4:].upper())
+    if re.compile(r'\w\wpl\w\w').match(word): # parallel
+        return '{} \\parallel {}'.format(word[:2].upper(), word[4:].upper())
+    if re.compile(r'pt\w.*').match(word): # define and draw point
+        pt = word[2].upper()
+        if ':' in word:
+            pt += "'"
+        pt_display = pt
+        if re.compile(r'.*\d+.*').match(word):
+            n = re.findall(r'\d+', word)[0] 
+            pt += n
+            pt_display = pt + '_' + n
+        return f"% define pt {pt}.<CR>" \
+                + "\\tkzDefPoint($0){" + pt + "}<CR>" \
+                + "\\tkzLabelPoint[ ]("+ pt +"){$"+ pt_display + "$} \\tkzDrawPoint(" + pt + ")"
+
+    if re.compile(r'ln\w[\d:]?\w[\d:]?').match(word): # define and draw line by tkz-euclide
+        pt1 = re.findall(r'\w[\d:]?', word[2:])[0].replace(":", "'")
+        pt2 = re.findall(r'\w[\d:]?$', word[2:])[0].replace(":", "'")
+        return '\\tkzDrawLine[add= 0.0 and 0.0]({}, {})'.format(pt1.upper(), pt2.upper())
     return ''
 
 def css_expand(word:str):

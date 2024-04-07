@@ -19,11 +19,28 @@ snippet date "date" w
 `date +%Y.%m.%d`
 endsnippet
 
-snippet ( "()" w
+snippet ( "()" i
 (${VISUAL}$0)
 endsnippet
-snippet [ "[]" w
-([${VISUAL}$0])
+snippet < "<>" i
+<${VISUAL}$0>
+endsnippet
+snippet [ "[]" i
+[${VISUAL}$0]
+endsnippet
+snippet { "{}" i
+{${VISUAL}$0}
+endsnippet
+snippet } "{<CR>}" i
+{
+${VISUAL}$0
+}
+endsnippet
+snippet ' "quotation" i
+'${VISUAL}$0'
+endsnippet
+snippet " "quotation" i
+"${VISUAL}$0"
 endsnippet
 
 snippet , "jp-ime" "re.match('1', vim.eval('g:jpIme'))" ie
@@ -85,5 +102,8 @@ snippet / "cn-ime 顿号" "re.match('1', vim.eval('g:cnIme'))" ie
 endsnippet
 snippet [ "cn-ime bracket 双括号" "re.match('1', vim.eval('g:cnIme'))" ie
 【${VISUAL}$0】
+endsnippet
+snippet $ "cn-ime 人民币" "re.match('1', vim.eval('g:cnIme'))" ie
+￥
 endsnippet
 
