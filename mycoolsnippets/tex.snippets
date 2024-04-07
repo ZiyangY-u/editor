@@ -166,27 +166,10 @@ snippet np "newpage" w
 \\newpage
 endsnippet
 
-snippet dd "$$" w
-\$$1\$
-endsnippet
-
-snippet pic "tikzpicture" w
-\\begin{tikzpicture}[scale=1]
-\\end{tikzpicture}
-endsnippet
-
-snippet tdp "tkz define point" w
-% define pt $1.
-\\tkzDefPoint($2){$1}
-\\tkzLabelPoint[ ]($1){\$$1\$} \\tkzDrawPoint($1)
-endsnippet
 snippet bdp "define shift point" w
 % base pt $1 def pt $2.
 \\tkzDefShiftPoint[$1]($3){$2}
 \\tkzLabelPoint[ ]($2){\$$2\$} \\tkzDrawPoint($2)
-endsnippet
-snippet tln "tkz define and draw line" w
-\\tkzDrawLine[add= 0.0 and 0.0]($1)
 endsnippet
 snippet cir "circle" w
 \\tkzDrawCircle($1)
@@ -195,13 +178,6 @@ snippet polyg "draw polygon" w
 \\tkzDrawPolygon($1)
 endsnippet
 
-snippet ll "intercept of two line" w
-% intercept line $1-$2, line $3-$4, intercept at $5.
-\\tkzInterLL($1,$2)($3,$4)
-\\tkzGetPoint{$5}
-\\tkzLabelPoint[ ]($5){\$$5\$}
-\\tkzDrawPoint[ ]($5) % line-line intercept end
-endsnippet
 snippet lc "intercept of line and circle" w
 % intercept line $1-$2, circle $3,$4 intercept at $5 and $6.
 \\tkzInterLC($1,$2)($3,$4)
@@ -234,31 +210,6 @@ snippet tan "from point tangent to circle" w
 \\tkzDrawPoint[ ]($6) % tangent intercept end
 endsnippet
 
-snippet ppd "perpendicular" w
-% project pt $1 onto line $2,$3 intercept at pt $4.
-\\tkzDefPointBy[projection=onto $2--$3]($1)
-\\tkzGetPoint{$4}
-\\tkzLabelPoint[ ]($4){\$$4\$}
-\\tkzDrawPoint[ ]($4)
-\\tkzDrawLine[add= 0.0 and 0.0]($1,$4) % perpendicular end
-endsnippet
-snippet prl "parallel" w
-% from $1 parallel to line $2,$3 go to pt $4.
-\\tkzDefPointWith[colinear=at $1]($2,$3)
-\\tkzGetPoint{$4}
-\\tkzLabelPoint[ ]($4){\$$4\$}
-\\tkzDrawPoint[ ]($4)
-\\tkzDrawLine[add= 0.0 and 0.0]($1,$4) % parallel end
-endsnippet
-
-snippet pol "point on line" w
-% define pt $1 on line $2,$3
-\\tkzDefPointOnLine[pos=0.5]($2,$3)
-\\tkzGetPoint{$1}
-\\tkzLabelPoint[ ]($1){\$$1\$}
-\\tkzDrawPoint[ ]($1)  % point of line end
-endsnippet
-
 snippet len "get length" w
 % get length of line $1-$2.
 \\tkzCalcLength($1,$2)
@@ -275,60 +226,45 @@ snippet mkr "mark right angle" w
 \\tkzMarkRightAngle[size=.1]($1)
 endsnippet
 
-snippet k "Richtung" w
+snippet k "above" w
 above
 endsnippet
-snippet j "Richtung" w
+snippet j "below" w
 below
 endsnippet
-snippet h "Richtung" w
+snippet h "left" w
 left
 endsnippet
-snippet l "Richtung" w
+snippet l "right" w
 right
 endsnippet
-snippet kh "" w
+snippet kh "above left" w
 above left
 endsnippet
-snippet hk "" w
+snippet hk "above left" w
 above left
 endsnippet
-snippet kl "" w
+snippet kl "above right" w
 above right
 endsnippet
-snippet lk "" w
+snippet lk "above right" w
 above right
 endsnippet
-snippet jh "" w
+snippet jh "below left" w
 below left
 endsnippet
-snippet hj "" w
+snippet hj "below left" w
 below left
 endsnippet
-snippet jl "" w
+snippet jl "below right" w
 below right
 endsnippet
-snippet lj "" w
+snippet lj "below right" w
 below right
 endsnippet
-
-snippet abc "description" w
-A,B,C
-endsnippet
-
-snippet init "init coordinate" w
-\\tkzInit[xmax=5,ymax=5]
-% necessary to limit the size of the axes
-\\tkzDrawX[>=latex]
-\\tkzDrawY[>=latex]
-endsnippet
-
 
 snippet gl "get length" w
 \\tkzGetLength{\\r$1}
-endsnippet
-snippet gmp "get middle point" w
-\\tkzDefMidPoint($1) \\tkzGetPoint{M_$1}
 endsnippet
 snippet gma "get middle arc" w
 \\tkzDefMidArc($1) \\tkzGetPoint{Mid_Arc_$1}

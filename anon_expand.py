@@ -103,32 +103,92 @@ def text_expand(word:str):
         return rst_word
     return ''
 
+def disp_pt(pt:str) -> str:
+    pt_disp = pt[0] # first character
+    n = re.findall(r'\d+', pt)
+    if len(n) > 0:
+        pt_disp += ('_' + n[0])
+    if '-' in pt or "'" in pt:
+        pt_disp += "'"
+    return pt_disp
+
+def get_pts(pts_str:str) -> list:
+    pts = re.findall(r'\w\d?-?', pts_str)
+    rst = []
+    for pt in pts:
+        rst.append(pt.upper().replace("-", "'"))
+    return rst
+
 def latex_expand(word:str):
     if re.compile(r'\dsq').match(word): # sqrt n
         return '\\sqrt[' + word[0] + ']{$0}'
-    if re.compile(r'tria\w\w\w').match(word): # triangle
-        return '\\bigtriangleup {}'.format(word[4:].upper())
-    if re.compile(r'\w\wpp\w\w').match(word): # perpendicular
-        return '{} \\bot {}'.format(word[:2].upper(), word[4:].upper())
-    if re.compile(r'\w\wpl\w\w').match(word): # parallel
-        return '{} \\parallel {}'.format(word[:2].upper(), word[4:].upper())
-    if re.compile(r'pt\w.*').match(word): # define and draw point
-        pt = word[2].upper()
-        if ':' in word:
-            pt += "'"
-        pt_display = pt
-        if re.compile(r'.*\d+.*').match(word):
-            n = re.findall(r'\d+', word)[0] 
-            pt += n
-            pt_display = pt + '_' + n
+    if re.compile(r'tri\w\d?-?\w\d?-?\w\d?-?').match(word): # triangle
+        pts = get_pts(word[3:])
+        return '\\bigtriangleup {}'.format(''.join([disp_pt(pt) for pt in pts]))
+    if re.compile(r'\w\d?-?\w\d?-?pp\w\d?-?\w\d?-?').match(word): # perpendicular
+        pts = get_pts(word.replace('pp', ''))
+        return '{}{} \\bot {}{}'.format(disp_pt(pts[0]), disp_pt(pts[1]), disp_pt(pts[2]), disp_pt(pts[3]))
+    if re.compile(r'\w\d?-?\w\d?-?pl\w\d?-?\w\d?-?').match(word): # parallel
+        pts = get_pts(word.replace('pl', ''))
+        return '{}{} \\parallel {}{}'.format(disp_pt(pts[0]), disp_pt(pts[1]), disp_pt(pts[2]), disp_pt(pts[3]))
+    if word.startswith('pt'): # define and draw point
+        pts = get_pts(word[2:])
+        pt = pts[0]
         return f"% define pt {pt}.<CR>" \
                 + "\\tkzDefPoint($0){" + pt + "}<CR>" \
-                + "\\tkzLabelPoint[ ]("+ pt +"){$"+ pt_display + "$} \\tkzDrawPoint(" + pt + ")"
+                + "\\tkzLabelPoint[ ]("+ pt +"){$"+ disp_pt(pt) + "$}<CR>" \
+                + "\\tkzDrawPoint[fill=black](" + pt + ")"
+    if word.startswith('ln'): # define and draw line by tkz-euclide
+        pts = get_pts(word[2:])
+        [pt1, pt2] = [pts[0], pts[1]]
+        return f'% draw line {pt1}-{pt2}<CR>' \
+                + '\\tkzDrawLine[add= 0.0 and 0.0]({}, {})'.format(pt1, pt2)
+    if re.compile(r'll.*').match(word): # line and line intercept
+        pts = get_pts(word[2:])
+        if len(pts) == 5:
+            [pt1, pt2, pt3, pt4, pt5] = [pts[0], pts[1], pts[2], pts[3], pts[4]]
+            return f"% intercepts line {pt1}-{pt2}, line {pt3}-{pt4}, intercepts at {pt5}.<CR>" \
+                    + f"\\tkzInterLL({pt1},{pt2})({pt3},{pt4})<CR>" \
+                    + "\\tkzGetPoint{" + pt5 + "}<CR>" \
+                    + f"\\tkzLabelPoint[ ]({pt5})" + "{$" + disp_pt(pt5) + "$}<CR>" \
+                    + f"\\tkzDrawPoint[fill=black]({pt5}) % line-line intercept end<CR>"
+    if word.startswith('pol'): # point on line
+        pts = get_pts(word[3:])
+        if len(pts) == 3:
+            [pt1, pt2, pt3] = [pts[0], pts[1], pts[2]]
+            return f'% define pt {pt3} on line {pt1}-{pt2}<CR>' \
+                    + f'\\tkzDefPointOnLine[pos=0.5$0]({pt1}, {pt2})<CR>' \
+                    + '\\tkzGetPoint{' + pt3 + '}<CR>' \
+                    + f"\\tkzLabelPoint[ ]({pt3})" + "{$" + disp_pt(pt3) + "$}<CR>" \
+                    + f"\\tkzDrawPoint[fill=black]({pt3}) % point of line end<CR>"
+    if word.startswith('pp'): # project(perpendicular) point to line
+        pts = get_pts(word[2:])
+        if len(pts) == 4:
+            [pt1, pt2, pt3, pt4] = [pts[0], pts[1], pts[2], pts[3]]
+            return f'% project pt pt1 onto line pt2-pt3 intercept at pt pt4.<CR>' \
+                    + f'\\tkzDefPointBy[projection=onto {pt2}--{pt3}]({pt1})<CR>' \
+                    + '\\tkzGetPoint{' + pt4 + '}<CR>' \
+                    + f"\\tkzLabelPoint[ ]({pt4})" + "{$" + disp_pt(pt4) + "$}<CR>" \
+                    + f"\\tkzDrawPoint[fill=black]({pt4})<CR>" \
+                    + f'\\tkzDrawLine[add= 0.0 and 0.0]({pt1},{pt4}) % project end'
+    if word.startswith('pl'): # parallel
+        pts = get_pts(word[2:])
+        if len(pts) == 4:
+            [pt1, pt2, pt3, pt4] = [pts[0], pts[1], pts[2], pts[3]]
+            return f'% from {pt1} parallel to line {pt2}-{pt3} go to pt {pt4}.<CR>' \
+                    + f'\\tkzDefPointWith[colinear=at {pt1}]({pt2},{pt3})<CR>'\
+                    + '\\tkzGetPoint{' + pt4 + '}<CR>' \
+                    + f"\\tkzLabelPoint[ ]({pt4})" + "{$" + disp_pt(pt4) + "$}<CR>" \
+                    + f"\\tkzDrawPoint[fill=black]({pt4})<CR>" \
+                    + f'\\tkzDrawLine[add= 0.0 and 0.0]({pt1},{pt4}) % parallel end'
+    if word.startswith('init'): # init coordinates
+        n = re.findall(r'\d+', word)
+        size = n[0] if len(n) == 1 else '5'
+        return f'\\tkzInit[xmax={size},ymax={size},xmin=-{size},ymin=-{size}]<CR>' \
+                + '\\tkzDrawX[>=latex]<CR>\\tkzDrawY[>=latex]<CR>' \
+                + '\\tkzGrid<CR>\\tkzClip[space=1]'
 
-    if re.compile(r'ln\w[\d:]?\w[\d:]?').match(word): # define and draw line by tkz-euclide
-        pt1 = re.findall(r'\w[\d:]?', word[2:])[0].replace(":", "'")
-        pt2 = re.findall(r'\w[\d:]?$', word[2:])[0].replace(":", "'")
-        return '\\tkzDrawLine[add= 0.0 and 0.0]({}, {})'.format(pt1.upper(), pt2.upper())
+
     return ''
 
 def css_expand(word:str):

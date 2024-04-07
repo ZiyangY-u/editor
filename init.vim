@@ -913,7 +913,7 @@ endf
 fu! InsertingWord()
     let frontText = getline('.')[:col('.')-2]
     if !g:jpIme && !g:cnIme
-        retu trim(matchstr(frontText, '[-&:;[:ident:]]*$'))
+        retu trim(matchstr(frontText, '[-&:[:ident:]]*$'))
     else
         if frontText[len(frontText)-1] =~ '\C[a-z]'
             retu trim(matchstr(frontText, '\.\?[-/[:lower:]]*$'))
