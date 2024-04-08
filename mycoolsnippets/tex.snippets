@@ -7,12 +7,17 @@ snippet doc "document" w
 \\usepackage{gensymb}
 \\usepackage{amsmath}
 \\usepackage{fontawesome5}
-\\usepackage{graphicx}				% LaTeX package to import graphics
-\\usepackage[export]{adjustbox}		% positioning figure and img
-\\graphicspath{{./}}				% configuring the graphicx package
-\\pagenumbering{gobble}				% not showing page number
-\usepackage{wrapfig}                % used for positioning figure
-|\setlength{\parindent}{0pt}	    % do not indent on start of paragraph
+\\usepackage[normalem]{ulem}
+\\usepackage{geometry}
+\\geometry{
+    left=20mm
+}                                      % set left margin
+\\usepackage{graphicx}                 % LaTeX package to import graphics
+\\usepackage[export]{adjustbox}        % positioning figure and img
+\\graphicspath{{./}}                   % configuring the graphicx package
+\\pagenumbering{gobble}                % not showing page number
+\\usepackage{wrapfig}                  % used for positioning figure
+\\setlength{\parindent}{0pt}           % do not indent on start of paragraph
 \\title{document at `date +%Y/%m/%d`}
 \\author{余子杨}
 \\date{`date +%Y/%m/%d`}
@@ -64,6 +69,9 @@ endsnippet
 snippet text "text in formula" w
 \\text{${VISUAL}$0}
 endsnippet
+snippet hs "空白" w
+\\hspace{$0cm}
+endsnippet
 
 # images
 snippet img "include image" w
@@ -93,6 +101,12 @@ snippet ff "one line formula" w
 endsnippet
 snippet f "inline formula" w
 \$ ${VISUAL}$0 \$
+endsnippet
+snippet _ "下标" i
+_{$0}
+endsnippet
+snippet ^ "上标" i
+^{$0}
 endsnippet
 snippet / "frac 分之" w
 \\frac{$1}{$2}
@@ -169,7 +183,7 @@ endsnippet
 # math picture
 snippet tkz "tikzpicture" w
 \\begin{wrapfigure}[0]{r}{0.25\textwidth} % 'r' for right
-	\\begin{tikzpicture}[scale=.9]
+	\\begin{tikzpicture}[scale=.3]
 	$0
 	\\end{tikzpicture}
 \\end{wrapfigure}
