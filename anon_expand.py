@@ -131,27 +131,54 @@ def latex_expand(word:str):
     if re.compile(r'\w\d?-?\w\d?-?pl\w\d?-?\w\d?-?').match(word): # parallel
         pts = get_pts(word.replace('pl', ''))
         return '{}{} \\parallel {}{}'.format(disp_pt(pts[0]), disp_pt(pts[1]), disp_pt(pts[2]), disp_pt(pts[3]))
+    # tkz-euclide drawing
+    if word.startswith('init'): # init coordinates
+        n = re.findall(r'\d+', word)
+        size = n[0] if len(n) == 1 else '5'
+        axis_pts = [f"x{i},x'{i},y{i},y'{i}" for i in range(1, int(size)+1)]
+        return f'\\tkzInit[xmax={size},ymax={size},xmin=-{size},ymin=-{size}]<CR>' \
+                + '\\tkzDrawX[>=latex]<CR>\\tkzDrawY[>=latex]<CR>' \
+                + '\\tkzGrid<CR>\\tkzClip[space=1]<cr>'\
+                + '% \\coordinate(O) at (0,0);<cr>'\
+                + '<cr>'.join([
+                    f"\\tkzDefPoint({i},0){{x{i}}}\\tkzDefPoint(-{i},0){{x'{i}}}\\tkzDefPoint(0,{i}){{y{i}}}\\tkzDefPoint(0,-{i}){{y'{i}}}" for i in range(1, int(size)+1)
+                    ]) + '<cr>' \
+                + f'\\tkzDrawPoints[shape=cross,color=black]({",".join(axis_pts)})<cr>'\
+                + '% \\node [above right=of O,label=below:{第一象限}] (1) {1};<cr>'\
+                + '% \\node [above left=of O,label=below:{第二象限}] (2) {2};<cr>'\
+                + '% \\node [below left=of O,label=below:{第三象限}] (3) {3};<cr>'\
+                + '% \\node [below right=of O,label=below:{第四象限}] (4) {4};<cr>'
+    # point
     if word.startswith('pt'): # define and draw point
         pts = get_pts(word[2:])
         pt = pts[0]
-        return f"% define pt {pt}.<CR>" \
+        return f"% define point {pt}.<CR>" \
                 + "\\tkzDefPoint($0){" + pt + "}<CR>" \
-                + "\\tkzLabelPoint[ ]("+ pt +"){$"+ disp_pt(pt) + "$}<CR>" \
-                + "\\tkzDrawPoint[fill=black](" + pt + ")"
+                + "\\tkzLabelPoint[ ]("+ pt +"){$ "+ disp_pt(pt) + " $}<CR>"
+    if word.startswith('ppt'): # define and draw point based on another point
+        pts = get_pts(word[3:])
+        [pt1, pt2] = [pts[0], pts[1]]
+        return f"% define point {pt2} based on point {pt1}.<CR>" \
+                + f"\\tkzDefShiftPoint[{pt1}]($0)" + "{" + pt2 + "}<CR>" \
+                + "\\tkzLabelPoint[ ]("+ pt2 +"){$ "+ disp_pt(pt2) + " $}<CR>"
+    if word.startswith('dp'): # draw point
+        pts = get_pts(word[2:])
+        return f'% draw points {",".join([pt for pt in pts])}<CR>' \
+                + f'\\tkzDrawPoints[fill=black]({",".join([pt for pt in pts])})<CR>'
+    # line
     if word.startswith('ln'): # define and draw line by tkz-euclide
         pts = get_pts(word[2:])
         [pt1, pt2] = [pts[0], pts[1]]
         return f'% draw line {pt1}-{pt2}<CR>' \
-                + '\\tkzDrawLine[add= 0.0 and 0.0]({}, {})'.format(pt1, pt2)
-    if re.compile(r'll.*').match(word): # line and line intercept
+                + '\\tkzDrawLine[solid,color=black,add= 0.0 and 0.0]({}, {})'.format(pt1, pt2)
+    if word.startswith('ll'): # line and line intercept
         pts = get_pts(word[2:])
         if len(pts) == 5:
             [pt1, pt2, pt3, pt4, pt5] = [pts[0], pts[1], pts[2], pts[3], pts[4]]
             return f"% intercepts line {pt1}-{pt2}, line {pt3}-{pt4}, intercepts at {pt5}.<CR>" \
                     + f"\\tkzInterLL({pt1},{pt2})({pt3},{pt4})<CR>" \
                     + "\\tkzGetPoint{" + pt5 + "}<CR>" \
-                    + f"\\tkzLabelPoint[ ]({pt5})" + "{$" + disp_pt(pt5) + "$}<CR>" \
-                    + f"\\tkzDrawPoint[fill=black]({pt5}) % line-line intercept end<CR>"
+                    + f"\\tkzLabelPoint[ ]({pt5})" + "{$ " + disp_pt(pt5) + " $}<CR>"
     if word.startswith('pol'): # point on line
         pts = get_pts(word[3:])
         if len(pts) == 3:
@@ -159,18 +186,16 @@ def latex_expand(word:str):
             return f'% define pt {pt3} on line {pt1}-{pt2}<CR>' \
                     + f'\\tkzDefPointOnLine[pos=0.5$0]({pt1}, {pt2})<CR>' \
                     + '\\tkzGetPoint{' + pt3 + '}<CR>' \
-                    + f"\\tkzLabelPoint[ ]({pt3})" + "{$" + disp_pt(pt3) + "$}<CR>" \
-                    + f"\\tkzDrawPoint[fill=black]({pt3}) % point of line end<CR>"
+                    + f"\\tkzLabelPoint[ ]({pt3})" + "{$ " + disp_pt(pt3) + " $}<CR>"
     if word.startswith('pp'): # project(perpendicular) point to line
         pts = get_pts(word[2:])
         if len(pts) == 4:
             [pt1, pt2, pt3, pt4] = [pts[0], pts[1], pts[2], pts[3]]
-            return f'% project pt pt1 onto line pt2-pt3 intercept at pt pt4.<CR>' \
+            return f'% project pt {pt1} onto line {pt2}-{pt3} intercept at pt {pt4}.<CR>' \
                     + f'\\tkzDefPointBy[projection=onto {pt2}--{pt3}]({pt1})<CR>' \
                     + '\\tkzGetPoint{' + pt4 + '}<CR>' \
-                    + f"\\tkzLabelPoint[ ]({pt4})" + "{$" + disp_pt(pt4) + "$}<CR>" \
-                    + f"\\tkzDrawPoint[fill=black]({pt4})<CR>" \
-                    + f'\\tkzDrawLine[add= 0.0 and 0.0]({pt1},{pt4}) % project end'
+                    + f"\\tkzLabelPoint[ ]({pt4})" + "{$ " + disp_pt(pt4) + " $}<CR>" \
+                    + f'\\tkzDrawLine[solid,color=black,add= 0.0 and 0.0]({pt1},{pt4}) % project end'
     if word.startswith('pl'): # parallel
         pts = get_pts(word[2:])
         if len(pts) == 4:
@@ -178,15 +203,93 @@ def latex_expand(word:str):
             return f'% from {pt1} parallel to line {pt2}-{pt3} go to pt {pt4}.<CR>' \
                     + f'\\tkzDefPointWith[colinear=at {pt1}]({pt2},{pt3})<CR>'\
                     + '\\tkzGetPoint{' + pt4 + '}<CR>' \
-                    + f"\\tkzLabelPoint[ ]({pt4})" + "{$" + disp_pt(pt4) + "$}<CR>" \
-                    + f"\\tkzDrawPoint[fill=black]({pt4})<CR>" \
-                    + f'\\tkzDrawLine[add= 0.0 and 0.0]({pt1},{pt4}) % parallel end'
-    if word.startswith('init'): # init coordinates
-        n = re.findall(r'\d+', word)
-        size = n[0] if len(n) == 1 else '5'
-        return f'\\tkzInit[xmax={size},ymax={size},xmin=-{size},ymin=-{size}]<CR>' \
-                + '\\tkzDrawX[>=latex]<CR>\\tkzDrawY[>=latex]<CR>' \
-                + '\\tkzGrid<CR>\\tkzClip[space=1]'
+                    + f"\\tkzLabelPoint[ ]({pt4})" + "{$ n" + disp_pt(pt4) + " $}<CR>" \
+                    + f'\\tkzDrawLine[solid,color=black,add= 0.0 and 0.0]({pt1},{pt4}) % parallel end'
+
+    # tkz-euclide mark
+    if word.startswith('mkln'): # mark line
+        pts = get_pts(word[4:])
+        [pt1, pt2] = [pts[0], pts[1]]
+        return f'% mark line {pt1}-{pt2}<CR>' \
+                + f'\\tkzMarkSegment[pos=.5,mark=|,color=black]({pt1},{pt2})'
+    if word.startswith('mka'): # mark angle
+        pts = get_pts(word[3:])
+        [pt1, pt2, pt3] = [pts[0], pts[1], pts[2]]
+        return f'% mark angle {pt1}-{pt2}-{pt3}<CR>' \
+                + f'\\tkzPicAngle["$ $0 $",draw,angle radius=7,angle eccentricity=1.7]({pt1},{pt2},{pt3})'
+    if word.startswith('mkr'): # mark right angle
+        pts = get_pts(word[3:])
+        [pt1, pt2, pt3] = [pts[0], pts[1], pts[2]]
+        return f'% mark right angle {pt1}-{pt2}-{pt3}<CR>' \
+                + f'\\tkzPicRightAngle["$ $0 $",draw,black,thick,angle radius=7]({pt1},{pt2},{pt3})'
+
+    # tkz-euclide calculation
+    if word.startswith('glen'): # get length
+        pts = get_pts(word[4:])
+        [pt1, pt2] = [pts[0], pts[1]]
+        return f'% get and mark length of line {pt1}-{pt2}<CR>' \
+                + f'\\tkzCalcLength({pt1},{pt2})<CR>' \
+                + '\\tkzGetLength{l' + pt1 + pt2 + '}<CR>' \
+                + '\\tkzDrawSegment[dashed,sloped,dim={\\pgfmathprintnumber\\l' + pt1 + pt2 + ',-6pt,text=black}]' + f'({pt1},{pt2})'
+    if word.startswith('gang'): # get angle
+        pts = get_pts(word[4:])
+        [pt1, pt2, pt3] = [pts[0], pts[1], pts[2]]
+        ang_var = 'angle' + pt1 + pt2 + pt3
+        return f'% get and mark angle {pt1}-{pt2}-{pt3}<CR>' \
+                + f'\\tkzFindAngle({pt1},{pt2},{pt3})<CR>' \
+                + '\\tkzGetAngle{' + ang_var + '}<CR>' \
+                + '\\pgfmathparse{round(\\' + ang_var + ')}<CR>' \
+                + f'\\let\\{ang_var}\\pgfmathresult<CR>' \
+                + f'\\tkzMarkAngle({pt1},{pt2},{pt3})<CR>' \
+                + f'\\tkzLabelAngle({pt1},{pt2},{pt3})' + '{\\tiny $ \\angle' + pt1 + pt2 + pt3 + '^\\circ $}'
+
+    if word.startswith('cir'): # circle
+        pts = get_pts(word[3:])
+        if len(pts) == 2: # define by O and R
+            [pt1, pt2] = [pts[0], pts[1]]
+            return f'% define circle by center point {pt1} and r{pt1}{pt2}<cr>' \
+                    + f'\\tkzCalcLength({pt1},{pt2})' + '\\tkzGetLength{r' + pt1 + pt2 + '}<cr>' \
+                    + f'\\tkzDefCircle[R]({pt1},\\r{pt1}{pt2})<cr>' \
+                    + f'\\tkzDrawCircle[solid]({pt1},{pt2})'
+        if len(pts) == 4: # define by triangular
+            [pt1, pt2, pt3, pt4] = [pts[0], pts[1], pts[2], pts[3]]
+            return f'% define circle by triangular {pt1}{pt2}{pt3} and get center {pt4}<cr>' \
+                    + f'\\tkzDefCircle[circum]({pt1},{pt2},{pt3})<cr>' \
+                    + '\\tkzGetPoint{' + pt4 + '}<cr>'\
+                    + "\\tkzLabelPoint[ ]("+ pt4 +"){$ "+ disp_pt(pt4) + " $}<CR>"\
+                    + f'\\tkzDrawCircle[solid]({pt4},{pt1})'
+
+    if word.startswith('lc'): # line intercept circle
+        pts = get_pts(word[2:])
+        [pt1, pt2, pt3, pt4, pt5, pt6] = [pts[0], pts[1], pts[2], pts[3], pts[4], pts[5]]
+        return f'% line {pt1}-{pt2} intercept with circle {pt3}{pt4} and get points {pt5} and {pt6}.<cr>'\
+                + f'\\tkzInterLC({pt1},{pt2})({pt3},{pt4})<cr>'\
+                + '\\tkzGetPoints{' + pt5 + '}{' + pt6 + '}<cr>'\
+                + f'\\tkzLabelPoint[ ]({pt5})' + '{$ ' + disp_pt(pt5) + ' $}<cr>'\
+                + f'\\tkzLabelPoint[ ]({pt6})' + '{$ ' + disp_pt(pt6) + ' $}<cr>'
+    if word.startswith('cc'): # circie intercept circle
+        pts = get_pts(word[2:])
+        [pt1, pt2, pt3, pt4, pt5, pt6] = [pts[0], pts[1], pts[2], pts[3], pts[4], pts[5]]
+        return f'% circle {pt1}{pt2} intercept with circle {pt3}{pt4} and get points {pt5} and {pt6}.<cr>'\
+                + f'\\tkzInterCC({pt1},{pt2})({pt3},{pt4})<cr>'\
+                + '\\tkzGetPoints{' + pt5 + '}{' + pt6 + '}<cr>'\
+                + f'\\tkzLabelPoint[ ]({pt5})' + '{$ ' + disp_pt(pt5) + ' $}<cr>'\
+                + f'\\tkzLabelPoint[ ]({pt6})' + '{$ ' + disp_pt(pt6) + ' $}<cr>'
+
+    if re.compile(r'r[hjkl]{1,2}').match(word): # Richtung
+        rst = ''
+        if 'j' in word:
+            rst += 'below'
+        if 'k' in word:
+            rst += 'above'
+        if 'h' in word:
+            rst += ' left'
+        if 'l' in word:
+            rst += ' right'
+        return rst
+    if word.startswith('fill'): # fill polygon
+        pts = get_pts(word[4:])
+        return f'\\tkzFillPolygon[color=gray]({",".join([pt for pt in pts])})'
 
 
     return ''

@@ -4,6 +4,7 @@ snippet doc "document" w
 \\usepackage{tikz}
 \\usepackage{tkz-euclide}
 \\usepackage{amssymb}
+\\usepackage{gensymb}
 \\usepackage{amsmath}
 \\usepackage{fontawesome5}
 \\usepackage{graphicx}				% LaTeX package to import graphics
@@ -11,6 +12,7 @@ snippet doc "document" w
 \\graphicspath{{./}}				% configuring the graphicx package
 \\pagenumbering{gobble}				% not showing page number
 \usepackage{wrapfig}                % used for positioning figure
+|\setlength{\parindent}{0pt}	    % do not indent on start of paragraph
 \\title{document at `date +%Y/%m/%d`}
 \\author{余子杨}
 \\date{`date +%Y/%m/%d`}
@@ -24,6 +26,11 @@ snippet begin "begin end"
 \\begin{$1}
 $0
 \\end{$1}
+endsnippet
+snippet group "begin group" w
+\\begingroup
+    \\fontsize{10pt}{12pt}\selectfont
+\\endgroup
 endsnippet
 
 # text appearance
@@ -53,6 +60,9 @@ snippet emph "emphasize" w
 endsnippet
 snippet tc "text color" w
 \\textcolor{$1}{${VISUAL}$0}
+endsnippet
+snippet text "text in formula" w
+\\text{${VISUAL}$0}
 endsnippet
 
 # images
@@ -84,7 +94,7 @@ endsnippet
 snippet f "inline formula" w
 \$ ${VISUAL}$0 \$
 endsnippet
-snippet frac "frac 分之" w
+snippet / "frac 分之" w
 \\frac{$1}{$2}
 endsnippet
 snippet frac1 "包围分母" w
@@ -93,11 +103,17 @@ endsnippet
 snippet frac2 "包围分子" w
 \\frac{${VISUAL}}{$0}
 endsnippet
+snippet ang "angle" w
+\\angle $0
+endsnippet
+snippet dg "degree 度" i
+^{\\circ}
+endsnippet
 # math - operator
 snippet * "乘以" w
 \\times
 endsnippet
-snippet / "除以" w
+snippet div "除以" w
 \\div
 endsnippet
 snippet pm "正负" w
@@ -128,6 +144,9 @@ endsnippet
 snippet tria "三角形" w
 \\bigtriangleup
 endsnippet
+snippet S "面积" w
+S_{$0}
+endsnippet
 snippet pp "垂直 perpendicular" w
 \\bot
 endsnippet
@@ -149,13 +168,15 @@ ${VISUAL}$0
 endsnippet
 # math picture
 snippet tkz "tikzpicture" w
-\\\\
-\\begin{wrapfigure}{r}{0.25\textwidth} % 'r' for right
-	\\begin{tikzpicture}
+\\begin{wrapfigure}[0]{r}{0.25\textwidth} % 'r' for right
+	\\begin{tikzpicture}[scale=.9]
 	$0
 	\\end{tikzpicture}
 \\end{wrapfigure}
 % here below for solution ...
+\\begingroup
+\\fontsize{8pt}{12pt}\\selectfont
+\\endgroup
 endsnippet
 
 # newline and newpage
@@ -166,37 +187,8 @@ snippet np "newpage" w
 \\newpage
 endsnippet
 
-snippet bdp "define shift point" w
-% base pt $1 def pt $2.
-\\tkzDefShiftPoint[$1]($3){$2}
-\\tkzLabelPoint[ ]($2){\$$2\$} \\tkzDrawPoint($2)
-endsnippet
-snippet cir "circle" w
-\\tkzDrawCircle($1)
-endsnippet
 snippet polyg "draw polygon" w
 \\tkzDrawPolygon($1)
-endsnippet
-
-snippet lc "intercept of line and circle" w
-% intercept line $1-$2, circle $3,$4 intercept at $5 and $6.
-\\tkzInterLC($1,$2)($3,$4)
-\\tkzGetFirstPoint{$5}
-\\tkzLabelPoint[ ]($5){\$$5\$}
-\\tkzDrawPoint[ ]($5)
-\\tkzGetSecondPoint{$6}
-\\tkzLabelPoint[ ]($6){\$$6\$}
-\\tkzDrawPoint[ ]($6) % line-circle intercept end
-endsnippet
-snippet cc "intercept of two circle" w
-% intercept line $1-$2, circle $3,$4 intercept at $5 and $6.
-\\tkzInterLC($1,$2)($3,$4)
-\\tkzGetFirstPoint{$5}
-\\tkzLabelPoint[ ]($5){\$$5\$}
-\\tkzDrawPoint[ ]($5)
-\\tkzGetSecondPoint{$6}
-\\tkzLabelPoint[ ]($6){\$$6\$}
-\\tkzDrawPoint[ ]($6) % circle-circle intercept end
 endsnippet
 
 snippet tan "from point tangent to circle" w
@@ -210,62 +202,6 @@ snippet tan "from point tangent to circle" w
 \\tkzDrawPoint[ ]($6) % tangent intercept end
 endsnippet
 
-snippet len "get length" w
-% get length of line $1-$2.
-\\tkzCalcLength($1,$2)
-\\tkzGetLength(r$1$2) % get length end
-endsnippet
-
-snippet mkln "mark line" w
-\\tkzMarkSegment[pos=.5,mark=|]($1)
-endsnippet
-snippet mkagl "mark angle" w
-\\tkzMarkAngle[size=.3,arc=l]($1)
-endsnippet
-snippet mkr "mark right angle" w
-\\tkzMarkRightAngle[size=.1]($1)
-endsnippet
-
-snippet k "above" w
-above
-endsnippet
-snippet j "below" w
-below
-endsnippet
-snippet h "left" w
-left
-endsnippet
-snippet l "right" w
-right
-endsnippet
-snippet kh "above left" w
-above left
-endsnippet
-snippet hk "above left" w
-above left
-endsnippet
-snippet kl "above right" w
-above right
-endsnippet
-snippet lk "above right" w
-above right
-endsnippet
-snippet jh "below left" w
-below left
-endsnippet
-snippet hj "below left" w
-below left
-endsnippet
-snippet jl "below right" w
-below right
-endsnippet
-snippet lj "below right" w
-below right
-endsnippet
-
-snippet gl "get length" w
-\\tkzGetLength{\\r$1}
-endsnippet
 snippet gma "get middle arc" w
 \\tkzDefMidArc($1) \\tkzGetPoint{Mid_Arc_$1}
 endsnippet
