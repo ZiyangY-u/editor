@@ -353,6 +353,7 @@ fu! s:GotCandidates(jobId, data, event)
             cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false)
         else
             cal complete(col('.') - len(InsertingWord()), com_items)
+            redraw
         endif
         cal RenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-3)
     endif
@@ -395,7 +396,7 @@ exe printf("im j<space> %s<cr>", "<tab>")
 im <silent><expr> <c-l> (g:canSnipExpand \|\| UltiSnips#CanExpandSnippet()) ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'i', '', {})<cr>" :
             \ UltiSnips#CanJumpForwards() ? "\<c-k>" :
-            \ ""
+            \ "\<esc>A"
 "   FZF integration
 ino <expr> <c-x><c-k> fzf#vim#complete(extend(FzfFloatWin(), {'source':'cat /usr/share/dict/en /usr/share/dict/esp /usr/share/dict/ngerman'}))
 ino <expr> <c-x><c-l> fzf#vim#complete#line({}, 1)
@@ -661,6 +662,7 @@ endf
 fu! Longf(fpath)
     retu RelPath(a:fpath, getcwd())
 endf
+let g:asyncrun_red = {'':"", 'running':"  ", 'failure':"  "}
 fu! ActTal()
     let [tal, curr] = ['', tabpagenr()]
     hi cc ctermfg=black ctermbg=lightgreen
@@ -675,9 +677,10 @@ fu! ActTal()
     endfor
     let tal .= "%#TabLine#%="
     " running indicators
-    let tal .= "%#error#%{g:asyncCnt > 0 ? '  '.g:asyncCnt.' ':''}"
+    let tal .= "%#error#%{g:asyncCnt > 0 ? '  '.g:asyncCnt.' ':''}".(g:asyncrun_status!='success'?g:asyncrun_red[g:asyncrun_status]:'')
     let tal .= "%{gutentags#statusline() == '' ? '' : ' 󱈢 '}"
     if g:refreshFlag == 1 | let tal .= "%#CSInfo#%{'[󱦟'.(empty(g:pathQueue) ? ']' : ' '.len(g:pathQueue).']')}" | en
+    let tal .= "%#CSInfo#".(g:asyncrun_status=='success' ? '  ':'')
     let tal .= "%#Git#%{FugitiveStatusline()}"
     let tal .= "%#Trans#%{g:TransMode}%{g:jpIme||g:cnIme ? '  󰗊 ' : ''}"
     let tal .= "%#Obss#%{ObsessionStatus()}"
@@ -995,9 +998,8 @@ let g:webdevicons_enable_nerdtree = 1
 let g:highlightedyank_highlight_duration = 150
 hi HighlightedyankRegion ctermbg=191
 " asyncrun.vim
-au User AsyncRunPre :let g:asyncCnt += 1
 fu! AsyncRunPost()
-    let g:asyncCnt -= 1
+    if g:asyncrun_status == 'failure' | copen | en
     if g:texCompilePending == 1
         exe printf('AsyncRun xelatex %s', expand('%:p'))
         let g:texCompilePending = 0
@@ -1270,10 +1272,18 @@ fu WinPath(mntPath) " convert wsl mnt path to windows path
 endf
 com! -nargs=0 WSLview exe 'sil !wslview %'
 com! -nargs=0 Notepad exe 'sil !subl.exe -a '.WinPath(expand('%')).':'.line('.')
-com! -nargs=0 Pdf exe 'sil !SumatraPDF.exe '.WinPath(substitute(expand('%:p'), '.tex$', '.pdf', ''))
 com! -nargs=0 Directory exe 'sil !explorer.exe ' . substitute(WinPath(expand('%:p:h')), '/', '\\\\', 'g')
 com! -nargs=0 EditComplete e ~/.config/nvim/complete_service.py
 com! -nargs=0 EditAnon e ~/.config/nvim/anon_expand.py
+" ------------------- Latex Misc -----------------------
+let g:PdfLoc = 1
+fu! GetPdfLoc()
+    let cmd = 'sed -n "1,'.line('.').'{/newpage/p}" '.expand('%:p')
+    let rst = split(system(cmd), '\n')
+    retu 1 + len(rst)
+endf
+com! -nargs=0 Pdf exe 'sil !SumatraPDF.exe -reuse-instance -page ' . GetPdfLoc() . ' ' . WinPath(substitute(expand('%:p'), '.tex$', '.pdf', ''))
+com! -nargs=0 PdfLoc exe 'sil !SumatraPDF.exe -reuse-instance -page ' . g:PdfLoc . ' ' . WinPath(substitute(expand('%:p'), '.tex$', '.pdf', ''))
 " ------------------- Async Misc -----------------------
 let g:texCompilePending = 0
 "  qfSearchCmd { qfEntry : [jobId list] }

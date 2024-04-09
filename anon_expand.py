@@ -135,19 +135,22 @@ def latex_expand(word:str):
     if word.startswith('init'): # init coordinates
         n = re.findall(r'\d+', word)
         size = n[0] if len(n) == 1 else '5'
-        axis_pts = [f"x{i},x'{i},y{i},y'{i}" for i in range(1, int(size)+1)]
+        axis_pts = [f"X{i},X'{i},Y{i},Y'{i}" for i in range(1, int(size)+1)]
         return f'\\tkzInit[xmax={size},ymax={size},xmin=-{size},ymin=-{size}]<CR>' \
                 + '\\tkzDrawX[>=latex]<CR>\\tkzDrawY[>=latex]<CR>' \
                 + '\\tkzGrid<CR>\\tkzClip[space=1]<cr>'\
                 + '% \\coordinate(O) at (0,0);<cr>'\
                 + '<cr>'.join([
-                    f"\\tkzDefPoint({i},0){{x{i}}}\\tkzDefPoint(-{i},0){{x'{i}}}\\tkzDefPoint(0,{i}){{y{i}}}\\tkzDefPoint(0,-{i}){{y'{i}}}" for i in range(1, int(size)+1)
+                    f"\\tkzDefPoint({i},0){{X{i}}}\\tkzDefPoint(-{i},0){{X'{i}}}\\tkzDefPoint(0,{i}){{Y{i}}}\\tkzDefPoint(0,-{i}){{Y'{i}}}" for i in range(1, int(size)+1)
                     ]) + '<cr>' \
                 + f'\\tkzDrawPoints[shape=cross,color=black]({",".join(axis_pts)})<cr>'\
                 + '% \\node [above right=of O,label=below:{第一象限}] (1) {1};<cr>'\
                 + '% \\node [above left=of O,label=below:{第二象限}] (2) {2};<cr>'\
                 + '% \\node [below left=of O,label=below:{第三象限}] (3) {3};<cr>'\
-                + '% \\node [below right=of O,label=below:{第四象限}] (4) {4};<cr>'
+                + '% \\node [below right=of O,label=below:{第四象限}] (4) {4};<cr>'\
+                + '% define O<cr>'\
+                + '\\tkzDefPoint(0,0){O}<cr>'\
+                + '% \\tkzLabelPoint[below right](O){$ O $}'
     # point
     if word.startswith('pt'): # define and draw point
         pts = get_pts(word[2:])
@@ -168,9 +171,15 @@ def latex_expand(word:str):
     # line
     if word.startswith('ln'): # define and draw line by tkz-euclide
         pts = get_pts(word[2:])
-        [pt1, pt2] = [pts[0], pts[1]]
-        return f'% draw line {pt1}-{pt2}<CR>' \
-                + '\\tkzDrawLine[solid,color=black,add= 0.0 and 0.0]({}, {})'.format(pt1, pt2)
+        if len(pts) == 2:
+            [pt1, pt2] = [pts[0], pts[1]]
+            return f'% draw line {pt1}-{pt2}<CR>' \
+                    + '\\tkzDrawLine[solid,color=black,add= 0.0 and 0.0]({}, {})'.format(pt1, pt2)
+        else: # multiple lines
+            rst = ''
+            for i in reversed(range(0, len(pts))):
+                rst += f'\\tkzDrawLine[solid,color=black,add= 0.0 and 0.0]({pts[i]}, {pts[i-1]})<cr>'
+            return f'% draw lines {"-".join([pt for pt in pts])}<cr>' + rst
     if word.startswith('ll'): # line and line intercept
         pts = get_pts(word[2:])
         if len(pts) == 5:
@@ -216,12 +225,12 @@ def latex_expand(word:str):
         pts = get_pts(word[3:])
         [pt1, pt2, pt3] = [pts[0], pts[1], pts[2]]
         return f'% mark angle {pt1}-{pt2}-{pt3}<CR>' \
-                + f'\\tkzPicAngle["$ $0 $",draw,angle radius=7,angle eccentricity=1.7]({pt1},{pt2},{pt3})'
+                + f'\\tkzPicAngle["\\scriptsize $ $0 $",draw,angle radius=7,angle eccentricity=1.7]({pt1},{pt2},{pt3})'
     if word.startswith('mkr'): # mark right angle
         pts = get_pts(word[3:])
         [pt1, pt2, pt3] = [pts[0], pts[1], pts[2]]
         return f'% mark right angle {pt1}-{pt2}-{pt3}<CR>' \
-                + f'\\tkzPicRightAngle["$ $0 $",draw,black,thick,angle radius=7]({pt1},{pt2},{pt3})'
+                + f'\\tkzPicRightAngle["\\scriptsize $ $0 $",draw,black,thin,angle radius=7]({pt1},{pt2},{pt3})'
 
     # tkz-euclide calculation
     if word.startswith('glen'): # get length
@@ -289,7 +298,7 @@ def latex_expand(word:str):
         return rst
     if word.startswith('fill'): # fill polygon
         pts = get_pts(word[4:])
-        return f'\\tkzFillPolygon[color=gray]({",".join([pt for pt in pts])})'
+        return f'\\tkzFillPolygon[color=lightgray]({",".join([pt for pt in pts])})'
 
 
     return ''

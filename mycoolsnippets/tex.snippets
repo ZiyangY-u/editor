@@ -180,6 +180,9 @@ snippet fs "方程组 formula set" w
 ${VISUAL}$0
 \\end{aligned} \\right.
 endsnippet
+snippet pi "󰏿" w
+\\tkzPi
+endsnippet
 # math picture
 snippet tkz "tikzpicture" w
 \\begin{wrapfigure}[0]{r}{0.25\textwidth} % 'r' for right
@@ -191,6 +194,10 @@ snippet tkz "tikzpicture" w
 \\begingroup
 \\fontsize{8pt}{12pt}\\selectfont
 \\endgroup
+endsnippet
+# math plot
+snippet plot "math plot" w
+\\draw[color=red,smooth,domain=$1:$2] plot(\x,$3) node[]{$ $0 $};
 endsnippet
 
 # newline and newpage

@@ -209,6 +209,10 @@ def add_words(path:str, enc:str) -> None:
             if cnt == 0:
                 cur.execute('insert into words values ("' + w + '", 0, "' + path + '", null, datetime("now"))')
         cur.execute('insert into path_history values ("' + path + '", "' + hashcode + '", datetime("now"))') # add path to history
+        # clear not chosen words imported 1 days ago
+        # and they will be recruited next time the file involved
+        cur.execute('delete from words where chosen = 0 and import_date < datetime("now", "-1 day")')
+        cur.execute('delete from path_history where import_date < datetime("now", "-1 day")')
         con_completion.commit()
 
 
@@ -576,13 +580,6 @@ if __name__ == '__main__':
             # print('adding path:', path_enc)
             path, enc = path_enc.split(':')
             add_words(path, enc)
-        # clear not chosen words imported 1 days ago
-        # and they will be recruited next time the file involved
-        con_completion = sqlite3.connect(COMPLETE_BUF_DB_PATH)
-        cur = con_completion.cursor()
-        cur.execute('delete from words where chosen = 0 and import_date < datetime("now", "-1 day")')
-        cur.execute('delete from path_history where import_date < datetime("now", "-1 day")')
-        con_completion.commit()
     if sys.argv[1] == '-add_word':
         word = sys.argv[2]
         path = sys.argv[3]
