@@ -239,7 +239,7 @@ def latex_expand(word:str):
         pts = get_pts(word[3:])
         [pt1, pt2, pt3] = [pts[0], pts[1], pts[2]]
         return f'% define pt {pt3} on circle {pt1}{pt2}, based on {pt2}<cr>' \
-                + f'\\tkzDefPointOnCircle[through = center {pt1} angle $0 point {pt2}]<cr> % need to input angle'\
+                + f'\\tkzDefPointOnCircle[through = center {pt1} angle $0 point {pt2}] % need to input angle<cr>'\
                 + get_and_label_pt(pt3)
 
     if word.startswith('pp'): # project(perpendicular) point to line
