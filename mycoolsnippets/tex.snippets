@@ -201,6 +201,12 @@ endsnippet
 snippet plot "math plot" w
 \\draw[color=red,smooth,domain=$1:$2] plot(\x,$3) node[]{$ $0 $};
 endsnippet
+snippet psnode "psDefBoxNodes" w
+\\psDefBoxNodes{`!v 'n'.matchstr(trim(execute('%s/psDefBoxNodes//ng')), "\\d*")`}{${VISUAL}$0}
+endsnippet
+snippet psarc "ps arc" w
+\\ncarc[nodesep=3pt,arcangle=55]{->}{$1:tC}{$2:bC}
+endsnippet
 
 # newline and newpage
 snippet nl "newline" w

@@ -999,13 +999,15 @@ let g:highlightedyank_highlight_duration = 150
 hi HighlightedyankRegion ctermbg=191
 " asyncrun.vim
 fu! AsyncRunPost()
-    if g:asyncrun_status == 'failure' | copen | en
+    if g:asyncrun_status == 'failure' | copen | wincmd w | en
     if g:texCompilePending == 1
         exe printf('AsyncRun xelatex --jobname=%s.tmp %s', expand('%:r'), expand('%:p'))
         let g:texCompilePending = 0
     endif
     if match(g:asyncrun_info, '^xelatex') >= 0 && g:asyncrun_status == 'success' " set tmp.pdf to real pdf
-        exe printf('!mv %s.tmp.pdf %s.pdf', expand('%:p:r'), expand('%:p:r')) | en
+        let target_path = split(g:asyncrun_info)[2]
+        exe printf('!mv %s.tmp.pdf %s.pdf', fnamemodify(target_path, ':p:r'), fnamemodify(target_path, ':p:r'))
+    en
     redrawt
 endf
 au User AsyncRunStop :cal AsyncRunPost()
