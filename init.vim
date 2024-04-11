@@ -1001,9 +1001,12 @@ hi HighlightedyankRegion ctermbg=191
 fu! AsyncRunPost()
     if g:asyncrun_status == 'failure' | copen | en
     if g:texCompilePending == 1
-        exe printf('AsyncRun xelatex %s', expand('%:p'))
+        exe printf('AsyncRun xelatex --jobname=%s.tmp %s', expand('%:r'), expand('%:p'))
         let g:texCompilePending = 0
     endif
+    if match(g:asyncrun_info, '^xelatex') >= 0 && g:asyncrun_status == 'success' " set tmp.pdf to real pdf
+        exe printf('!mv %s.tmp.pdf %s.pdf', expand('%:p:r'), expand('%:p:r')) | en
+    redrawt
 endf
 au User AsyncRunStop :cal AsyncRunPost()
 " }}}
@@ -1068,7 +1071,7 @@ fu! GetDefault(v, default)
 endf
 fu! CompileTex()
     if g:asyncrun_status != 'running'
-        exe printf('AsyncRun xelatex %s', expand('%:p'))
+        exe printf('AsyncRun xelatex --jobname=%s.tmp %s', expand('%:r'), expand('%:p'))
     else
         let g:texCompilePending = 1 | en
 endf
