@@ -269,7 +269,7 @@ def latex_expand(word:str):
         pts = get_pts(word[3:])
         [pt1, pt2, pt3] = [pts[0], pts[1], pts[2]]
         return f'% mark angle {pt1}-{pt2}-{pt3}<CR>' \
-                + f'\\tkzPicAngle["\\scriptsize $ $0 $",draw,angle radius=7,angle eccentricity=1.7]({pt1},{pt2},{pt3})'
+                + f'\\tkzPicAngle["\\tiny $ $0 $",draw,angle radius=7,angle eccentricity=1.7]({pt1},{pt2},{pt3})'
     if word.startswith('mkr'): # mark right angle
         pts = get_pts(word[3:])
         [pt1, pt2, pt3] = [pts[0], pts[1], pts[2]]
@@ -284,7 +284,7 @@ def latex_expand(word:str):
         return f'% get and mark length of line {pt1}-{pt2}<CR>' \
                 + f'\\tkzCalcLength({pt1},{pt2})<CR>' \
                 + '\\tkzGetLength{' + len_var + '}<CR>' \
-                + '\\tkzDrawSegment[dashed,sloped,dim={\\pgfmathprintnumber\\' + len_var + ',-6pt,text=black}]' + f'({pt1},{pt2})'
+                + '\\tkzDrawSegment[dashed,sloped,dim={\\tiny\\pgfmathprintnumber\\' + len_var + ',-6pt,text=black}]' + f'({pt1},{pt2})'
     if word.startswith('gang'): # get angle
         pts = get_pts(word[4:])
         [pt1, pt2, pt3] = [pts[0], pts[1], pts[2]]
@@ -294,16 +294,16 @@ def latex_expand(word:str):
                 + '\\tkzGetAngle{' + ang_var + '}<CR>' \
                 + '\\pgfmathparse{round(\\' + ang_var + ')}<CR>' \
                 + f'\\let\\{ang_var}\\pgfmathresult<CR>' \
-                + f'\\tkzMarkAngle({pt1},{pt2},{pt3})<CR>' \
-                + f'\\tkzLabelAngle[pos=1.8]({pt1},{pt2},{pt3})' + '{\\tiny $ \\' + ang_var + '^\\circ $}'
+                + f'\\tkzPicAngle["\\tiny $ \\{ang_var}^\\circ $",draw,angle radius=7,angle eccentricity=1.7]({pt1},{pt2},{pt3})'
 
     if word.startswith('cir'): # circle
         pts = get_pts(word[3:])
         if len(pts) == 2: # define by O and R
             [pt1, pt2] = [pts[0], pts[1]]
+            len_var = 'len' + get_timeid()
             return f'% define circle by center point {pt1} and r{pt1}{pt2}<cr>' \
-                    + f'\\tkzCalcLength({pt1},{pt2})' + '\\tkzGetLength{r' + pt1 + pt2 + '}<cr>' \
-                    + f'\\tkzDefCircle[R]({pt1},\\r{pt1}{pt2})<cr>' \
+                    + f'\\tkzCalcLength({pt1},{pt2})' + '\\tkzGetLength{' + len_var + '}<cr>' \
+                    + f'\\tkzDefCircle[R]({pt1},\\'+ len_var + ')<cr>' \
                     + f'\\tkzDrawCircle[solid]({pt1},{pt2})'
         if len(pts) == 4: # define by triangular
             [pt1, pt2, pt3, pt4] = [pts[0], pts[1], pts[2], pts[3]]
