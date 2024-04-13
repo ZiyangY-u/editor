@@ -358,6 +358,7 @@ fu! s:GotCandidates(jobId, data, event)
         cal RenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-3)
     endif
 endf
+au CompleteChanged * redraw " redraw view after selection changed
 fu! RefreshCandidates()
     let cw = InsertingWord()
     if len(cw) < 1 | retu | en
