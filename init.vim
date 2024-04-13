@@ -355,7 +355,7 @@ fu! s:GotCandidates(jobId, data, event)
             cal complete(col('.') - len(InsertingWord()), com_items)
             redraw
         endif
-        cal RenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-3)
+        " cal RenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-3)
     endif
 endf
 au CompleteChanged * redraw " redraw view after selection changed
