@@ -355,10 +355,10 @@ fu! s:GotCandidates(jobId, data, event)
             cal complete(col('.') - len(InsertingWord()), com_items)
             redraw
         endif
-        " cal RenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-3)
+        cal RenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-4)
     endif
 endf
-au CompleteChanged * redraw " redraw view after selection changed
+au CompleteChanged * echo v:event['completed_item']
 fu! RefreshCandidates()
     let cw = InsertingWord()
     if len(cw) < 1 | retu | en
