@@ -6,6 +6,7 @@ snippet doc "document" w
 \\usepackage{pgfmath}
 \\usepackage{amssymb}
 \\usepackage{gensymb}
+\\usepackage[dvipsnames]{xcolor} % text colors
 \\usepackage{amsmath}
 \\usepackage{pst-node}
 \\let\clipbox\relax
@@ -13,7 +14,7 @@ snippet doc "document" w
 \\usepackage[normalem]{ulem}
 \\usepackage{geometry}
 \\geometry{
-    left=20mm
+    left=20mm, right=20mm, top=20mm, bottom=20mm,
 }                                      % set left margin
 \\usepackage{graphicx}                 % LaTeX package to import graphics
 \\usepackage[export]{adjustbox}        % positioning figure and img
@@ -21,6 +22,12 @@ snippet doc "document" w
 \\pagenumbering{gobble}                % not showing page number
 \\usepackage{wrapfig}                  % used for positioning figure
 \\setlength{\parindent}{0pt}           % do not indent on start of paragraph
+% arc symbol start
+\\usepackage{tipa}
+\\newcommand{\\arc}[1]{{%
+  \\setbox9=\\hbox{#1}%
+  \\ooalign{\\resizebox{\\wd9}{\\height}{\\texttoptiebar{\\phantom{A}}}\\cr#1}}}
+% arc symbol end
 \\title{document at `date +%Y/%m/%d`}
 \\author{余子杨}
 \\date{`date +%Y/%m/%d`}
@@ -69,11 +76,14 @@ endsnippet
 snippet tc "text color" w
 \\textcolor{$1}{${VISUAL}$0}
 endsnippet
-snippet text "text in formula" w
+snippet t "text in formula" w
 \\text{${VISUAL}$0}
 endsnippet
 snippet hs "空白" w
 \\hspace{$0cm}
+endsnippet
+snippet fn "footnote" w
+\\footnote{$0}
 endsnippet
 
 # images
@@ -89,6 +99,7 @@ endsnippet
 # list
 snippet ol "ordered list" w
 \\begin{enumerate}
+    \\setcounter{enumi}{0}
     \\item $0
 \\end{enumerate}
 endsnippet
@@ -111,7 +122,7 @@ endsnippet
 snippet ^ "上标" i
 ^{$0}
 endsnippet
-snippet / "frac 分之" w
+snippet / "frac 分之" i
 \\frac{$1}{$2}
 endsnippet
 snippet frac1 "包围分母" w
@@ -187,6 +198,11 @@ snippet pi "󰏿" w
 \\tkzPi
 endsnippet
 # math picture
+snippet tikz "tikz picture" w
+\\begin{tikzpicture}[scale=1.0]
+$0
+\\end{tikzpicture}
+endsnippet
 snippet tkz "tikzpicture" w
 \\begin{wrapfigure}[0]{r}{0.25\textwidth} % 'r' for right
 	\\begin{tikzpicture}[scale=.3]
@@ -224,7 +240,7 @@ snippet dt "tikz draw pt to pt" w
 \\draw [solid,thin,-] ($1) to[out=35, in=145] node[ ] {\scriptsize$ $0 $} ($2);
 endsnippet
 snippet lw "tikz line width" w
-line width=$0pt
+line width=$0pt,
 endsnippet
 
 # newline and newpage

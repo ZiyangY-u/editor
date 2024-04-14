@@ -192,8 +192,8 @@ def latex_expand(word:str):
         pts = get_pts(word[2:])
         return f'% draw points {",".join([pt for pt in pts])}<CR>' \
                 + f'\\tkzDrawPoints[fill=black]({",".join([pt for pt in pts])})<CR>'
-    if word.startswith('lp'): # label point
-        pts = get_pts(word[2:])
+    if word.startswith('lbp'): # label point
+        pts = get_pts(word[3:])
         return f'% label points {",".join([pt for pt in pts])}<cr>'\
                 + f'\\tkzLabelPoint[ ]({pts[0]}){{$ $0 $}}'
     if word.startswith('mida'): # middle arc/angle
@@ -244,20 +244,23 @@ def latex_expand(word:str):
 
     if word.startswith('pp'): # project(perpendicular) point to line
         pts = get_pts(word[2:])
-        if len(pts) == 4:
-            [pt1, pt2, pt3, pt4] = [pts[0], pts[1], pts[2], pts[3]]
-            return f'% project pt {pt1} onto line {pt2}-{pt3} intercept at pt {pt4}.<CR>' \
-                    + f'\\tkzDefPointBy[projection=onto {pt2}--{pt3}]({pt1})<CR>' \
-                    + get_and_label_pt(pt4) \
-                    + f'\\tkzDrawLine[solid,color=black,add= 0.0 and 0.0]({pt1},{pt4}) % project end'
+        [pt1, pt2, pt3, pt4] = [pts[0], pts[1], pts[2], pts[3]]
+        return f'% project pt {pt1} onto line {pt2}-{pt3} intercept at pt {pt4}.<CR>' \
+                + f'\\tkzDefPointBy[projection=onto {pt2}--{pt3}]({pt1})<CR>' \
+                + get_and_label_pt(pt4) \
+                + f'\\tkzDrawLine[solid,color=black,add= 0.0 and 0.0]({pt1},{pt4}) % project end'
     if word.startswith('pl'): # parallel
         pts = get_pts(word[2:])
-        if len(pts) == 4:
-            [pt1, pt2, pt3, pt4] = [pts[0], pts[1], pts[2], pts[3]]
-            return f'% from {pt1} parallel to line {pt2}-{pt3} go to pt {pt4}.<CR>' \
-                    + f'\\tkzDefPointWith[colinear=at {pt1}]({pt2},{pt3})<CR>'\
-                    + get_and_label_pt(pt4) \
-                    + f'\\tkzDrawLine[solid,color=black,add= 0.0 and 0.0]({pt1},{pt4}) % parallel end'
+        [pt1, pt2, pt3, pt4] = [pts[0], pts[1], pts[2], pts[3]]
+        return f'% from {pt1} parallel to line {pt2}-{pt3} go to pt {pt4}.<CR>' \
+                + f'\\tkzDefPointWith[colinear=at {pt1}]({pt2},{pt3})<CR>'\
+                + get_and_label_pt(pt4) \
+                + f'\\tkzDrawLine[solid,color=black,add= 0.0 and 0.0]({pt1},{pt4}) % parallel end'
+    if word.startswith('lbln'): # label line
+        pts = get_pts(word[4:])
+        [pt1, pt2] = [pts[0], pts[1]]
+        return f'% label line {pt1}-{pt2}<cr>'\
+                + f'\\tkzLabelLine[pos=.7,left]({pt1},{pt2}){{\\tiny$ $0 $}}<cr>'
 
     # tkz-euclide mark
     if word.startswith('mkln'): # mark line
