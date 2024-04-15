@@ -385,7 +385,7 @@ endf
 au CompleteDonePre * if complete_info(['mode'])['mode'] == 'files' | cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false) | en
 au CompleteDone * sil redraw | cal PostComplete()
 "   <tab> for select candidate, j+n for quick selection
-ino <silent><expr> <tab> pumvisible() ? "\<down>" : "\<tab>"
+im <silent><expr> <tab> pumvisible() ? "\<down>" : (UltiSnips#CanExpandSnippet() ? "\<c-l>" : "\<tab>")
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
 for i in range(2, 9)
     exe printf("im j%d %s<cr>", i, repeat("<tab>", i))
