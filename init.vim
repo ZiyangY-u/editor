@@ -870,7 +870,7 @@ let g:MfzfOpts = ['-1', '-m', '-i', '--reverse',]
 fu! UltiExpand(fromVisual)
     let [snips, query] = [UltiSnips#SnippetsInCurrentScope(1), '']
     if a:fromVisual == 1
-        let Sink = {snip -> execute('norm! gv"_c'.split(snip, "	")[0]."\<c-r>=UltiSnips#ExpandSnippet()\<cr>\<esc>gvkoj=")}
+        let Sink = {snip -> execute('norm! gv"_c'.split(snip, "	")[0]."\<c-r>=UltiSnips#ExpandSnippet()\<cr>")}
     el
         let query = expand("<cword>")
         let Sink = {snip -> execute('norm! "_ciw'.split(snip, "	")[0]."\<c-r>=UltiSnips#ExpandSnippet()\<cr>")}

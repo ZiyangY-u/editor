@@ -28,6 +28,7 @@ snippet doc "document" w
   \\setbox9=\\hbox{#1}%
   \\ooalign{\\resizebox{\\wd9}{\\height}{\\texttoptiebar{\\phantom{A}}}\\cr#1}}}
 % arc symbol end
+\\newcommand{\sq}{\sqrt}
 \\title{document at `date +%Y/%m/%d`}
 \\author{余子杨}
 \\date{`date +%Y/%m/%d`}
@@ -46,6 +47,11 @@ snippet group "begin group" w
 \\begingroup
   \\fontsize{10pt}{12pt}\selectfont
 \\endgroup
+endsnippet
+snippet minip "minipage" w
+\\begin{minipage}[t][3cm]{3cm} % content pos [t]op, [c]enter, [b]ottom; height; width
+$0
+\\end{minipage}
 endsnippet
 
 # text appearance
@@ -138,13 +144,13 @@ snippet dg "degree 度" i
 ^{\\circ}
 endsnippet
 # math - operator
-snippet * "乘以" w
+snippet * "乘以" i
 \\times
 endsnippet
 snippet div "除以" w
 \\div
 endsnippet
-snippet pm "正负" w
+snippet +- "正负" i
 \\pm
 endsnippet
 snippet sq "根号下" w
@@ -274,5 +280,10 @@ snippet goc "get point on circle" w
 endsnippet
 snippet gtc "get point from triangle center" w
 \\tkzDefTriangleCenter[$1]() \\tkzGetPoint{O}
+endsnippet
+
+# for self-define
+snippet ncmd "newcommand" w
+\\newcommand{$0}{$1} % {new}{existed}
 endsnippet
 
