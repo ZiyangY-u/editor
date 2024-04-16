@@ -39,6 +39,7 @@ hi posBar ctermfg=Black ctermbg=Blue
 hi c1 ctermfg=Black ctermbg=DarkCyan
 hi ModColor cterm=bold ctermfg=white ctermbg=68
 hi sleepWindow ctermbg=DarkGray
+hi texPage ctermbg=128
 
 let g:asyncCnt = 0
 fu! ActStl(isActive)
@@ -54,6 +55,7 @@ fu! ActStl(isActive)
 
     let stl.="%=" " left/right separator
     " virtual column number and byte index number
+    if &ft == 'tex' | let stl.='%#texPage# 󰗚 [%{GetPdfLoc()}]' | en " tex Pdf page number
     let stl.="%#posBar#%  %v[%c] %P %#totalL#%L% "
     let stl.=" %#fileType#% %y %{strlen(&fenc)?&fenc:'none'}/%{strlen(&ff)?&ff:''} "
     retu stl
