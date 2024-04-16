@@ -376,7 +376,7 @@ endfunction
 au BufReadPost,BufWritePost,BufEnter * if filereadable(bufname(bufnr())) && !has_key(g:serviceBlackList, bufname(bufnr()))
             \| let g:pathQueue[expand('%:p').':'.getbufvar(bufnr(), "&fenc")] = 1 | en
 cal timer_start(1500, 'RefreshService', {'repeat': -1})
-au CursorMovedI * sil redraw | cal RefreshCandidates() | cal ClearVirtualTxt()
+au CursorMovedI * sil redraw! | cal RefreshCandidates() | cal ClearVirtualTxt()
 " au CursorMovedI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
 fu! PostComplete()
     if exists("v:completed_item['word']")
@@ -385,7 +385,7 @@ fu! PostComplete()
     en
 endf
 au CompleteDonePre * if complete_info(['mode'])['mode'] == 'files' | cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false) | en
-au CompleteDone * sil redraw | cal PostComplete()
+au CompleteDone * redraw! | cal PostComplete()
 "   <tab> for select candidate, j+n for quick selection
 im <silent><expr> <tab> pumvisible() ? "\<down>" : (UltiSnips#CanExpandSnippet() ? "\<c-l>" : "\<tab>")
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
@@ -420,7 +420,7 @@ fu! AddYankHist(toAdd)
     for item in g:yankHistory
         if sha256(item) != sha | cal add(tmpl, item) | en
     endfor
-    cal add(tmpl, a:toAdd)
+    cal add(tmpl, substitute(a:toAdd, '\\', '\\\\', 'g'))
     let g:yankHistory = len(tmpl) > 100 ? tmpl[-100:] : tmpl
     if match(a:toAdd, '^\i*$') >= 0
         cal jobstart(SendService('-chosen', a:toAdd), {'detach':v:true}) | en
