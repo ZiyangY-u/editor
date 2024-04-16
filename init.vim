@@ -1025,7 +1025,7 @@ aug filetypes
     au FileType text,ark :let g:TransMode=GetDefault(g:TransMode, 'Latin')
     au FileType text,ark :let g:WikiTag=GetDefault(g:WikiTag, '\#English')
     au FileType fzf setl nonu nornu
-    au FileType javascript setl ts=2 sw=2
+    au FileType javascript,tex setl ts=2 sw=2
     au FileType vim setl tw=0
     au FileType html,javascript,css,xml :EmmetInstall
     au FileType python,vim,c setl ofu=v:lua.vim.lsp.omnifunc
