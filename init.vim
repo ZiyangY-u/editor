@@ -39,6 +39,7 @@ hi posBar ctermfg=Black ctermbg=Blue
 hi c1 ctermfg=Black ctermbg=DarkCyan
 hi ModColor cterm=bold ctermfg=white ctermbg=68
 hi sleepWindow ctermbg=DarkGray
+hi texPage ctermbg=128
 
 let g:asyncCnt = 0
 fu! ActStl(isActive)
@@ -54,6 +55,7 @@ fu! ActStl(isActive)
 
     let stl.="%=" " left/right separator
     " virtual column number and byte index number
+    if &ft == 'tex' | let stl.='%#texPage# 󰗚 [%{GetPdfLoc()}]' | en " tex Pdf page number
     let stl.="%#posBar#%  %v[%c] %P %#totalL#%L% "
     let stl.=" %#fileType#% %y %{strlen(&fenc)?&fenc:'none'}/%{strlen(&ff)?&ff:''} "
     retu stl
@@ -374,7 +376,7 @@ endfunction
 au BufReadPost,BufWritePost,BufEnter * if filereadable(bufname(bufnr())) && !has_key(g:serviceBlackList, bufname(bufnr()))
             \| let g:pathQueue[expand('%:p').':'.getbufvar(bufnr(), "&fenc")] = 1 | en
 cal timer_start(1500, 'RefreshService', {'repeat': -1})
-au CursorMovedI * sil redraw | cal RefreshCandidates() | cal ClearVirtualTxt()
+au CursorMovedI * sil redraw! | cal RefreshCandidates() | cal ClearVirtualTxt()
 " au CursorMovedI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
 fu! PostComplete()
     if exists("v:completed_item['word']")
@@ -383,7 +385,7 @@ fu! PostComplete()
     en
 endf
 au CompleteDonePre * if complete_info(['mode'])['mode'] == 'files' | cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false) | en
-au CompleteDone * sil redraw | cal PostComplete()
+au CompleteDone * redraw! | cal PostComplete()
 "   <tab> for select candidate, j+n for quick selection
 im <silent><expr> <tab> pumvisible() ? "\<down>" : (UltiSnips#CanExpandSnippet() ? "\<c-l>" : "\<tab>")
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
@@ -418,7 +420,7 @@ fu! AddYankHist(toAdd)
     for item in g:yankHistory
         if sha256(item) != sha | cal add(tmpl, item) | en
     endfor
-    cal add(tmpl, a:toAdd)
+    cal add(tmpl, substitute(a:toAdd, '\\', '\\\\', 'g'))
     let g:yankHistory = len(tmpl) > 100 ? tmpl[-100:] : tmpl
     if match(a:toAdd, '^\i*$') >= 0
         cal jobstart(SendService('-chosen', a:toAdd), {'detach':v:true}) | en
@@ -870,7 +872,7 @@ let g:MfzfOpts = ['-1', '-m', '-i', '--reverse',]
 fu! UltiExpand(fromVisual)
     let [snips, query] = [UltiSnips#SnippetsInCurrentScope(1), '']
     if a:fromVisual == 1
-        let Sink = {snip -> execute('norm! gv"_c'.split(snip, "	")[0]."\<c-r>=UltiSnips#ExpandSnippet()\<cr>\<esc>gvkoj=")}
+        let Sink = {snip -> execute('norm! gv"_c'.split(snip, "	")[0]."\<c-r>=UltiSnips#ExpandSnippet()\<cr>")}
     el
         let query = expand("<cword>")
         let Sink = {snip -> execute('norm! "_ciw'.split(snip, "	")[0]."\<c-r>=UltiSnips#ExpandSnippet()\<cr>")}
@@ -1025,7 +1027,7 @@ aug filetypes
     au FileType text,ark :let g:TransMode=GetDefault(g:TransMode, 'Latin')
     au FileType text,ark :let g:WikiTag=GetDefault(g:WikiTag, '\#English')
     au FileType fzf setl nonu nornu
-    au FileType javascript setl ts=2 sw=2
+    au FileType javascript,tex setl ts=2 sw=2
     au FileType vim setl tw=0
     au FileType html,javascript,css,xml :EmmetInstall
     au FileType python,vim,c setl ofu=v:lua.vim.lsp.omnifunc

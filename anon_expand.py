@@ -148,11 +148,11 @@ def latex_expand(word:str):
         return f'\\tkzInit[xmax={size},ymax={size},xmin=-{size},ymin=-{size}]<CR>' \
                 + '\\tkzDrawX[>=latex]<CR>\\tkzDrawY[>=latex]<CR>' \
                 + '\\tkzGrid<CR>\\tkzClip[space=1]<cr>'\
-                + '% \\coordinate(O) at (0,0);<cr>'\
                 + '<cr>'.join([
                     f"\\tkzDefPoint({i},0){{X{i}}}\\tkzDefPoint(-{i},0){{X{i}'}}\\tkzDefPoint(0,{i}){{Y{i}}}\\tkzDefPoint(0,-{i}){{Y{i}'}}" for i in range(1, int(size)+1)
                     ]) + '<cr>' \
                 + f'\\tkzDrawPoints[shape=cross,color=black]({",".join(axis_pts)})<cr>'\
+                + '% \\coordinate(O) at (0,0);<cr>'\
                 + '% \\node [above right=of O,label=below:{第一象限}] (1) {1};<cr>'\
                 + '% \\node [above left=of O,label=below:{第二象限}] (2) {2};<cr>'\
                 + '% \\node [below left=of O,label=below:{第三象限}] (3) {3};<cr>'\
