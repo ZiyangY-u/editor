@@ -386,6 +386,7 @@ fu! PostComplete()
 endf
 au CompleteDonePre * if complete_info(['mode'])['mode'] == 'files' | cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false) | en
 au CompleteDone * redraw! | cal PostComplete()
+au CompleteDone * if (g:jpIme || g:cnIme) && v:completed_item != {} | cal nvim_feedkeys("\<esc>a", 'i', v:false) | en
 "   <tab> for select candidate, j+n for quick selection
 im <silent><expr> <tab> pumvisible() ? "\<down>" : (UltiSnips#CanExpandSnippet() ? "\<c-l>" : "\<tab>")
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
