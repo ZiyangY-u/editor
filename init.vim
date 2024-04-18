@@ -178,7 +178,7 @@ com! -range -nargs=0 GDAttach :cal GDelAttach(Selected())
 " Vertical Quick Scope
 let g:vertLineMark = nvim_create_namespace('vertLineMark')
 const [g:DOWN, g:UP] = [0, 1]
-fu! PumRenderVerticalScope(start, dense, end, col)
+fu! PumRenderVerticalScope(col)
     cal ClearVirtualTxt()
     let ppos = pum_getpos()
     if !has_key(ppos, 'height') | retu | en " exit when pum not showing
@@ -364,6 +364,9 @@ fu! s:GotCandidates(jobId, data, event)
     endif
 endf
 au CompleteChanged * echo v:event['completed_item']
+" TODO add candidate paging
+" ino <c-n> for paging next
+" ino <c-p> for paging prev
 fu! RefreshCandidates()
     let cw = InsertingWord()
     if len(cw) < 1 | retu | en
@@ -380,7 +383,7 @@ au BufReadPost,BufWritePost,BufEnter * if filereadable(bufname(bufnr())) && !has
             \| let g:pathQueue[expand('%:p').':'.getbufvar(bufnr(), "&fenc")] = 1 | en
 cal timer_start(1500, 'RefreshService', {'repeat': -1})
 au CursorMovedI * sil redraw! | cal RefreshCandidates() | cal ClearVirtualTxt()
-au CompleteChanged * cal PumRenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-3)
+au CompleteChanged * cal PumRenderVerticalScope(virtcol('.')-len(InsertingWord())-3)
 " au CursorMovedI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
 fu! PostComplete()
     if exists("v:completed_item['word']")
