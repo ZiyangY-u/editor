@@ -36,3 +36,7 @@ endsnippet
 snippet nn "null" w
 if(lower(text(`!v getreg('"')`))="null", NULL, `!v getreg('"')`)
 endsnippet
+
+snippet tc "text color in Backlog" w
+&color(red) {$0${VISUAL}}
+endsnippet
