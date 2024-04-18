@@ -357,7 +357,7 @@ fu! s:GotCandidates(jobId, data, event)
             cal complete(col('.') - len(InsertingWord()), com_items)
             redraw
         endif
-        cal RenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-4)
+        cal RenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-3)
     endif
 endf
 au CompleteChanged * echo v:event['completed_item']
@@ -387,6 +387,8 @@ endf
 au CompleteDonePre * if complete_info(['mode'])['mode'] == 'files' | cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false) | en
 au CompleteDone * redraw! | cal PostComplete()
 au CompleteDone * if (g:jpIme || g:cnIme) && v:completed_item != {} | cal nvim_feedkeys("\<esc>a", 'i', v:false) | en
+au User EnterIme ino <silent> <BS> <BS><esc>a
+au User ExitIme sil! iu <BS>
 "   <tab> for select candidate, j+n for quick selection
 im <silent><expr> <tab> pumvisible() ? "\<down>" : (UltiSnips#CanExpandSnippet() ? "\<c-l>" : "\<tab>")
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
@@ -569,8 +571,8 @@ xn <expr> <Down> { 'V':repeat('j', winheight(0)/3) }[mode()]
 xn <silent>x :<C-U>call cursor(line("'}")-1,col("'>"))<CR>`<1v``
 " Quick back to normal mode
 let g:PreferQuitIme = 0
-ino <silent> jk <esc>:if g:PreferQuitIme==1 \| let [g:jpIme, g:cnIme] = [0, 0] \|en<cr>
-ino <silent> jK <esc>:if g:PreferQuitIme==0 \| let [g:jpIme, g:cnIme] = [0, 0] \|en<cr>
+ino <silent> jk <esc>:if g:PreferQuitIme==1 \| let [g:jpIme, g:cnIme] = [0, 0] \| do User ExitIme \|en<cr>
+ino <silent> jK <esc>:if g:PreferQuitIme==0 \| let [g:jpIme, g:cnIme] = [0, 0] \| do User ExitIme \|en<cr>
 cno <expr> jk getcmdtype() == ':' ? '<c-u><esc>' : 'jk'
 tno jk <c-\><c-n>
 xn JK <esc>
@@ -1191,7 +1193,7 @@ fu! WebSearch(content, url, escapeMap)
     endfor
     exe 'sil !msedge.exe '. a:url . resultTarget . ' &' | redraw!
     let g:LastWebSearchURL = substitute(a:url . resultTarget, ' ', '%20', 'g')
-    doautocmd User PostWebSearch
+    do User PostWebSearch
 endf
 
 let g:WikiTag = ''
@@ -1264,8 +1266,8 @@ nn <silent> ,<tab>i :cal TranslitMode()<CR>
 nn <silent> ,<tab>o o<esc>:cal TranslitMode()<CR>
 nn <silent> ,<tab>l :let g:TransMode='Latin'<CR>
 nn <silent> ,<tab>g :let g:TransMode='Greek'<CR>
-ino <silent> jj <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:jpIme == 1 ? [0,0] : [1,0])\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
-ino <silent> jc <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:cnIme == 1 ? [0,0] : [0,1])\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
+ino <silent> jj <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:jpIme == 1 ? [0,0] : [1,0])\|do User EnterIme\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
+ino <silent> jc <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:cnIme == 1 ? [0,0] : [0,1])\|do User EnterIme\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
 im <silent><expr> <cr> (g:jpIme && complete_info().selected == -1) ? "<c-l>" : "<cr>"
 " -------------------- Calc Misc -----------------------
 fu! NumTrans(fmt, num)
