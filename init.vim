@@ -345,28 +345,47 @@ fu! RenderCandidate(_, word)
 endf
 fu! s:GotCandidates(jobId, data, event)
     if a:jobId == g:completingId && mode() == 'i'
-        let [candidates, com_items, g:inserted] = [filter(a:data, {_,item -> item != ''}), [], InsertingWord()]
+        let [candidates, b:com_items, g:inserted] = [filter(a:data, {_,item -> item != ''}), [], InsertingWord()]
         if &omnifunc != '' && !g:jpIme && !g:cnIme && !has_key(g:omniExclude, &ft) " blocking request
             let luacmd = "vim.lsp.buf_request_sync(".bufnr().",'textDocument/completion', vim.lsp.util.make_position_params(), 500)"
             try
                 let _clientId = luaeval("next(".luacmd.")")
                 let fromlsp = luaeval(luacmd."["._clientId."]")
-                let com_items = LspItemsToCompleteItems(fromlsp)
+                let b:com_items = LspItemsToCompleteItems(fromlsp)
             catch | endtry
         endif
-        cal extend(com_items, map(candidates, function('RenderCandidate')))
+        cal extend(b:com_items, map(candidates, function('RenderCandidate')))
         if count(expand("<cWORD>"), '/') >= 2
             cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false)
         else
-            cal complete(col('.') - len(InsertingWord()), com_items)
+            let b:com_page = 1
+            cal complete(col('.') - len(InsertingWord()), b:com_items[:9])
+            do User PumPageChanged
             redraw
         endif
     endif
 endf
 au CompleteChanged * echo v:event['completed_item']
-" TODO add candidate paging
-" ino <c-n> for paging next
-" ino <c-p> for paging prev
+fu! PumNextPage()
+    if len(b:com_items) > 10 * b:com_page
+        let [curr_idx, b:com_page] = [b:com_page*10, b:com_page+1]
+        cal complete(col('.') - len(InsertingWord()), b:com_items[curr_idx:10*b:com_page-1])
+        do User PumPageChanged
+    en
+    retu ''
+endf
+fu! PumPrevPage()
+    if b:com_page >= 2
+        let [prev_idx, b:com_page] = [10*(b:com_page-2), b:com_page-1]
+        cal complete(col('.') - len(InsertingWord()), b:com_items[prev_idx:10*b:com_page-1])
+        do User PumPageChanged
+    en
+    retu ''
+endf
+au User PumPageChanged cal nvim_buf_set_extmark(bufnr(), g:vertLineMark, line(".")-1, 0,
+            \ { "virt_text":[[printf('[%d/%d]', b:com_page, len(b:com_items)/10 + (len(b:com_items)%10>0?1:0)), 'SnipAnon']], "hl_mode":"combine" })
+ino <c-a> <c-r>=PumNextPage()<cr>
+ino <c-s> <c-r>=PumPrevPage()<cr>
 fu! RefreshCandidates()
     let cw = InsertingWord()
     if len(cw) < 1 | retu | en
