@@ -29,7 +29,7 @@ set sc sm nosmd        " showcmd showmatch noshowmode
 set conceallevel=0     " do not hide anything
 set switchbuf+=usetab,newtab
 set title titlestring=%<%F titlelen=0
-set ph=15 pw=20
+set ph=10 pw=20
 
 " Statusline
 hi mod cterm=bold ctermfg=Black ctermbg=DarkRed
@@ -177,17 +177,21 @@ com! -range -nargs=0 GDAttach :cal GDelAttach(Selected())
 
 " Vertical Quick Scope
 let g:vertLineMark = nvim_create_namespace('vertLineMark')
+const [g:DOWN, g:UP] = [0, 1]
+fu! PumRenderVerticalScope(start, dense, end, col)
+    cal ClearVirtualTxt()
+    let ppos = pum_getpos()
+    if !has_key(ppos, 'height') | retu | en " exit when pum not showing
+    let direct = (has_key(ppos, 'row') && ppos['row'] == (winline()+1)) ? g:DOWN : g:UP
+    let [pumHeight, selected] = [float2nr(pum_getpos()['height']), complete_info(['selected'])['selected']]
+    for i in range(1, (pumHeight <= 10 ? pumHeight : 10))
+        let [txt, hl] = [string(abs(i-(selected%10)-1)%10), 'QuickScopePrimary']
+        if direct == g:UP | cal VirtualMarkWrapper(line('.')-pumHeight+i-2, a:col, txt, hl) | en
+        if direct == g:DOWN | cal VirtualMarkWrapper(line('.')+i-1, a:col, txt, hl) | en
+    endfor
+endf
 fu! RenderVerticalScope(start, dense, end, col)
     cal ClearVirtualTxt()
-    if pumvisible()
-        let pumHeight = float2nr(pum_getpos()['height'])
-        for i in range(1, (pumHeight <= 9 ? pumHeight : 9))
-            let [txt, hl] = [string(i), 'QuickScopePrimary']
-            cal VirtualMarkWrapper(line('.')-pumHeight+i-2, a:col, txt, hl)
-            cal VirtualMarkWrapper(line('.')+i-1, a:col, txt, hl)
-        endfor
-        retu
-    endif
     let offset = a:start
     while offset <= (a:end == -1 ? winheight(0) : a:end)
         let [txt, hl] = [string(offset), 'QuickScopePrimary']
@@ -318,7 +322,7 @@ au WinEnter,CursorHold,FocusGained * if expand('%')!="[Command Line]"|checktime
 set dict+=/usr/share/dict/en
 set dict+=/usr/share/dict/esp
 
-set cot=menu,menuone,noselect ssop+=globals
+set cot=menu,menuone,noselect,preview ssop+=globals
 
 "   auto completion
 let [g:completingId, g:jpIme, g:cnIme, g:inserted, g:refreshFlag, g:pathQueue, g:omniExclude, g:serviceBlackList] = [0, 0, 0, '', 0, {}, {}, {}]
@@ -357,7 +361,6 @@ fu! s:GotCandidates(jobId, data, event)
             cal complete(col('.') - len(InsertingWord()), com_items)
             redraw
         endif
-        cal RenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-3)
     endif
 endf
 au CompleteChanged * echo v:event['completed_item']
@@ -377,6 +380,7 @@ au BufReadPost,BufWritePost,BufEnter * if filereadable(bufname(bufnr())) && !has
             \| let g:pathQueue[expand('%:p').':'.getbufvar(bufnr(), "&fenc")] = 1 | en
 cal timer_start(1500, 'RefreshService', {'repeat': -1})
 au CursorMovedI * sil redraw! | cal RefreshCandidates() | cal ClearVirtualTxt()
+au CompleteChanged * cal PumRenderVerticalScope(1, 1, 9, virtcol('.')-len(InsertingWord())-3)
 " au CursorMovedI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
 fu! PostComplete()
     if exists("v:completed_item['word']")
@@ -387,14 +391,13 @@ endf
 au CompleteDonePre * if complete_info(['mode'])['mode'] == 'files' | cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false) | en
 au CompleteDone * redraw! | cal PostComplete()
 au CompleteDone * if (g:jpIme || g:cnIme) && v:completed_item != {} | cal nvim_feedkeys("\<esc>a", 'i', v:false) | en
-au User EnterIme ino <silent> <BS> <BS><esc>a
-au User ExitIme sil! iu <BS>
+au User ImeChanged if (g:jpIme || g:cnIme) | exe "ino <silent> <BS> <BS><esc>a" | else | exe "sil! iu <BS>" | en
 "   <tab> for select candidate, j+n for quick selection
 im <silent><expr> <tab> pumvisible() ? "\<down>" : (UltiSnips#CanExpandSnippet() ? "\<c-l>" : "\<tab>")
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
 for i in range(2, 9)
     exe printf("im j%d %s<cr>", i, repeat("<tab>", i))
-    exe printf("im J%d %s", i, repeat("<tab>", i))
+    exe printf("im J%d %s<cr>", i, repeat("<s-tab>", i))
 endfor
 exe printf("im j%d %s<cr>", 0, repeat("<tab>", 10))
 exe printf("im j<space> %s<cr>", "<tab>")
@@ -571,8 +574,8 @@ xn <expr> <Down> { 'V':repeat('j', winheight(0)/3) }[mode()]
 xn <silent>x :<C-U>call cursor(line("'}")-1,col("'>"))<CR>`<1v``
 " Quick back to normal mode
 let g:PreferQuitIme = 0
-ino <silent> jk <esc>:if g:PreferQuitIme==1 \| let [g:jpIme, g:cnIme] = [0, 0] \| do User ExitIme \|en<cr>
-ino <silent> jK <esc>:if g:PreferQuitIme==0 \| let [g:jpIme, g:cnIme] = [0, 0] \| do User ExitIme \|en<cr>
+ino <silent> jk <esc>:if g:PreferQuitIme==1 \| let [g:jpIme, g:cnIme] = [0, 0] \| do User ImeChanged \|en<cr>
+ino <silent> jK <esc>:if g:PreferQuitIme==0 \| let [g:jpIme, g:cnIme] = [0, 0] \| do User ImeChanged \|en<cr>
 cno <expr> jk getcmdtype() == ':' ? '<c-u><esc>' : 'jk'
 tno jk <c-\><c-n>
 xn JK <esc>
@@ -1266,8 +1269,8 @@ nn <silent> ,<tab>i :cal TranslitMode()<CR>
 nn <silent> ,<tab>o o<esc>:cal TranslitMode()<CR>
 nn <silent> ,<tab>l :let g:TransMode='Latin'<CR>
 nn <silent> ,<tab>g :let g:TransMode='Greek'<CR>
-ino <silent> jj <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:jpIme == 1 ? [0,0] : [1,0])\|do User EnterIme\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
-ino <silent> jc <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:cnIme == 1 ? [0,0] : [0,1])\|do User EnterIme\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
+ino <silent> jj <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:jpIme == 1 ? [0,0] : [1,0])\|do User ImeChanged\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
+ino <silent> jc <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:cnIme == 1 ? [0,0] : [0,1])\|do User ImeChanged\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
 im <silent><expr> <cr> (g:jpIme && complete_info().selected == -1) ? "<c-l>" : "<cr>"
 " -------------------- Calc Misc -----------------------
 fu! NumTrans(fmt, num)
