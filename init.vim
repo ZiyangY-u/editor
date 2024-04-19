@@ -373,8 +373,8 @@ fu! PumPageLoc(pn)
     endif
     retu ''
 endf
-ino <c-a> <c-r>=PumPageLoc(b:c_page-1)<cr>
-ino <c-s> <c-r>=PumPageLoc(b:c_page+1)<cr>
+ino <m-,> <c-r>=PumPageLoc(b:c_page-1)<cr>
+ino <m-.> <c-r>=PumPageLoc(b:c_page+1)<cr>
 fu! RefreshCandidates()
     let cw = InsertingWord()
     if len(cw) < 1 | retu | en
