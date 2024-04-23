@@ -979,7 +979,6 @@ ca gc Git commit
 ca gca Git commit --amend<cr>
 ca gco cal fzf#run({'source':'git branch', 'dir':expand('%:p:h'), 'sink':{gb -> execute('Git checkout '.gb)}, 'options':extend(copy(g:MfzfOpts), ['--prompt=checkout > ']), })<cr>
 ca gch Git checkout
-ca gps Git push
 ca gm Git merge
 ca gcmt Git blame --date=format-local:'%Y/%m/%d %H:%M:%S'
 ca gpl AsyncRun -cwd=<C-R>=expand('%:p:h')<CR> git pull origin <c-r>=fugitive#Head(0,FugitiveGitDir())<CR>
