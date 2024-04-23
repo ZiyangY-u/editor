@@ -365,7 +365,7 @@ fu! s:GotCandidates(jobId, data, event)
 endf
 fu! PumPageLoc(pn)
     let c_len = len(b:c_items)
-    if 0 < a:pn && a:pn * 10 < (c_len + (c_len % 10 > 0 ? 10 : 0))
+    if 0 < a:pn && a:pn * 10 <= (c_len + (c_len % 10 > 0 ? 10 : 0))
         let [start, end, b:c_page] = [(a:pn-1)*10, 10*a:pn-1, a:pn]
         cal complete(col('.') - len(InsertingWord()), b:c_items[start:end])
         cal nvim_buf_set_extmark(bufnr(), g:vertLineMark, line(".")-1, 0,
