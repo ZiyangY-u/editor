@@ -199,6 +199,8 @@ def add_words(path:str, enc:str) -> None:
         con_completion = sqlite3.connect(COMPLETE_BUF_DB_PATH)
         cur = con_completion.cursor()
         for w in tmp:
+            if not w.isascii():
+                continue
             cur.execute('select count(1) from words where word = "' + w + '"')
             cnt = cur.fetchall()[0][0]
             if cnt == 0:
@@ -594,7 +596,8 @@ if __name__ == '__main__':
     if sys.argv[1] == '-add_word':
         word = sys.argv[2]
         path = sys.argv[3]
-        add_word(word, path)
+        if word.isascii():
+            add_word(word, path)
 
     if sys.argv[1] == '-query':
         word = sys.argv[2]
@@ -602,7 +605,8 @@ if __name__ == '__main__':
         rst_list = query_word(word, src)
     if sys.argv[1] == '-chosen':
         chosen_word = sys.argv[2]
-        choose(chosen_word)
+        if chosen_word.isascii():
+            choose(chosen_word)
 
     if sys.argv[1] == '-query_jp':
         word = sys.argv[2]
