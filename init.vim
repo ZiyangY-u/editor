@@ -982,6 +982,8 @@ ca gch Git checkout
 ca gps Git push
 ca gm Git merge
 ca gcmt Git blame --date=format-local:'%Y/%m/%d %H:%M:%S'
+ca gpl AsyncRun -cwd=<C-R>=expand('%:p:h')<CR> git pull origin <c-r>=fugitive#Head(0,FugitiveGitDir())<CR>
+ca gps AsyncRun -cwd=<C-R>=expand('%:p:h')<CR> git push origin <c-r>=fugitive#Head(0,FugitiveGitDir())<CR>
 " vim-easy-align
 xn g= <Plug>(EasyAlign)
 nn g= :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr><Plug>(EasyAlign)
