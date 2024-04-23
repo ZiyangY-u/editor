@@ -309,9 +309,12 @@ def query_jp_dict(word:str):
     if '.' in word:
         word = word[word.index('.')+1:]
     to_query = word.replace('nn', 'n').replace('\\', '')
-    # exact match
-    sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE PLAIN_TEXT = "{}" {}'.format(to_query, order)
+    # exact match original word
+    sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE SRC <> "create" AND PLAIN_TEXT = "{}" {}'.format(to_query, order)
     query(sql, '󰾹 match', con_jp_dict, rst_list)
+    # exact match created word
+    sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE SRC = "create" AND PLAIN_TEXT = "{}" {}'.format(to_query, order)
+    query(sql, '󰾹 created', con_jp_dict, rst_list)
     create_gobi('', '', word)
     # with 語尾
     for romaji_gobi, kana_gobi in GOBI.items():
@@ -476,16 +479,26 @@ def query_cn_dict(word):
     if '.' in word:
         word = word[word.index('.')+1:]
     to_query = word.replace('nn', 'n').replace('\\', '')
-    # exact match
+    # exact match original word
     sql_pinyin = '''
     SELECT DISTINCT D.WORD, D.FREQUENCY, D.CHOSEN FROM CN_DICT D JOIN PINYIN_PLAIN P ON D.WORD = P.WORD
-    WHERE P.PINYIN = "{}" ORDER BY D.CHOSEN DESC, D.FREQUENCY DESC, LENGTH(D.WORD) ASC
+    WHERE D.SRC <> "create" AND P.PINYIN = "{}" ORDER BY D.CHOSEN DESC, D.FREQUENCY DESC, LENGTH(D.WORD) ASC
     '''
     sql_init = '''
     SELECT DISTINCT D.WORD, D.FREQUENCY, D.CHOSEN FROM CN_DICT D JOIN INITIALS I ON D.WORD = I.WORD
-    WHERE I.INITIAL = "{}" ORDER BY D.CHOSEN DESC, D.FREQUENCY DESC, LENGTH(D.WORD) ASC
+    WHERE D.SRC <> "create" AND I.INITIAL = "{}" ORDER BY D.CHOSEN DESC, D.FREQUENCY DESC, LENGTH(D.WORD) ASC
     '''
     query(query_cn_wrap(sql_pinyin, sql_init, to_query), '󰾹 match', con_cn_dict, rst_list)
+    # exact match created word
+    sql_pinyin = '''
+    SELECT DISTINCT D.WORD, D.FREQUENCY, D.CHOSEN FROM CN_DICT D JOIN PINYIN_PLAIN P ON D.WORD = P.WORD
+    WHERE D.SRC = "create" AND P.PINYIN = "{}" ORDER BY D.CHOSEN DESC, D.FREQUENCY DESC, LENGTH(D.WORD) ASC
+    '''
+    sql_init = '''
+    SELECT DISTINCT D.WORD, D.FREQUENCY, D.CHOSEN FROM CN_DICT D JOIN INITIALS I ON D.WORD = I.WORD
+    WHERE D.SRC = "create" AND I.INITIAL = "{}" ORDER BY D.CHOSEN DESC, D.FREQUENCY DESC, LENGTH(D.WORD) ASC
+    '''
+    query(query_cn_wrap(sql_pinyin, sql_init, to_query), '󰾹 created', con_cn_dict, rst_list)
 
     cur = con_cn_dict.cursor()
     # if '/' given then use it as delimiter
