@@ -433,7 +433,7 @@ def get_romaji_from_word(word:str) -> str:
     cur = con_jp_dict.cursor()
     cur.execute(f'select plain_text from jp_dict where word = "{word}" limit 1')
     rst = cur.fetchall()
-    return rst[0][0]
+    return rst[0][0] if len(rst) != 0 else ''
 
 
 def create_jp():
