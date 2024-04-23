@@ -19,22 +19,22 @@ snippet date "date" w
 `date +%Y.%m.%d`
 endsnippet
 
-snippet ( "()" i
+snippet ( "()" "not re.match('\)', vim.eval('getline(\'.\')[col(\'.\')-1]'))" ie
 (${VISUAL}$0)
 endsnippet
-snippet < "<>" i
+snippet < "<>" "not re.match('\>', vim.eval('getline(\'.\')[col(\'.\')-1]'))" ie
 <${VISUAL}$0>
 endsnippet
-snippet [ "[]" i
+snippet [ "[]" "not re.match('\]', vim.eval('getline(\'.\')[col(\'.\')-1]'))" ie
 [${VISUAL}$0]
 endsnippet
-snippet { "{}" i
+snippet { "{}" "not re.match('\}', vim.eval('getline(\'.\')[col(\'.\')-1]'))" ie
 {${VISUAL}$0}
 endsnippet
-snippet ' "quotation" i
+snippet ' "quotation" "not re.match('\'', vim.eval('getline(\'.\')[col(\'.\')-1]'))" ie
 '${VISUAL}$0'
 endsnippet
-snippet " "quotation" i
+snippet " "quotation" "not re.match('\u0022', vim.eval('getline(\'.\')[col(\'.\')-1]'))" ie
 "${VISUAL}$0"
 endsnippet
 
