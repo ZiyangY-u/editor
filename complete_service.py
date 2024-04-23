@@ -320,6 +320,7 @@ def query_jp_dict(word:str):
     # exact match
     sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" {}'.format(to_query, order)
     query(sql, '󰾹 match', con_jp_dict)
+    print(romaji_to_hirakana(word), 'かな') # one candidate for quick select kana
     create_gobi('', '', word)
     # with 語尾
     for romaji_gobi, kana_gobi in GOBI.items():
