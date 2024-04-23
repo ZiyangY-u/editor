@@ -15,7 +15,7 @@ import copy
 import subprocess
 from os import access, R_OK
 from os.path import isfile
-from jpn_ime_service import romaji_to_hirakana, HIRAKANA
+from jpn_ime_service import HIRAKANA
 
 COMPLETE_BUF_DB_PATH = '/root/.config/nvim/completion_buf.db'
 JP_DICT_DB_PATH = '/root/.config/nvim/jp/completion.db'
@@ -25,26 +25,6 @@ VOWELS = 'aeiou'
 DELIMITATOR = '/'
 
 DIGITS = { '0': '０', '1': '１', '2': '２', '3': '３', '4': '４', '5': '５', '6': '６', '7': '７', '8': '８', '9': '９', ',': '，', }
-
-MARKS = {
-        '~':'～',
-        '!':'！',
-        '@':'＠',
-        '#':'＃',
-        '$':'＄',
-        '%':'％',
-        '^':'＾',
-        '&':'＆',
-        '*':'＊',
-        '-':'ー',
-        '<':'＜',
-        '>':'＞',
-        '?':'？',
-        '/':'・',
-        ',':'、',
-        '.':'。',
-        '|':'｜',
-        }
 
 GOBI = {
         # 動詞形
@@ -118,19 +98,34 @@ GOBI = {
 
 # logging.basicConfig(filename='./example.log', level=logging.DEBUG)
 
-def query(sql:str, indicate:str, connection:sqlite3.Connection) -> None:
+class CompletionItem:
+    __slots__ = (
+            "word" # completion word
+            , "indicator"
+            , "freq" # frequency
+            , "sort"
+            )
+
+    def __init__(self, word, indicator, freq=0):
+        self.word = word
+        self.indicator = indicator
+        self.freq = freq
+    def __str__(self):
+        return f"{self.word} {self.indicator}"
+
+def query(sql:str, indicate:str, connection:sqlite3.Connection, rst:list) -> None:
     """
     query from completion db and print result
-    :param sql: sql for query
+    :param sql: sql for query [word, frequency, chosen]
     :param indicate: indicator print after every result
     :param use_dict: use Japanese dictionary if True
     """
     cur = connection.cursor()
     cur.execute(sql)
     for item in cur.fetchall():
-        print(item[0], indicate)
+        rst.append(CompletionItem(item[0], indicate, float(item[1]) + float(item[2])))
 
-def query_with_decor(sql:str, indicate:str, connection:sqlite3.Connection, tail_decor:str) -> None:
+def query_with_decor(sql:str, indicate:str, connection:sqlite3.Connection, tail_decor:str, rst:list) -> None:
     """
     query from completion db and add decoration in tail of every result
     :param sql: sql for query
@@ -141,14 +136,14 @@ def query_with_decor(sql:str, indicate:str, connection:sqlite3.Connection, tail_
     cur = connection.cursor()
     cur.execute(sql)
     for item in cur.fetchall():
-        print(item[0] + tail_decor, indicate)
+        rst.append(CompletionItem(item[0] + tail_decor, indicate, float(item[1]) + float(item[2])))
 
-def query_and_inflect(sql:str, indicate:str, patch:str, tail_decor:str, connection:sqlite3.Connection):
+def query_and_inflect(sql:str, indicate:str, patch:str, tail_decor:str, connection:sqlite3.Connection, rst:list):
     cur = connection.cursor()
     cur.execute(sql)
     # logging.debug(sql)
     for item in cur.fetchall():
-        print(item[0][:-1] + patch + tail_decor, indicate)
+        rst.append(CompletionItem(item[0][:-1] + patch + tail_decor, indicate, float(item[1]) + float(item[2])))
 
 def add_word(word:str, path:str) -> None:
     """
@@ -216,32 +211,35 @@ def add_words(path:str, enc:str) -> None:
         con_completion.commit()
 
 
-def query_word(word:str, src:str) -> None:
+def query_word(word:str, src:str) -> list:
     """
     get candidates from word complition
     :param word: word to query
     :param src: source path indication
     """
+    rst_list = []
     con_completion = sqlite3.connect(COMPLETE_BUF_DB_PATH)
     # create like pattern: query -> %q%u%e%r%y%
     like_pat = '%' + '%'.join((ch for ch in word)) + '%'
     # recent hot words, recent 2 hours chosen
-    sql = '''SELECT DISTINCT WORD FROM WORDS WHERE
+    sql = '''SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE
             LENGTH(WORD) < 100 AND WORD LIKE "''' + like_pat + '''" COLLATE NOCASE
             AND RECENT_CHOSEN_TIME IS NOT NULL
-            AND RECENT_CHOSEN_TIME >= DATETIME("NOW", "-2 HOUR")
+            AND RECENT_CHOSEN_TIME >= DATETIME("NOW", "-1 HOUR")
             ORDER BY RECENT_CHOSEN_TIME DESC, CHOSEN DESC LIMIT 5'''
-    query(sql, '󰈸 hot data', con_completion)
+    query(sql, '󰈸 hot data', con_completion, rst_list)
 
     # from current file
-    sql = 'SELECT DISTINCT WORD FROM WORDS WHERE SRC="' + src + '" AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ORDER BY CHOSEN DESC LIMIT 5'
-    query(sql, '󰈝 this file', con_completion)
+    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE SRC="' + src + '" AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ORDER BY CHOSEN DESC LIMIT 5'
+    query(sql, '󰈝 this file', con_completion, rst_list)
     # chosen history
-    sql = 'SELECT DISTINCT WORD FROM WORDS WHERE CHOSEN > 0 AND LENGTH(WORD) < 100 AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ORDER BY CHOSEN DESC LIMIT 15'
-    query(sql, '󱈅 chosen history', con_completion)
+    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE CHOSEN > 0 AND LENGTH(WORD) < 100 AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ORDER BY CHOSEN DESC LIMIT 15'
+    query(sql, '󱈅 chosen history', con_completion, rst_list)
     # unchosen words
-    sql = 'SELECT DISTINCT WORD FROM WORDS WHERE LENGTH(WORD) < 100 AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ORDER BY LENGTH(WORD) LIMIT 20'
-    query(sql, '󰄮 unchosen', con_completion)
+    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE CHOSEN = 0 AND LENGTH(WORD) < 100 AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ORDER BY LENGTH(WORD) LIMIT 20'
+    query(sql, '󰄮 unchosen', con_completion, rst_list)
+
+    return rst_list
 
 def choose(word:str) -> None:
     """
@@ -259,13 +257,6 @@ def choose(word:str) -> None:
         con_completion.commit()
     else:
         add_word(word, '-')
-
-def prints(marks:list) -> None:
-    """
-    prints marks in a list.
-    """
-    for mk in marks:
-        print(mk)
 
 DIGIT_MARKS = {
         '1': ['①', '❶', 'Ⅰ', 'ⅰ'],
@@ -290,13 +281,13 @@ DIGIT_MARKS = {
         ')': ['）', '」', '〕', '］', '｝', '〉', '》', '』', '】'],
         }
 
-def print_marks(word:str):
+def print_marks(word:str, rst:list):
     """
     print marks from DIGIT_MARKS, indicated by :param word:.
     """
     for w, mks in DIGIT_MARKS.items():
         if word == w:
-            prints(mks)
+            rst.extend([CompletionItem(mk, 'marks') for mk in mks])
 
 def create_gobi(created_romaji, created_kana, romaji):
     gobi_tmp = copy.deepcopy(GOBI)
@@ -312,69 +303,69 @@ def query_jp_dict(word:str):
     query candidates from Japanese dictionary complition.
     :param word: word to query
     """
+    rst_list = []
     con_jp_dict = sqlite3.connect(JP_DICT_DB_PATH)
     order = ' ORDER BY CHOSEN DESC, FREQUENCY DESC, LENGTH(WORD), LENGTH(PLAIN_TEXT) ASC'
     if '.' in word:
         word = word[word.index('.')+1:]
     to_query = word.replace('nn', 'n').replace('\\', '')
     # exact match
-    sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" {}'.format(to_query, order)
-    query(sql, '󰾹 match', con_jp_dict)
-    print(romaji_to_hirakana(word), 'かな') # one candidate for quick select kana
+    sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE PLAIN_TEXT = "{}" {}'.format(to_query, order)
+    query(sql, '󰾹 match', con_jp_dict, rst_list)
     create_gobi('', '', word)
     # with 語尾
     for romaji_gobi, kana_gobi in GOBI.items():
         if word.endswith(romaji_gobi):
             without_gobi = to_query[:-len(romaji_gobi)]
             # 登る %-_u
-            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi[:-1] + 'u', order)
+            sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi[:-1] + 'u', order)
             if without_gobi[-2:] in HIRAKANA.keys():
-                query_and_inflect(sql, '󰷫 Inf(_u)+語尾', HIRAKANA[without_gobi[-2:]], kana_gobi, con_jp_dict)
+                query_and_inflect(sql, '󰷫 Inf(_u)+語尾', HIRAKANA[without_gobi[-2:]], kana_gobi, con_jp_dict, rst_list)
             elif without_gobi[-1:] in HIRAKANA.keys():
-                query_and_inflect(sql, '󰷫 Inf(_u)+語尾', HIRAKANA[without_gobi[-1:]], kana_gobi, con_jp_dict)
+                query_and_inflect(sql, '󰷫 Inf(_u)+語尾', HIRAKANA[without_gobi[-1:]], kana_gobi, con_jp_dict, rst_list)
             # んで
             if romaji_gobi.startswith('nd'):
-                sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'mu', order)
-                query_and_inflect(sql, '󰷫 Inf(む)+語尾', '', kana_gobi, con_jp_dict)
-                sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'bu', order)
-                query_and_inflect(sql, '󰷫 Inf(ぶ)+語尾', '', kana_gobi, con_jp_dict)
-                sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'nu', order)
-                query_and_inflect(sql, '󰷫 Inf(ぬ)+語尾', '', kana_gobi, con_jp_dict)
+                sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'mu', order)
+                query_and_inflect(sql, '󰷫 Inf(む)+語尾', '', kana_gobi, con_jp_dict, rst_list)
+                sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'bu', order)
+                query_and_inflect(sql, '󰷫 Inf(ぶ)+語尾', '', kana_gobi, con_jp_dict, rst_list)
+                sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'nu', order)
+                query_and_inflect(sql, '󰷫 Inf(ぬ)+語尾', '', kana_gobi, con_jp_dict, rst_list)
             # して
             if romaji_gobi.startswith('shit'):
-                sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'su', order)
-                query_and_inflect(sql, '󰷫 Inf(す)+語尾', '', kana_gobi, con_jp_dict)
+                sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'su', order)
+                query_and_inflect(sql, '󰷫 Inf(す)+語尾', '', kana_gobi, con_jp_dict, rst_list)
             # いて
             if romaji_gobi.startswith('it'):
-                sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'tu', order)
-                query_and_inflect(sql, '󰷫 Inf(つ)+語尾', '', kana_gobi, con_jp_dict)
-                sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'ku', order)
-                query_and_inflect(sql, '󰷫 Inf(く)+語尾', '', kana_gobi, con_jp_dict)
+                sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'tu', order)
+                query_and_inflect(sql, '󰷫 Inf(つ)+語尾', '', kana_gobi, con_jp_dict, rst_list)
+                sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'ku', order)
+                query_and_inflect(sql, '󰷫 Inf(く)+語尾', '', kana_gobi, con_jp_dict, rst_list)
             # って
             if romaji_gobi.startswith('tt'):
-                sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'ru', order)
-                query_and_inflect(sql, '󰷫 Inf(る)+語尾', '', kana_gobi, con_jp_dict)
-                sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-u" {} limit 20'.format(without_gobi + 'u', order)
-                query_and_inflect(sql, '󰷫 Inf(う)+語尾', '', kana_gobi, con_jp_dict)
+                sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-_u" {} limit 20'.format(without_gobi + 'ru', order)
+                query_and_inflect(sql, '󰷫 Inf(る)+語尾', '', kana_gobi, con_jp_dict, rst_list)
+                sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-u" {} limit 20'.format(without_gobi + 'u', order)
+                query_and_inflect(sql, '󰷫 Inf(う)+語尾', '', kana_gobi, con_jp_dict, rst_list)
 
             # 買う %-u
-            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-u" {} limit 20'.format(without_gobi[:-2] + 'u', order)
+            sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-u" {} limit 20'.format(without_gobi[:-2] + 'u', order)
             if without_gobi[-2:] in HIRAKANA.keys():
-                query_and_inflect(sql, '󰷫 Inf(u)+語尾', HIRAKANA[without_gobi[-2:]], kana_gobi, con_jp_dict)
+                query_and_inflect(sql, '󰷫 Inf(u)+語尾', HIRAKANA[without_gobi[-2:]], kana_gobi, con_jp_dict, rst_list)
 
-            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-adj" {}'.format(without_gobi + 'i', order)
-            query_and_inflect(sql, '󰷫 い形容詞 語尾', '', kana_gobi, con_jp_dict)
-            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src = "kunnyomi" {} LIMIT 5'.format(without_gobi, order)
-            query_with_decor(sql, '󰷫 訓+語尾', con_jp_dict, kana_gobi)
-            sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src <> "kunnyomi" {}'.format(without_gobi, order)
-            query_with_decor(sql, '󰷫 語尾', con_jp_dict, kana_gobi)
+            sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src like "%-adj" {}'.format(without_gobi + 'i', order)
+            query_and_inflect(sql, '󰷫 い形容詞 語尾', '', kana_gobi, con_jp_dict, rst_list)
+            sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src = "kunnyomi" {} LIMIT 5'.format(without_gobi, order)
+            query_with_decor(sql, '󰷫 訓+語尾', con_jp_dict, kana_gobi, rst_list)
+            sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE PLAIN_TEXT = "{}" and src <> "kunnyomi" {}'.format(without_gobi, order)
+            query_with_decor(sql, '󰷫 語尾', con_jp_dict, kana_gobi, rst_list)
 
     order = ' ORDER BY CHOSEN DESC, LENGTH(WORD), LENGTH(PLAIN_TEXT) ASC, FREQUENCY DESC'
     # chosen words
-    sql = 'SELECT DISTINCT WORD FROM JP_DICT WHERE PLAIN_TEXT LIKE "{}%" AND CHOSEN > 0 {}'.format(to_query, order)
-    query(sql, '󰂺 chosen', con_jp_dict)
+    sql = 'SELECT DISTINCT WORD, FREQUENCY, CHOSEN FROM JP_DICT WHERE PLAIN_TEXT LIKE "{}%" AND CHOSEN > 0 {}'.format(to_query, order)
+    query(sql, '󰂺 chosen', con_jp_dict, rst_list)
     # special marks
-    print_marks(word)
+    print_marks(word, rst_list)
 
     cur = con_jp_dict.cursor()
     # if '/' given then use it as delimiter
@@ -389,20 +380,23 @@ def query_jp_dict(word:str):
         rst = cur.execute(sql).fetchall()
         if rst:
             for item in rst:
-                print(item[0] + r, '󰎔')
+                rst_list.append(CompletionItem(item[0] + r, '󰎔'))
             break
     # digits (currency)
     if re.compile(r'^\d*$').match(word):
-        print(word)
-        print("{:,}".format(int(word)))
-        print(''.join(DIGITS[d] for d in [*word]))
-        print(''.join(DIGITS[d] for d in [*"{:,}".format(int(word))]))
+        rst_list.append(CompletionItem(word, 'digit'))
+        rst_list.append(CompletionItem("{:,}".format(int(word)), 'digit'))
+        rst_list.append(CompletionItem(''.join(DIGITS[d] for d in [*word]), 'digit'))
+        rst_list.append(CompletionItem(''.join(DIGITS[d] for d in [*"{:,}".format(int(word))]), 'digit'))
 
     # katakana
     result = subprocess.run(['/root/.config/nvim/romaji_hirakana', word], stdout=subprocess.PIPE)
-    katakana = result.stdout.decode('utf8')
-    result = subprocess.run(['/root/.config/nvim/hirakana_to_katakana', katakana], stdout=subprocess.PIPE)
-    print(result.stdout.decode('utf8'))
+    hirakana = result.stdout.decode('utf8').rstrip()
+    result = subprocess.run(['/root/.config/nvim/hirakana_to_katakana', hirakana], stdout=subprocess.PIPE)
+    rst_list.append(CompletionItem(result.stdout.decode('utf8').rstrip(), 'カタカナ'))
+    # かな
+    rst_list.insert(1, CompletionItem(hirakana, '平仮名')) # one candidate for quick select kana
+    return rst_list
 
 def choose_jp_dict(word:str, inserting:str):
     con_jp_dict = sqlite3.connect(JP_DICT_DB_PATH)
@@ -477,20 +471,21 @@ def query_cn_wrap(sql_pinyin, sql_init, word):
         return sql_pinyin.format(word)
 
 def query_cn_dict(word):
+    rst_list = []
     con_cn_dict = sqlite3.connect(CN_DICT_DB_PATH)
     if '.' in word:
         word = word[word.index('.')+1:]
     to_query = word.replace('nn', 'n').replace('\\', '')
     # exact match
     sql_pinyin = '''
-    SELECT DISTINCT D.WORD FROM CN_DICT D JOIN PINYIN_PLAIN P ON D.WORD = P.WORD
+    SELECT DISTINCT D.WORD, D.FREQUENCY, D.CHOSEN FROM CN_DICT D JOIN PINYIN_PLAIN P ON D.WORD = P.WORD
     WHERE P.PINYIN = "{}" ORDER BY D.CHOSEN DESC, D.FREQUENCY DESC, LENGTH(D.WORD) ASC
     '''
     sql_init = '''
-    SELECT DISTINCT D.WORD FROM CN_DICT D JOIN INITIALS I ON D.WORD = I.WORD
+    SELECT DISTINCT D.WORD, D.FREQUENCY, D.CHOSEN FROM CN_DICT D JOIN INITIALS I ON D.WORD = I.WORD
     WHERE I.INITIAL = "{}" ORDER BY D.CHOSEN DESC, D.FREQUENCY DESC, LENGTH(D.WORD) ASC
     '''
-    query(query_cn_wrap(sql_pinyin, sql_init, to_query), '󰾹 match', con_cn_dict)
+    query(query_cn_wrap(sql_pinyin, sql_init, to_query), '󰾹 match', con_cn_dict, rst_list)
 
     cur = con_cn_dict.cursor()
     # if '/' given then use it as delimiter
@@ -512,7 +507,8 @@ def query_cn_dict(word):
         r = to_query[len(pin):]
         if r.startswith(DELIMITATOR): # remove start delimitator
             r = r[1:]
-        print(item[0] + r, '󰎔')
+        rst_list.append(CompletionItem(item[0] + r, '󰎔'))
+    return rst_list
 
 def insert_new_cn_word(word, cursor):
     cnt = cursor.execute('select count(1) from cn_dict where word = "{}"'.format(word)).fetchall()
@@ -573,6 +569,7 @@ def add_cn_chosen_cnt(word:str, cursor):
         insert_new_cn_word(word, cursor)
 
 if __name__ == '__main__':
+    rst_list = []
     if sys.argv[1] == '-h':
         print('hello')
     if sys.argv[1] == '-add_path':
@@ -589,27 +586,30 @@ if __name__ == '__main__':
     if sys.argv[1] == '-query':
         word = sys.argv[2]
         src = sys.argv[3]
-        query_word(word, src)
+        rst_list = query_word(word, src)
     if sys.argv[1] == '-chosen':
         chosen_word = sys.argv[2]
         choose(chosen_word)
 
     if sys.argv[1] == '-query_jp':
         word = sys.argv[2]
-        query_jp_dict(word)
+        rst_list = query_jp_dict(word)
     if sys.argv[1] == '-chosen_jp':
         chosen_word, inserting = sys.argv[2:4]
         choose_jp_dict(chosen_word, inserting.replace(DELIMITATOR, ''))
     if sys.argv[1] == '-create':
         create_cn()
-    if sys.argv[1] == '-test':
-        create_gobi('', '', 'atukunakunarimashita')
-        print(GOBI)
+    # if sys.argv[1] == '-test':
+    #     create_gobi('', '', 'atukunakunarimashita')
+    #     print(GOBI)
 
     if sys.argv[1] == '-query_cn':
         word = sys.argv[2]
-        query_cn_dict(word)
+        rst_list = query_cn_dict(word)
     if sys.argv[1] == '-chosen_cn':
         chosen_word, inserting = sys.argv[2:4]
         choose_cn_dict(chosen_word, inserting.replace(DELIMITATOR, ''))
+
+    for it in rst_list:
+        print(it)
 

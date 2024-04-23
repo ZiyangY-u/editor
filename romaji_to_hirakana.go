@@ -55,6 +55,7 @@ func main() {
         "hya": "ひゃ", "hyu": "ひゅ", "hyo": "ひょ",
         "mya": "みゃ", "myu": "みゅ", "myo": "みょ",
         "rya": "りゃ", "ryu": "りゅ", "ryo": "りょ",
+        "-": "ー",
     }
 
     romaji := os.Args[1]
@@ -81,6 +82,11 @@ func main() {
                 kana_buf = kana_buf + HIRAKANA[romaji_buf[1:]]
                 romaji_buf = ""
             }
+        }
+        if string(ch) == "-" {
+            kana_buf = kana_buf + "ー"
+            romaji_buf = ""
+            continue
         }
         if !contains(VOWELS, string(ch)){
             romaji_buf = romaji_buf + string(ch)
