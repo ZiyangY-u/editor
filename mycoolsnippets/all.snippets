@@ -19,16 +19,16 @@ snippet date "date" w
 `date +%Y.%m.%d`
 endsnippet
 
-snippet ( "()" "not re.match('\)', vim.eval('getline(\'.\')[col(\'.\')-1]'))" ie
+snippet ( "()" "not re.match('\)', vim.eval('getline(\'.\')[col(\'.\')-1]')) and not re.match('1', vim.eval('g:jpIme'))" ie
 (${VISUAL}$0)
 endsnippet
-snippet < "<>" "not re.match('\>', vim.eval('getline(\'.\')[col(\'.\')-1]'))" ie
+snippet < "<>" "not re.match('\>', vim.eval('getline(\'.\')[col(\'.\')-1]')) and not re.match('1', vim.eval('g:jpIme'))" ie
 <${VISUAL}$0>
 endsnippet
-snippet [ "[]" "not re.match('\]', vim.eval('getline(\'.\')[col(\'.\')-1]'))" ie
+snippet [ "[]" "not re.match('\]', vim.eval('getline(\'.\')[col(\'.\')-1]')) and not re.match('1', vim.eval('g:jpIme'))" ie
 [${VISUAL}$0]
 endsnippet
-snippet { "{}" "not re.match('\}', vim.eval('getline(\'.\')[col(\'.\')-1]'))" ie
+snippet { "{}" "not re.match('\}', vim.eval('getline(\'.\')[col(\'.\')-1]')) and not re.match('1', vim.eval('g:jpIme'))" ie
 {${VISUAL}$0}
 endsnippet
 snippet ' "quotation" "not re.match('\'', vim.eval('getline(\'.\')[col(\'.\')-1]'))" ie
