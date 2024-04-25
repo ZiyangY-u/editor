@@ -206,11 +206,12 @@ def add_words(path:str, enc:str) -> None:
             if cnt == 0:
                 cur.execute('insert into words values ("' + w + '", 0, "' + path + '", null, datetime("now"))')
         cur.execute('insert into path_history values ("' + path + '", "' + hashcode + '", datetime("now"))') # add path to history
-        # clear not chosen words imported 1 days ago
-        # and they will be recruited next time the file involved
-        cur.execute('delete from words where chosen = 0 and import_date < datetime("now", "-1 day")')
-        cur.execute('delete from path_history where import_date < datetime("now", "-1 day")')
-        con_completion.commit()
+    # clear not chosen words imported 1 days ago
+    # and they will be recruited next time the file involved
+    cur.execute('delete from words where chosen = 0 and import_date < datetime("now", "-1 day")')
+    cur.execute('delete from words where recent_chosen_time < datetime("now", "-7 day")')
+    cur.execute('delete from path_history where import_date < datetime("now", "-1 day")')
+    con_completion.commit()
 
 
 def query_word(word:str, src:str) -> list:
