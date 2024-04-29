@@ -297,6 +297,8 @@ fu! GoMark(flag) " 0 for prev; 1 for next
 endf
 let g:refresh = timer_start(1000, 'RefreshRoadMap', {'repeat': -1})
 
+" Quick Comment
+
 " Diff
 hi DiffText ctermbg=88
 hi DiffChange ctermbg=none
@@ -1185,7 +1187,7 @@ endf
 fu! CaseConvert(content)
     let converted = match(a:content, '_\([A-Z]\)') >= 0 ? tolower(a:content) : a:content
     if match(a:content, '_\([a-z]\)') >= 0 " u2c
-        retu substitute(converted, '_\([a-z]\)', '\u\1', 'g')
+        retu substitute(converted, '_\([a-z1-9]\)', '\u\1', 'g')
     elseif match(a:content, '\(\u\?\l\+\)\(\u\)') >= 0 " c2u
         retu substitute(converted, '\(\u\?\l\+\)\(\u\)', '\l\1_\l\2', 'g')
     el
