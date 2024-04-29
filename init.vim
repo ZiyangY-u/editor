@@ -247,8 +247,7 @@ endf
 fu! RefreshRoadMap(timer)
     if !exists('g:roadmapbuf') || &ft == 'roadmap' | retu | en
     if index(tabpagebuflist(), g:roadmapbuf) < 0 | cal timer_pause(g:refresh, 1) | en
-    " clear buf content first
-    for i in range(1, 999) | cal setbufline(g:roadmapbuf, i, '') | endfor
+    for i in range(1, 999) | cal setbufline(g:roadmapbuf, i, '') | endfor " clear buf content first
     call setbufline(g:roadmapbuf, 1, ['  Roadmap:'])
 
     let marks = GetMarks()
@@ -298,6 +297,34 @@ endf
 let g:refresh = timer_start(1000, 'RefreshRoadMap', {'repeat': -1})
 
 " Quick Comment
+let g:quickCmtDbPath = ''
+au ExitPre * if exists('g:quickCmtBuf') | exe 'bd!'.g:quickCmtBuf | en
+au CursorHold * if exists('g:quickCmtBuf') && index(tabpagebuflist(), g:quickCmtBuf) >= 0 | cal timer_pause(g:refreshQuickCmt, 0) | en
+fu! ToggleQuickCmt()
+    if !exists('g:quickCmtBuf') || !bufexists(g:quickCmtBuf)
+        let g:quickCmtBuf = bufadd('') | call bufload(g:quickCmtBuf) | en
+    cal RefreshQuickCmt('')
+    if index(tabpagebuflist(), g:quickCmtBuf) == -1
+        exe 'bo vsplit |b'.g:quickCmtBuf.'|vert res 25'
+        cal setbufvar(g:quickCmtBuf, '&rnu', 0) | cal setbufvar(g:quickCmtBuf, '&nu', 0) | cal setbufvar(g:quickCmtBuf, '&wrap', 1)
+        cal setbufvar(g:quickCmtBuf, '&ft', 'quickCmtBuf')
+        wincmd p " jump back to main window
+    en
+endf
+fu! RefreshQuickCmt(timer)
+    if !exists('g:quickCmtBuf') || &ft == 'quickCmtBuf' | retu | en
+    if index(tabpagebuflist(), g:quickCmtBuf) < 0 | cal timer_pause(g:refreshQuickCmt, 1) | en
+    for i in range(1, 999) | cal setbufline(g:quickCmtBuf, i, '') | endfor " clear buf content first
+    cal setbufline(g:quickCmtBuf, 1, ['󰡟  Quick Comment:'])
+    let cword = expand("<cword>")
+    cal setbufline(g:quickCmtBuf, 2, [cword])
+    let cmd = ['~/.config/nvim/quick_cmt.py', g:quickCmtDbPath, cword, CaseConvert(cword)]
+    let [rst, idx] = [split(system(join(cmd, ' ')), '\n'), 3]
+    for ln in rst
+        call setbufline(g:quickCmtBuf, idx, ln)
+    endfor
+endf
+let g:refreshQuickCmt = timer_start(1000, 'RefreshQuickCmt', {'repeat': -1})
 
 " Diff
 hi DiffText ctermbg=88
