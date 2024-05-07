@@ -380,7 +380,7 @@ ino <m-.> <c-r>=PumPageLoc(b:c_page+1)<cr>
 fu! RefreshCandidates()
     let cw = InsertingWord()
     if len(cw) < 1 | retu | en
-    let query = g:jpIme ? '-query_jp' : (g:cnIme ? '-query_cn' : '-query')
+    let query = g:jpIme ? '-query_jp' : g:cnIme ? '-query_cn' : '-query'.(g:pLang == '' ? '' : '_'.g:pLang)
     let g:completingId = jobstart(SendService(query, '"'.cw.'" "'.expand('%p').'"'), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
 endf
 fu! RefreshService(timer)
@@ -392,7 +392,7 @@ endfunction
 au BufReadPost,BufWritePost,BufEnter * if filereadable(bufname(bufnr())) && !has_key(g:serviceBlackList, bufname(bufnr()))
             \| let g:pathQueue[expand('%:p').':'.getbufvar(bufnr(), "&fenc")] = 1 | en
 cal timer_start(1500, 'RefreshService', {'repeat': -1})
-au CursorMovedI * sil redraw! | cal RefreshCandidates() | cal ClearVirtualTxt()
+au CursorMovedI,CursorHoldI * sil redraw! | cal RefreshCandidates() | cal ClearVirtualTxt()
 au CompleteChanged * cal PumRenderVerticalScope(virtcol('.')-len(InsertingWord())-3)
 " au CursorMovedI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
 fu! PostComplete()
@@ -674,6 +674,7 @@ hi Git ctermfg=Black ctermbg=185
 hi Trans ctermfg=227 ctermbg=31
 hi Obss ctermfg=Black ctermbg=118
 hi CSInfo cterm=bold ctermfg=white ctermbg=blue
+hi PreferLang ctermfg=black ctermbg=135
 nn ,t :cal SplitOp('tabe \|', '')<CR>
 vn ,t :cal SplitOp('tabe \|', Selected())<CR>
 nn t gt
@@ -705,6 +706,7 @@ fu! ActTal()
     let tal .= "%#CSInfo#".(g:asyncrun_status=='success' ? '  ':'')
     let tal .= "%#Git#%{FugitiveStatusline()}"
     let tal .= "%#Trans#%{g:TransMode}%{g:jpIme||g:cnIme ? '  󰗊 ' : ''}"
+    let tal .= "%#PreferLang#%{g:pLang}"
     let tal .= "%#Obss#%{ObsessionStatus()}"
     retu tal
 endfu
@@ -1259,7 +1261,7 @@ fu! IndoEuropeanFZF()
     let spec = {'options': ['--phony', '--bind', 'change:reload:'.reload_cmd]}
     cal fzf#vim#grep('echo "type to search"', 1, spec, 1)
 endf
-let [g:transCache, g:TransMode] = ['', '']
+let [g:transCache, g:TransMode, g:pLang] = ['', '', ''] " pLang for prefer language
 fu! TranslitMode()
     hi CursorLine ctermbg=31 | redraw | let ch = getchar()
     if ch == 27 || (g:transCache[-1:-1] == 'j' && ch == 107) " ESC

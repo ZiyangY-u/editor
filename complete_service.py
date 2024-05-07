@@ -16,6 +16,7 @@ import subprocess
 from os import access, R_OK
 from os.path import isfile
 from jpn_ime_service import HIRAKANA
+from anon_expand import ESCAPE
 
 COMPLETE_BUF_DB_PATH = '/root/.config/nvim/completion_buf.db'
 JP_DICT_DB_PATH = '/root/.config/nvim/jp/completion.db'
@@ -209,7 +210,7 @@ def add_words(path:str, enc:str) -> None:
     # clear not chosen words imported 1 days ago
     # and they will be recruited next time the file involved
     cur.execute('delete from words where chosen = 0 and import_date < datetime("now", "-1 day")')
-    cur.execute('delete from words where recent_chosen_time < datetime("now", "-7 day")')
+    cur.execute('delete from words where chosen < 5 and recent_chosen_time < datetime("now", "-7 day")')
     cur.execute('delete from path_history where import_date < datetime("now", "-1 day")')
     con_completion.commit()
 
@@ -584,6 +585,21 @@ def add_cn_chosen_cnt(word:str, cursor):
     elif len(chosen_cnt) == 0: # create new one
         insert_new_cn_word(word, cursor)
 
+def query_all_dict(word:str, use_en:bool, use_de:bool):
+    rst_list = []
+    exp = '^' + '.*'.join([ESCAPE[ch] if ch in ESCAPE else '['+ch+ch.upper()+']' for ch in word])
+    if use_en:
+        result = subprocess.run(['rg', exp, '-I', '/usr/share/dict/en'], stdout=subprocess.PIPE)
+        rst = result.stdout.decode('utf8').split('\n')
+        for dict_word in filter(lambda x : x != '', rst):
+            rst_list.append(CompletionItem(dict_word, '󰺄 dict[Eng]', len(dict_word)))
+    if use_de:
+        result = subprocess.run(['rg', exp, '-I', '/usr/share/dict/ngerman'], stdout=subprocess.PIPE)
+        rst = result.stdout.decode('utf8').split('\n')
+        for dict_word in filter(lambda x : x != '', rst):
+            rst_list.append(CompletionItem(dict_word, '󰺄 dict[Deu]', len(dict_word)))
+    return sorted(rst_list, key=lambda i : i.freq)
+
 if __name__ == '__main__':
     rst_list = []
     if sys.argv[1] == '-h':
@@ -627,6 +643,16 @@ if __name__ == '__main__':
     if sys.argv[1] == '-chosen_cn':
         chosen_word, inserting = sys.argv[2:4]
         choose_cn_dict(chosen_word, inserting.replace(DELIMITATOR, ''))
+
+    if sys.argv[1] == '-query_en':
+        word = sys.argv[2]
+        rst_list = query_all_dict(word, use_en=True, use_de=False)
+    if sys.argv[1] == '-query_de':
+        word = sys.argv[2]
+        rst_list = query_all_dict(word, use_en=False, use_de=True)
+    if sys.argv[1] == '-query_all':
+        word = sys.argv[2]
+        rst_list = query_all_dict(word, use_en=True, use_de=True)
 
     for it in rst_list:
         print(it)
