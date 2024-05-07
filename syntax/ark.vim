@@ -123,3 +123,9 @@ hi Inseparable ctermfg=134
 syntax match Separable /\<sep\>/
 hi Separable ctermfg=39
 
+syntax match CompondJointN /-n-/
+syntax match CompondJointN /-en-/
+hi CompondJointN ctermfg=137
+syntax match CompondJointS /-s-/
+syntax match CompondJointS /-es-/
+hi CompondJointS ctermfg=142
