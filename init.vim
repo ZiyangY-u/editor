@@ -329,12 +329,8 @@ fu! PairHint()
             let [start, end] = map(split(rst, ' '), {_,v -> str2nr(v)})
             let left = getline('.')[virtcol2col(0, line('.'), start-1)]
             let right = getline('.')[virtcol2col(0, line('.'), end-1)]
-            cal nvim_buf_set_extmark(bufnr(''), g:pairExtmk, line('.')-1, 0, {
-                        \ "virt_text":[[left, 'PairHint']], "hl_mode": "combine",
-                        \ "virt_text_win_col": str2nr(start)-1, })
-            cal nvim_buf_set_extmark(bufnr(''), g:pairExtmk, line('.')-1, 0, {
-                        \ "virt_text":[[right, 'PairHint']], "hl_mode": "combine",
-                        \ "virt_text_win_col": str2nr(end)-1, })
+            cal VirtualMarkWrapper(line('.')-1, start-1, left, 'PairHint')
+            cal VirtualMarkWrapper(line('.')-1, end-1, right, 'PairHint')
         endif
     endif
 endf
