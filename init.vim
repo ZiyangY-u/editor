@@ -312,6 +312,31 @@ fu! Diffthese()
     cal win_gotoid(curr)
 endf
 com! -nargs=0 Dfthese :cal Diffthese()
+
+" Pair Hint
+let g:pairExtmk = nvim_create_namespace('PairExtMarks')
+fu! PairHint()
+    for mkInfo in nvim_buf_get_extmarks(0, g:pairExtmk, 0, -1, {})
+        cal nvim_buf_del_extmark(0, g:pairExtmk, mkInfo[0])
+    endfor
+    let col = virtcol('.') > virtcol('$')-1 ? virtcol('$')-1 : virtcol('.')
+    if !empty(getline('.'))
+        " let bs = system("hexdump -v -e '/1 \"%02x\"'", getline('.'))
+        let rst = trim(system('/root/.config/nvim/pair_hint.py ' . col .' '. system("hexdump -v -e '/1 \"%02x\"'", getline('.'))))
+        if match(rst, '^\d\+ \d\+$') >= 0
+            let [start, end] = map(split(rst, ' '), {_,v -> str2nr(v)})
+            let left = getline('.')[virtcol2col(0, line('.'), start-1)]
+            let right = getline('.')[virtcol2col(0, line('.'), end-1)]
+            cal nvim_buf_set_extmark(bufnr(''), g:pairExtmk, line('.')-1, 0, {
+                        \ "virt_text":[[left, 'SnipAnon']], "hl_mode": "combine",
+                        \ "virt_text_win_col": str2nr(start)-1, })
+            cal nvim_buf_set_extmark(bufnr(''), g:pairExtmk, line('.')-1, 0, {
+                        \ "virt_text":[[right, 'SnipAnon']], "hl_mode": "combine",
+                        \ "virt_text_win_col": str2nr(end)-1, })
+        endif
+    endif
+endf
+au CursorHold * cal PairHint()
 " }}}
 " => Automatic -------------------- {{{
 " au InsertLeave * :execute 'sil! .s/\s\+$//'
@@ -1105,6 +1130,7 @@ endf
 fu! QuickRun()
     if &ft == 'vim' | so %
     elseif &ft == 'tex' | cal CompileTex()
+    elseif &ft == 'python' | :!python3 %
     en
 endf
 nn <silent> <f5> :cal QuickRun()<cr>
