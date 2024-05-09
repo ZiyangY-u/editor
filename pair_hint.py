@@ -75,6 +75,19 @@ def search_pair_brackets(s, col):
         return None
     return (start, end)
 
+
+def search_next_pair_brackets(s, col):
+    idx = col if not is_left_bracket(s[col]) else col+1
+    while idx < len(s):
+        if is_left_bracket(s[idx]):
+            break
+        idx += 1
+    bracket = s[idx]
+    end = search_forward(s, idx+1, bracket, get_right_by_left(bracket))
+    if end is None or end == idx+1:
+        return None
+    return (idx, end)
+
 def get_vertical_start_end(s, start, end):
     vstart, vend, idx = 1, 1, 0
     for idx, ch in enumerate(s):
@@ -99,5 +112,11 @@ if __name__ == '__main__':
     if start_end is not None:
         start, end = start_end
         vstart, vend = get_vertical_start_end(bs, start, end)
-        print(vstart, vend)
+        print(vstart, vend, end='')
+    # search next pair
+    start_end = search_next_pair_brackets(bs, int(col)-1) 
+    if start_end is not None:
+        start, end = start_end
+        vstart, vend = get_vertical_start_end(bs, start, end)
+        print('', vstart, vend, end='')
 

@@ -314,23 +314,25 @@ endf
 com! -nargs=0 Dfthese :cal Diffthese()
 
 " Pair Hint
-let g:pairExtmk = nvim_create_namespace('PairExtMarks')
 hi PairHint cterm=bold ctermfg=red ctermbg=black
+hi PairHintNext cterm=bold ctermfg=yellow ctermbg=black
+fu! MarkPair(start, end, hl)
+    let left = getline('.')[virtcol2col(0, line('.'), a:start-1)]
+    let right = getline('.')[virtcol2col(0, line('.'), a:end-1)]
+    cal VirtualMarkWrapper(line('.')-1, a:start-1, left, a:hl)
+    cal VirtualMarkWrapper(line('.')-1, a:end-1, right, a:hl)
+endf
 fu! PairHint()
-    for mkInfo in nvim_buf_get_extmarks(0, g:pairExtmk, 0, -1, {})
-        cal nvim_buf_del_extmark(0, g:pairExtmk, mkInfo[0])
-    endfor
     if virtcol('.') > virtcol('$')-1 | retu | en
-    let col = virtcol('.') > virtcol('$')-1 ? virtcol('$')-1 : virtcol('.')
-    if !empty(getline('.'))
-        " let bs = system("hexdump -v -e '/1 \"%02x\"'", getline('.'))
+    let col = strchars(getline('.')[:col('.')-1])
+    if !empty(getline('.')) && mode() == 'n'
         let rst = trim(system('/root/.config/nvim/pair_hint.py ' . col .' '. system("hexdump -v -e '/1 \"%02x\"'", getline('.'))))
-        if match(rst, '^\d\+ \d\+$') >= 0
-            let [start, end] = map(split(rst, ' '), {_,v -> str2nr(v)})
-            let left = getline('.')[virtcol2col(0, line('.'), start-1)]
-            let right = getline('.')[virtcol2col(0, line('.'), end-1)]
-            cal VirtualMarkWrapper(line('.')-1, start-1, left, 'PairHint')
-            cal VirtualMarkWrapper(line('.')-1, end-1, right, 'PairHint')
+        if match(rst, '^\d\+ \d\+') >= 0
+            let pairs = map(split(rst, ' '), {_,v -> str2nr(v)})
+            let [start, end] = pairs[:1] | cal MarkPair(start, end, 'PairHint')
+            if len(pairs) == 4
+                let [start, end] = pairs[2:3] | cal MarkPair(start, end, 'PairHintNext')
+            endif
         endif
     endif
 endf
