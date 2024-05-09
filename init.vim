@@ -322,18 +322,23 @@ fu! MarkPair(start, end, hl)
     cal VirtualMarkWrapper(line('.')-1, a:start-1, left, a:hl)
     cal VirtualMarkWrapper(line('.')-1, a:end-1, right, a:hl)
 endf
+fu! MarkRst(rst)
+    if match(a:rst, '^\d\+ \d\+') >= 0
+        let pairs = map(split(a:rst, ' '), {_,v -> str2nr(v)})
+        let [start, end] = pairs[:1] | cal MarkPair(start, end, 'PairHint')
+        if len(pairs) == 4
+            let [start, end] = pairs[2:3] | cal MarkPair(start, end, 'PairHintNext')
+        endif
+    endif
+endf
 fu! PairHint()
     if virtcol('.') > virtcol('$')-1 | retu | en
     let col = strchars(getline('.')[:col('.')-1])
     if !empty(getline('.')) && mode() == 'n'
         let rst = trim(system('/root/.config/nvim/pair_hint.py ' . col .' '. system("hexdump -v -e '/1 \"%02x\"'", getline('.'))))
-        if match(rst, '^\d\+ \d\+') >= 0
-            let pairs = map(split(rst, ' '), {_,v -> str2nr(v)})
-            let [start, end] = pairs[:1] | cal MarkPair(start, end, 'PairHint')
-            if len(pairs) == 4
-                let [start, end] = pairs[2:3] | cal MarkPair(start, end, 'PairHintNext')
-            endif
-        endif
+        cal MarkRst(rst)
+        let rst = trim(system('/root/.config/nvim/quote_hint.py ' . col .' '. system("hexdump -v -e '/1 \"%02x\"'", getline('.'))))
+        cal MarkRst(rst)
     endif
 endf
 au CursorHold * cal PairHint()
