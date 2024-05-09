@@ -63,4 +63,4 @@ if __name__ == '__main__':
         if next_start_end is not None:
             start, end = next_start_end
             vstart, vend = get_vertical_start_end(bs, start, end)
-            print('', vstart, vend, end='')
+            print(vstart, vend, end='')
