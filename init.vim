@@ -323,6 +323,7 @@ fu! MarkPair(start, end, hl)
     cal VirtualMarkWrapper(line('.')-1, a:end-1, right, a:hl)
 endf
 fu! s:MarkRst(jobId, data, event)
+    if (!exists('b:phJid') && !exists('b:qhJid')) || a:jobId != b:phJid && a:jobId != b:qhJid | retu | en
     let rst = trim(a:data[0])
     if match(rst, '^\d\+ \d\+') >= 0
         let pairs = map(split(rst, ' '), {_,v -> str2nr(v)})
@@ -337,8 +338,8 @@ fu! PairHint()
     let col = strchars(getline('.')[:col('.')-1])
     if !empty(getline('.')) && mode() == 'n'
         let bs = system("hexdump -v -e '/1 \"%02x\"'", getline('.'))
-        cal jobstart('/root/.config/nvim/pair_hint.py ' . col .' '. bs, {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
-        cal jobstart('/root/.config/nvim/quote_hint.py ' . col .' '. bs, {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
+        let b:phJid = jobstart('/root/.config/nvim/pair_hint.py ' . col .' '. bs, {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
+        let b:qhJid = jobstart('/root/.config/nvim/quote_hint.py ' . col .' '. bs, {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
     endif
 endf
 au CursorHold * cal PairHint()
