@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import sys
-from pair_hint import get_vertical_start_end
+from pair_hint import get_virtual_start_end
 
 SINGLE = "'"
 DOUBLE = '"'
@@ -44,23 +44,23 @@ def search_next_pair_quotes(s, col):
     return (idx, end)
 
 if __name__ == '__main__':
-    [col, hex_str] = sys.argv[1:]
+    [col, hex_str, ts] = sys.argv[1:]
     bs = bytearray.fromhex(hex_str).decode()
     start_end = search_pair_quotes(bs, int(col)-1) 
     if start_end is not None:
         start, end = start_end
-        vstart, vend = get_vertical_start_end(bs, start, end)
+        vstart, vend = get_virtual_start_end(bs, start, end, int(ts))
         print(vstart, vend, end='')
         # search next pair
         next_start_end = search_next_pair_quotes(bs, end+1) 
         if next_start_end is not None:
             start, end = next_start_end
-            vstart, vend = get_vertical_start_end(bs, start, end)
+            vstart, vend = get_virtual_start_end(bs, start, end, int(ts))
             print('', vstart, vend, end='')
     else:
         # search next pair
         next_start_end = search_next_pair_quotes(bs, int(col)-1) 
         if next_start_end is not None:
             start, end = next_start_end
-            vstart, vend = get_vertical_start_end(bs, start, end)
+            vstart, vend = get_virtual_start_end(bs, start, end, int(ts))
             print(vstart, vend, end='')

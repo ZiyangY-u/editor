@@ -88,17 +88,21 @@ def search_next_pair_brackets(s, col):
         return None
     return (idx, end)
 
-def get_vertical_start_end(s, start, end):
+def get_virtual_start_end(s, start, end, ts):
     vstart, vend, idx = 1, 1, 0
     for idx, ch in enumerate(s):
         if len(ch.encode('utf8')) == 3: # CJK character
             vstart += 1
+        if ch == "\t":
+            vstart += (ts - 1)
         vstart += 1
         if idx == start:
             break
     for idx, ch in enumerate(s):
         if len(ch.encode('utf8')) == 3: # CJK character
             vend += 1
+        if ch == "\t":
+            vend += (ts - 1)
         vend += 1
         if idx == end:
             break
@@ -106,17 +110,17 @@ def get_vertical_start_end(s, start, end):
 
 
 if __name__ == '__main__':
-    [col, hex_str] = sys.argv[1:]
+    [col, hex_str, ts] = sys.argv[1:]
     bs = bytearray.fromhex(hex_str).decode()
     start_end = search_pair_brackets(bs, int(col)-1) 
     if start_end is not None:
         start, end = start_end
-        vstart, vend = get_vertical_start_end(bs, start, end)
+        vstart, vend = get_virtual_start_end(bs, start, end, int(ts))
         print(vstart, vend, end='')
     # search next pair
     start_end = search_next_pair_brackets(bs, int(col)-1) 
     if start_end is not None:
         start, end = start_end
-        vstart, vend = get_vertical_start_end(bs, start, end)
+        vstart, vend = get_virtual_start_end(bs, start, end, int(ts))
         print('', vstart, vend, end='')
 

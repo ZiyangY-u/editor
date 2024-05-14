@@ -338,8 +338,8 @@ fu! PairHint()
     let col = strchars(getline('.')[:col('.')-1])
     if !empty(getline('.')) && mode() == 'n'
         let bs = system("hexdump -v -e '/1 \"%02x\"'", getline('.'))
-        let b:phJid = jobstart('/root/.config/nvim/pair_hint.py ' . col .' '. bs, {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
-        let b:qhJid = jobstart('/root/.config/nvim/quote_hint.py ' . col .' '. bs, {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
+        let b:phJid = jobstart(join(['/root/.config/nvim/pair_hint.py', col, bs, &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
+        let b:qhJid = jobstart(join(['/root/.config/nvim/quote_hint.py', col, bs, &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
     endif
 endf
 au CursorHold * cal PairHint()
