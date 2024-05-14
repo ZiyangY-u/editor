@@ -376,6 +376,18 @@ def common_expand(word:str):
     if word == 'ret': return 'return'
     return ''
 
+def ark_expand(word:str):
+    if re.compile(r'\d').match(word): # snake to camel
+        return word + ' strong'
+    if word == 'w':
+        return 'weak'
+    if word == 'C':
+        return 'Cog. '
+    if word == 'ff':
+        return '(< $0)'
+    return ''
+
+
 if __name__ == '__main__':
     [word, ft, reg] = ['', '', '']
     if len(sys.argv) > 1:
@@ -394,8 +406,10 @@ if __name__ == '__main__':
         expand = latex_expand(word)
     if ft == 'sql' or ft == 'xml':
         expand = sql_expand(word)
-    if ft == 'text' or ft == 'ark':
-        expand = text_expand(word)
+    # if ft == 'text' or ft == 'ark':
+    #     expand = text_expand(word)
+    if ft == 'ark':
+        expand = ark_expand(word)
     if ft == 'javascript' or ft == 'css' or ft == 'less':
         expand = css_expand(word)
 
