@@ -130,15 +130,15 @@ LEFT JOIN $1 ON $2
 endsnippet
 
 snippet od "ORDER BY ASC" w
-order by
+ORDER BY
 endsnippet
 snippet odd "ORDER BY DESC" w
-order by ${1} desc
+ORDER BY ${1} DESC
 endsnippet
 
 post_expand "from UltiSnips import vim_helper; vim_helper.command('echom 1')"
 snippet gb "GROUP BY" w
-group by
+GROUP BY
 endsnippet
 
 snippet cmpxone "compare xone table and ag table" w
@@ -166,4 +166,14 @@ SET proc_message = '' -- xone
 SELECT proc_kind, case proc_kind when 0 then 'Xone' when 1 then 'Ag' else '' end kind_name,
 proc_status, case proc_status when 0 then '実行中' when 1 then '正常終了' when 9 then '異常終了' else '' end status_name,
 proc_datetime, proc_message FROM OPENQUERY([XONE_MT_WRITEONLY], 'SELECT * from extif_agcore.M_SAS_X1_PROC_CONTROL where proc_kind in (0, 1)')
+endsnippet
+
+snippet ch "char" w
+char($0)
+endsnippet
+snippet 39 "char(39)" w
+char(39)
+endsnippet
+snippet w "WHERE" w
+WHERE $0
 endsnippet

@@ -388,8 +388,8 @@ fu! s:GotCandidates(jobId, data, event)
             catch | endtry
         endif
         cal extend(b:c_items, map(candidates, function('RenderCandidate')))
-        if count(expand("<cWORD>"), '/') >= 2
-            cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false)
+        if count(InsertingWord(), '/') >= 2
+            sil cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false)
         else
             let b:c_page = 1
             cal PumPageLoc(b:c_page)
@@ -432,7 +432,8 @@ fu! PostComplete()
         let g:exAnonExpand = ''
     en
 endf
-au CompleteDonePre * if complete_info(['mode'])['mode'] == 'files' | cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false) | en
+au CompleteDonePre * if complete_info(['mode'])['mode'] == 'files' && !empty(complete_info(['items']).items)
+            \| sil cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false) | en
 au CompleteDone * redraw! | cal PostComplete()
 au CompleteDone * if (g:jpIme || g:cnIme) && v:completed_item != {} | cal nvim_feedkeys("\<esc>a", 'i', v:false) | en
 au User ImeChanged if (g:jpIme || g:cnIme) | exe "ino <silent> <BS> <BS><esc>a" | else | exe "sil! iu <BS>" | en
@@ -971,7 +972,11 @@ endf
 fu! InsertingWord()
     let frontText = getline('.')[:col('.')-2]
     if !g:jpIme && !g:cnIme
-        retu trim(matchstr(frontText, '[-&:[:ident:]]*$'))
+        if &ft == 'vim'
+            retu trim(matchstr(frontText, '[-&:[:ident:]]*$'))
+        else
+            retu trim(matchstr(frontText, '[-&[:ident:]]*$'))
+        endif
     else
         if frontText[len(frontText)-1] =~ '\C[a-z]'
             retu trim(matchstr(frontText, '\.\?[-/[:lower:]]*$'))
