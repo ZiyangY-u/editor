@@ -1344,6 +1344,8 @@ com! -nargs=0 Notepad exe 'sil !subl.exe -a '.WinPath(expand('%')).':'.line('.')
 com! -nargs=0 Directory exe 'sil !explorer.exe ' . substitute(WinPath(expand('%:p:h')), '/', '\\\\', 'g')
 com! -nargs=0 EditComplete e ~/.config/nvim/complete_service.py
 com! -nargs=0 EditAnon e ~/.config/nvim/anon_expand.py
+vn <c-c> "+y
+nn <c-c> "+y
 " ------------------- Latex Misc -----------------------
 let g:PdfLoc = 1
 fu! GetPdfLoc()
