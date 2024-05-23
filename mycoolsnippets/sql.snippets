@@ -3,7 +3,7 @@ ALTER TABLE HIST_D_HATSUREI ALTER COLUMN
 endsnippet
 
 snippet add "description"
-ALTER TABLE HIST_D_HATSUREI ADD COLUMN
+ALTER TABLE TUR_BILL_DATAFILE ADD `!v getreg('"')` VARCHAR() DEFAULT ''
 endsnippet
 
 snippet drop "description"
@@ -176,4 +176,16 @@ char(39)
 endsnippet
 snippet w "WHERE" w
 WHERE $0
+endsnippet
+snippet max "max" w
+MAX(${VISUAL}$0)
+endsnippet
+snippet as "as" w
+AS `!v getreg('"')`
+endsnippet
+snippet fmt "date format" w
+FORMAT(${VISUAL}$0, 'yy/MM/dd hh:mm')
+endsnippet
+snippet ut "update TUR_BILL_DATAFILE" w
+UPDATE TUR_BILL_DATAFILE SET `!v getreg('"')` = $0 WHERE FILE_ID = 2875
 endsnippet

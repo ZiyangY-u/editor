@@ -81,9 +81,9 @@ def java_variable(word:str):
     return ' '.join(filter(None, [scope, static, final, type]))
 
 def sql_expand(word:str):
-    if re.compile(r'sel\d*').match(word):
+    if re.compile(r'sel\d').match(word):
         return 'SELECT TOP ' + word[3:] + ' * from $1'
-    if re.compile(r't\d*').match(word):
+    if re.compile(r't\d').match(word):
         return 'TOP ' + word[1:]
     return ''
 

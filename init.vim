@@ -1347,6 +1347,7 @@ com! -nargs=0 EditAnon e ~/.config/nvim/anon_expand.py
 vn <c-c> "+y
 nn <c-c> "+y
 nn ,<c-c> "+p
+nmap ,R "+r
 " ------------------- Latex Misc -----------------------
 let g:PdfLoc = 1
 fu! GetPdfLoc()
