@@ -377,10 +377,18 @@ def common_expand(word:str):
     return ''
 
 def ark_expand(word:str):
-    if re.compile(r'\d').match(word): # snake to camel
-        return word + ' strong'
+    if re.compile(r'\d').match(word):
+        return '(' + word + ' strong)'
     if word == 'w':
-        return 'weak'
+        return '(weak)'
+    if word == 'iw':
+        return '(insep weak)'
+    if re.compile(r'i\d').match(word):
+        return '(insep ' + word[1] + ' strong)'
+    if word == 'sw':
+        return '(sep weak)'
+    if re.compile(r's\d').match(word):
+        return '(sep ' + word[1] + ' strong)'
     if word == 'C':
         return 'Cog. '
     if word == 'ff':
