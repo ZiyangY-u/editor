@@ -1,10 +1,13 @@
 #!/usr/bin/python3
 
 import sys
+import re
 
 [LEFT_BRACKET_SMALL, RIGHT_BRACKET_SMALL] = ['(', ')'] # ()
 [LEFT_BRACKET_MIDDLE, RIGHT_BRACKET_MIDDLE] = ['[', ']'] # []
 [LEFT_BRACKET_BIG, RIGHT_BRACKET_BIG] = ['{', '}'] # {}
+
+CJK_PAT = re.compile(r'[\u4e00-\u9fff]')
 
 def is_right_bracket(b):
     if b == RIGHT_BRACKET_SMALL or b == RIGHT_BRACKET_MIDDLE or b == RIGHT_BRACKET_BIG:
@@ -91,7 +94,7 @@ def search_next_pair_brackets(s, col):
 def get_virtual_start_end(s, start, end, ts):
     vstart, vend, idx = 1, 1, 0
     for idx, ch in enumerate(s):
-        if len(ch.encode('utf8')) == 3: # CJK character
+        if CJK_PAT.match(ch):
             vstart += 1
         if ch == "\t":
             vstart += (ts - 1)
@@ -99,7 +102,7 @@ def get_virtual_start_end(s, start, end, ts):
         if idx == start:
             break
     for idx, ch in enumerate(s):
-        if len(ch.encode('utf8')) == 3: # CJK character
+        if CJK_PAT.match(ch):
             vend += 1
         if ch == "\t":
             vend += (ts - 1)

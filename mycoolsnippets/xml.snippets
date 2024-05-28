@@ -49,3 +49,7 @@ endsnippet
 snippet in "isnull" w
 ISNULL(`!v getreg('"')`, '') AS `!v substitute(getreg('"'), '^\w*\.', '', '')`
 endsnippet
+
+snippet loginuser "login user" w
+${@com.core.backend.util.SystemInfoUtil@getUserId()}
+endsnippet
