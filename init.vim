@@ -1345,8 +1345,9 @@ com! -nargs=0 Directory exe 'sil !explorer.exe ' . substitute(WinPath(expand('%:
 com! -nargs=0 EditComplete e ~/.config/nvim/complete_service.py
 com! -nargs=0 EditAnon e ~/.config/nvim/anon_expand.py
 vn <c-c> "+y
-nn <c-c> "+y
+nn <c-c> :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>"+y
 nn ,<c-c> "+p
+nn ,,<c-c> "+P
 nmap ,R "+r
 " ------------------- Latex Misc -----------------------
 let g:PdfLoc = 1
