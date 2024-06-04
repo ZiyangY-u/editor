@@ -64,11 +64,11 @@ AND
 endsnippet
 
 snippet chargeall "請求書まとめ" w
-SELECT * FROM TUR_CHARGE CRG WHERE CRG.CHARGE_NO IN ('$1')
+SELECT * FROM TUR_CHARGE CRG WHERE CRG.CHARGE_NO IN ($1)
 SELECT * FROM TUR_CHARGE_PRINT_HEAD HED
 JOIN TUR_CHARGE_PRINT_DETAIL DTL ON HED.CHARGE_NO = DTL.CHARGE_NO AND HED.ORIGINAL_KBN = DTL.ORIGINAL_KBN
-WHERE HED.CHARGE_NO IN ('$1')
-SELECT * FROM CHARGE_CSV CSV WHERE CSV.CHARGE_NO IN ('$1')
+WHERE HED.CHARGE_NO IN ($1)
+SELECT * FROM CHARGE_CSV CSV WHERE CSV.CHARGE_NO IN ($1)
 endsnippet
 
 snippet cnt "description" w
@@ -102,6 +102,9 @@ endsnippet
 snippet smci "select MUR_CODE_ITEM" w
 SELECT * FROM [DBO].[MUR_CODE_ITEM] WHERE DIVISION IN (${1})
 endsnippet
+snippet smu "select M_USER" w
+SELECT * FROM M_USER WHERE USER_ID IN ($0)
+endsnippet
 snippet apitoken "楽々api token" w
 UPDATE [DBO].[MUR_CODE_ITEM] SET NAME = '${1}' WHERE DIVISION = 70035 AND SEQ = 3
 endsnippet
@@ -127,6 +130,9 @@ JOIN $1 ON $2
 endsnippet
 snippet ljo "LEFT JOIN" w
 LEFT JOIN $1 ON $2
+endsnippet
+snippet ijo "INNER JOIN" w
+INNER JOIN $1 ON $2
 endsnippet
 
 snippet od "ORDER BY ASC" w
@@ -187,5 +193,23 @@ snippet fmt "date format" w
 FORMAT(${VISUAL}$0, 'yy/MM/dd hh:mm')
 endsnippet
 snippet ut "update TUR_BILL_DATAFILE" w
-UPDATE TUR_BILL_DATAFILE SET `!v getreg('"')` = $0 WHERE FILE_ID = 2875
+UPDATE TUR_BILL_DATAFILE SET `!v getreg('"')` = $0 WHERE FILE_ID IN (2886, 2885)
+endsnippet
+
+snippet v1 "VALID_FLAG = 1" w
+VALID_FLAG = 1
+endsnippet
+snippet v0 "VALID_FLAG = 0" w
+VALID_FLAG = 0
+endsnippet
+
+snippet uid "USER_ID" w
+USER_ID
+endsnippet
+snippet oid "ORG_ID" w
+ORG_ID
+endsnippet
+
+snippet in "in" w
+in ($0)
 endsnippet
