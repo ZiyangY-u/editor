@@ -9,15 +9,9 @@ snippet logc "log on change by useEffect" w
 useEffect(() => { console.log('`!v getreg('"')` =>', `!v getreg('"')`) }, [`!v getreg('"')`])
 endsnippet
 
-snippet box "react box tag"
-<Box>${1}
-${VISUAL}
-</Box>
-endsnippet
-
 snippet t "simple tag"
 <${1:Box}>
-${VISUAL}
+$0${VISUAL}
 </$1>
 endsnippet
 
@@ -50,7 +44,7 @@ if (${1:===}) {
 endsnippet
 
 snippet lbl "react label tag"
-<label>$1${VISUAL}</label>
+<label>$0${VISUAL}</label>
 endsnippet
 
 snippet br "HTML br tag"
