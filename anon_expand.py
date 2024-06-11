@@ -365,7 +365,7 @@ def margin_padding(mp, trlb, px):
     mp_dic = {'m': 'margin', 'p': 'padding'}
     direct_dic = { 't': 'Top', 'r': 'Right', 'l': 'Left', 'b': 'Bottom' }
     expand = mp_dic[mp] + direct_dic[trlb]
-    return expand + (": '{px}px'".format(px=px) if px else ": '$1px'")
+    return expand + (": '{px}px'".format(px=px) if px else ": '$0px'")
 
 def common_expand(word:str):
     if re.compile(r'\w+_\w+').match(word): # snake to camel

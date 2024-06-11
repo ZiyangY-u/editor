@@ -8,8 +8,14 @@ snippet r "vim register" w
 \`!v getreg('"')\`
 endsnippet
 
-snippet sync
-sync `date +%Y/%m/%d`.
+snippet 0 "$0" w
+\$0
+endsnippet
+snippet 1 "$1" w
+\$1
+endsnippet
+snippet 2 "$2" w
+\$2
 endsnippet
 
 snippet time "date time" w

@@ -52,11 +52,11 @@ snippet br "HTML br tag"
 endsnippet
 
 snippet onch "onChange"
-onChange={e => {$1
+onChange={e => { $0
 }}
 endsnippet
 snippet oncl "onClick" w
-onClick={e => {$1
+onClick={e => { $0
 }}
 endsnippet
 
@@ -80,7 +80,7 @@ ${VISUAL}
 endsnippet
 
 snippet st "useState"
-const [${1:state}, set${1/\w/\u$0/}] = useState(false)
+const [${1:state}, set${1/\w/\u$0/}] = useState($0)
 endsnippet
 
 # below for react
@@ -90,11 +90,14 @@ snippet arr "arrow function" iw
 endsnippet
 
 snippet sx "description"
-sx={{ ${VISUAL}$1 }}
+sx={{ $0 }}
+endsnippet
+snippet wid "width" w
+width: '$0px'
 endsnippet
 
 snippet style "description"
-style={{ $1 }}
+style={{ $0 }}
 endsnippet
 
 snippet tos "tostring" w
@@ -108,3 +111,7 @@ endsnippet
 snippet bc "Box close" w
 </Box>
 endsnippet
+snippet etv "e.target.value" w
+e.target.value
+endsnippet
+

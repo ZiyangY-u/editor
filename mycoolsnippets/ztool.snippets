@@ -10,10 +10,6 @@ snippet cp "description" w
  `!v getreg('"')`
 endsnippet
 
-snippet mui "description" w
-INSERT INTO MUR_CODE_ITEM(DIVISION,SEQ,SORT_SEQ,NAME,NAME2,NAME3,OTHER_CHAR,OTHER_DECIMAL,REMARKS_OTHER_CHAR,REMARKS_OTHER_DECIMAL,DISPLAY_FLAG,LINK1_DIVISION,LINK1_SEQ)
-endsnippet
-
 snippet t "tab indente" w
 	`!v getreg('"')`
 endsnippet
@@ -37,6 +33,7 @@ snippet nn "null" w
 if(lower(text(`!v getreg('"')`))="null", NULL, `!v getreg('"')`)
 endsnippet
 
+# backlog snippets
 snippet tc "text color in Backlog" w
 &color(red) {$0${VISUAL}}
 endsnippet
@@ -50,4 +47,9 @@ snippet code "Backlog code" w
 {code}
 $0
 {/code}
+endsnippet
+snippet quote "Backlog quote" w
+{quote}
+$0
+{/quote}
 endsnippet
