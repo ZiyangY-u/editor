@@ -1014,7 +1014,7 @@ ca glg tab Git log -n 100 --graph --pretty='%H %s %d %ad %ae' --date=short --aut
 ca glga tab Git log -n 100 --graph --pretty='%H %s %d %ad %ae' --date=short --all --author-date-order
 ca glp tab Git log -p -- %
 ca gb tab Git branch
-ca gbd cal fzf#run({'source':'git branch', 'dir':expand('%:p:h'), 'sink':{gb->execute('Git branch -d '.gb)}, 'options':extend(copy(g:MfzfOpts), ['--prompt=delete > ']), })<cr>
+ca gbd cal fzf#run({'source':'git branch', 'dir':expand('%:p:h'), 'sink':{gb->execute('Git branch -d '.gb)}, 'options':extend(copy(g:MfzfOpts), ['--prompt=delete branch > ']), })<cr>
 ca gc Git commit
 ca gca Git commit --amend<cr>
 ca gco cal fzf#run({'source':'git branch', 'dir':expand('%:p:h'), 'sink':{gb -> execute('Git checkout '.gb)}, 'options':extend(copy(g:MfzfOpts), ['--prompt=checkout > ']), })<cr>
