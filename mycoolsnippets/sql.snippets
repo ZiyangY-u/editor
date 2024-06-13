@@ -193,7 +193,7 @@ snippet fmt "date format" w
 FORMAT(${VISUAL}$0, 'yy/MM/dd hh:mm')
 endsnippet
 snippet ut "update TUR_BILL_DATAFILE" w
-UPDATE TUR_BILL_DATAFILE SET `!v getreg('"')` = $0 WHERE FILE_ID IN (2886, 2885)
+UPDATE TUR_COST_DATA SET `!v getreg('"')` = $0 WHERE SALES_COST_DATA_NO IN (29210)
 endsnippet
 
 snippet v1 "VALID_FLAG = 1" w
@@ -211,7 +211,7 @@ ORG_ID
 endsnippet
 
 snippet in "in" w
-in ($0)
+IN ($0)
 endsnippet
 
 snippet uag "USE [AGDB]" w

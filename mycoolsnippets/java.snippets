@@ -1,21 +1,22 @@
 snippet main "main" w
 public static void main(String[] args){
-$1
+$0
 }
 endsnippet
 snippet systemprint "System.out.println" w
-System.out.println($1);
+System.out.println($0);
 endsnippet
 snippet { "{ bracket" w
 {
-$1${VISUAL}
+$0${VISUAL}
 }
 endsnippet
 snippet if "if"
-if ($1)
+if ($0)
 endsnippet
 snippet el "else" w
-else {$1
+else {
+$0
 }
 endsnippet
 snippet elif "else if" w
@@ -57,13 +58,13 @@ snippet new "new object from class"
 endsnippet
 
 snippet 2i "String to int" i
-Integer.parseInt(${VISUAL}$1)
+Integer.parseInt(${VISUAL}$0)
 endsnippet
 snippet 2d "String to double" w
-Double.parseDouble(${VISUAL}$1)
+Double.parseDouble(${VISUAL}$0)
 endsnippet
 snippet 2s "int to String" i
-Integer.toString(${VISUAL}$1)
+Integer.toString(${VISUAL}$0)
 endsnippet
 snippet tos "toString()" i
 toString()
@@ -104,7 +105,7 @@ endsnippet
 
 snippet jdoc "java doc" w
 /**
- * $1
+ * $0
  *
  * @param
  * @return
@@ -112,8 +113,11 @@ snippet jdoc "java doc" w
 endsnippet
 
 snippet / "doc" w
-/** $1 */
+/** $0 */
 endsnippet
 snippet rt "return" w
 return $0
+endsnippet
+snippet inf "log.info" w
+log.info("$0");
 endsnippet

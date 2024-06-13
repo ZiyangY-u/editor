@@ -16,16 +16,17 @@ $0${VISUAL}
 endsnippet
 
 snippet if "if clause"
-if ($1)
+if ($0)
 endsnippet
 
 snippet el "else clause" w
-else {$1
+else {
+$0
 }
 endsnippet
 
 snippet fore "description" w
-forEach(ele => {$1
+forEach(ele => {$0
 })
 endsnippet
 
@@ -52,11 +53,13 @@ snippet br "HTML br tag"
 endsnippet
 
 snippet onch "onChange"
-onChange={e => { $0
+onChange={e => {
+$0
 }}
 endsnippet
 snippet oncl "onClick" w
-onClick={e => { $0
+onClick={e => {
+$0
 }}
 endsnippet
 
@@ -66,7 +69,7 @@ const ${1:fun} = () => {
 endsnippet
 
 snippet req "javascript request"
-`!v getreg('"')`$1({})
+`!v getreg('"')`({})
 	.then(res => {
 		console.log('res =>', res.data)
 	})
@@ -76,7 +79,7 @@ endsnippet
 snippet useeff "react useEffect"
 useEffect(() => {
 ${VISUAL}
-}, [$1])
+}, [$0])
 endsnippet
 
 snippet st "useState"
@@ -86,7 +89,7 @@ endsnippet
 # below for react
 
 snippet arr "arrow function" iw
-() => {$1}
+() => {$0}
 endsnippet
 
 snippet sx "description"
