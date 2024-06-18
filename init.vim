@@ -677,6 +677,9 @@ fu! SplitOp(sc, query) " run a split cmd first, then operate
         cal fzf#run({'source': GetAllExmarks(), 'sink': {mk->execute(a:sc.'b '.matchstr(mk, '+\d*\s\d*'))}, 'options':opts,})
     elseif (op ==# 'T') " Terminal
         exe 'FloatermToggle'
+    elseif (op ==# 'f') " temporary file
+        let tempname = tempname()
+        cal fzf#run({'source': [tempname], 'sink': {tf->execute(a:sc.'MEdit '.tf)}, 'options':opts,})
     el
         exe a:sc."|norm \<C-L>"
     en
