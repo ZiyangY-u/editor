@@ -393,6 +393,8 @@ def ark_expand(word:str):
         return 'Cog. '
     if word == 'ff':
         return '(< $0)'
+    if re.compile(r'^[a-z].*').match(word): # camel to snake
+        return word.capitalize()
     return ''
 
 

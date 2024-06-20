@@ -485,7 +485,7 @@ fu! PutYankHist(target)
         let delimiter = nr2char(getchar())
         let @" = join(a:target, (delimiter == "\<cr>" ? "\n" : delimiter))
     endif
-    norm p
+    norm p==
     cal AddYankHist(getreg('"'))
 endf
 au SessionLoadPost * exe 'let g:yankHistory = ' . g:YankHistorySave
@@ -561,6 +561,8 @@ fu! OmniJumpBoot(backNormFlag)
 endf
 nn <leader>j :cal OmniJumpBoot(0)<CR>
 nn <leader><leader> :cal OmniJumpBoot(1)<cr>
+" past and auto-indent
+nn p p==
 
 " Hiraishin  -------------------- {{{
 let g:HRSmode=1 " HiRaiShin mode
@@ -1194,9 +1196,9 @@ fu! ReplaceOp(type)
         sil exe 'norm! `z'
         sil cal execute('DMarks z')
     elseif a:type ==# 'V'
-        exe printf('norm! `<V`>"_d"%sP', b:reg_name)
+        exe printf('norm! `<V`>"_d"%sP==', b:reg_name)
     elseif a:type ==# 'line'
-        exe printf('norm! `]$v`[0"_d"%sP', b:reg_name)
+        exe printf('norm! `]$v`[0"_d"%sP==', b:reg_name)
     en
 endf
 " Surround-Operator
