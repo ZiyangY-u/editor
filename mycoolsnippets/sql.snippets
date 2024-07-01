@@ -32,7 +32,7 @@ UPDATE A
 SET ...
 , A.U_FLAG = 1
 , A.R_DATE = getdate()
-, A.UPDATE_USER_ID = 9999
+, A.UPDATE_USER_ID = 8837
 , A.UPDATE_USER = 'システム管理者'
 , A.UPDATE_DATE_TIME = getdate()
 FROM WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 A
@@ -226,9 +226,27 @@ endsnippet
 snippet ubid "USE [SASBI_DEV]" w
 USE [SASBI_DEV]
 endsnippet
+snippet ubiw "USE [SASBI_WUHAN]" w
+USE [SASBI_WUHAN]
+endsnippet
 
 snippet ston "statistics on" w
 set statistics time on
 $0
 set statistics time off
+endsnippet
+
+snippet cidx "create index" w
+drop index if exists `!v nvim_get_var('yankHistory')[-2]`_`!v nvim_get_var('yankHistory')[-1]`_IDX on `!v nvim_get_var('yankHistory')[-2]`;
+create index `!v nvim_get_var('yankHistory')[-2]`_`!v nvim_get_var('yankHistory')[-1]`_IDX on `!v nvim_get_var('yankHistory')[-2]`(`!v nvim_get_var('yankHistory')[-1]`);
+endsnippet
+snippet idoc "index doc" w
+	`!v nvim_get_var('yankHistory')[-2]`	`!v nvim_get_var('yankHistory')[-2]`_`!v nvim_get_var('yankHistory')[-1]`_IDX	`!v nvim_get_var('yankHistory')[-1]`		NONCLUSTERED	create index `!v nvim_get_var('yankHistory')[-2]`_`!v nvim_get_var('yankHistory')[-1]`_IDX on `!v nvim_get_var('yankHistory')[-2]`(`!v nvim_get_var('yankHistory')[-1]`);	drop index `!v nvim_get_var('yankHistory')[-2]`_`!v nvim_get_var('yankHistory')[-1]`_IDX on `!v nvim_get_var('yankHistory')[-2]`;	2024/6/20 余追加　確認中
+endsnippet
+
+snippet cv "convert" w
+case `!v getreg('"')` when null then 'NULL' else convert(varchar(100), `!v getreg('"')`) end
+endsnippet
+snippet isn "isnull" w
+ISNULL(`!v getreg('"')`, '')
 endsnippet

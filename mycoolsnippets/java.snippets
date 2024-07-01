@@ -121,3 +121,87 @@ endsnippet
 snippet inf "log.info" w
 log.info("$0");
 endsnippet
+snippet is "log.info start" w
+log.info("start running $0`!v getreg('"')`");
+log.info("end running $0`!v getreg('"')`");
+endsnippet
+snippet log4j "log4j" w
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
+endsnippet
+
+# snippet ank "AnkenhimotukePatternParamModel" w
+# , " jobLinkId:", `!v getreg('"')`.getJobLinkId(), "jno:", `!v getreg('"')`.getJno(), "accountId:", `!v getreg('"')`.getAccountId()
+# endsnippet
+snippet ank "" w
+" `!v getreg('"')`:", `!v getreg('"')`
+endsnippet
+snippet bus "BushoTantouPatternParamModel" w
+, " invoiceDataId:", `!v getreg('"')`.getInvoiceDataId(), " jno:", `!v getreg('"')`.getJno(), " accountNo:", `!v getreg('"')`.getAccountNo(), " salesCostDataNo:", `!v getreg('"')`.getSalesCostDataNo()
+endsnippet
+snippet inv "TurInvoiceDetailStandard" w
+" salesCostDataNo:", `!v getreg('"')`.getSalesCostDataNo(), " updateSeq:", `!v getreg('"')`.getUpdateSeq()
+endsnippet
+snippet wrk "WorkCostData" w
+" WorkCostData.salesCostDataNo:", `!v getreg('"')`.getSalesCostDataNo(), " updateSeq:", `!v getreg('"')`.getUpdateSeq()
+endsnippet
+# snippet com "CommonRequestModel" w
+# " WorkCostData.salesCostDataNo:", `!v getreg('"')`.getCostdata().getSalesCostDataNo(), " WorkCostData.updateSeq:", `!v getreg('"')`.getCostdata().getUpdateSeq(), " WorkInvoiceData.salesCostDataNo:", `!v getreg('"')`.getData().getInvoiceDataId(), " TurInvoiceDetailStandard.salesCostDataNo:", `!v getreg('"')`.getStandardModel().getSalesCostDataNo(), " TurInvoiceDetailStandard.updateSeq:", `!v getreg('"')`.getStandardModel().getUpdateSeq()
+# endsnippet
+snippet camp "CampaignPatternParamModel" w
+" jNo:", `!v getreg('"')`.getJNo(), " campId:", `!v getreg('"')`.getCampId(),
+" invoiceDataTitle:", `!v getreg('"')`.getInvoiceDataTitle(), " salesCostDataNo:", `!v getreg('"')`.getSalesCostDataNo()
+endsnippet
+snippet com "" w
+" comId:", `!v getreg('"')`.getComId()
+endsnippet
+snippet dat "" w
+" mediaId:", `!v getreg('"')`.getMediaId(),
+" agencyComId:", `!v getreg('"')`.getAgencyComId(),
+" advertiserId:", `!v getreg('"')`.getAdvertiserId(),
+" invoiceDataId:", `!v getreg('"')`.getInvoiceDataId()
+endsnippet
+snippet key "" w
+" fileId:", `!v getreg('"')`.getFileId(),
+" invoiceSeq:", `!v getreg('"')`.getInvoiceSeq(),
+" jobLinkId:", `!v getreg('"')`.getJobLinkId(),
+" getJNo:", `!v getreg('"')`.getJNo()
+endsnippet
+
+snippet mar "" w
+" jNo:", `!v getreg('"')`.getJNo(),
+" salesCostDataNo:", `!v getreg('"')`.getSalesCostDataNo(),
+" siteHeadId:", `!v getreg('"')`.getSiteHeadId(),
+" menuHeadId:", `!v getreg('"')`.getMenuHeadId(),
+" mediaId:", `!v getreg('"')`.getMediaId(),
+" accountNo:", `!v getreg('"')`.getAccountNo()
+endsnippet
+snippet mat "" w
+" jNo:", `!v getreg('"')`.getJNo(),
+" jobLinkId:", `!v getreg('"')`.getJobLinkId(),
+" accountId:", `!v getreg('"')`.getAccountId(),
+" accountNo:", `!v getreg('"')`.getAccountNo(),
+" campId:", `!v getreg('"')`.getCampId()
+endsnippet
+snippet nay "" w
+" agencyName:", `!v getreg('"')`.getAgencyName(),
+" getAdvertiserName:", `!v getreg('"')`.getAdvertiserName(),
+" mediaName:", `!v getreg('"')`.getMediaName(),
+" siteBodyId:", `!v getreg('"')`.getSiteBodyId(),
+" menuBodyId:", `!v getreg('"')`.getMenuBodyId()
+endsnippet
+
+snippet sit "" w
+" jNo:", `!v getreg('"')`.getJNo(),
+" siteCode:", `!v getreg('"')`.getSiteCode(),
+" siteHeadId:", `!v getreg('"')`.getSiteHeadId(),
+" siteBodyId:", `!v getreg('"')`.getSiteBodyId(),
+" menuHeadId:", `!v getreg('"')`.getMenuHeadId(),
+" menuBodyId:", `!v getreg('"')`.getMenuBodyId()
+endsnippet
+
+snippet te "time elapsed" w
+long `!v getreg('"')`Start = System.currentTimeMillis();
+long `!v getreg('"')`Finish = System.currentTimeMillis();
+log.info("`!v getreg('"')` elapsed {}", `!v getreg('"')`Finish - `!v getreg('"')`Start);
+endsnippet

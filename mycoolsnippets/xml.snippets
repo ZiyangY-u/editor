@@ -53,3 +53,7 @@ endsnippet
 snippet loginuser "login user" w
 ${@com.core.backend.util.SystemInfoUtil@getUserId()}
 endsnippet
+
+snippet ifn "if null" w
+<choose> <when test="`!v getreg('"')` == null"> NULL </when> <otherwise> #{`!v getreg('"')`} </otherwise> </choose>
+endsnippet

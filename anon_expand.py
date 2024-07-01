@@ -53,10 +53,12 @@ java_type = {
         'i': 'int',
         'I': 'Integer',
         'S': 'short',
+        'L': 'Long',
         'd': 'double',
         'B': 'BigDecimal',
         'b': 'boolean',
         'v': 'var',
+        'M': 'Map',
         }
 
 def java_expand(word:str):
