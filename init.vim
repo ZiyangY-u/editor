@@ -977,6 +977,8 @@ fu! InsertingWord()
     if !g:jpIme && !g:cnIme
         if &ft == 'vim'
             retu trim(matchstr(frontText, '[-&:[:ident:]]*$'))
+        elseif &ft == 'c'
+            retu trim(matchstr(frontText, '[-:[:ident:]]*$'))
         else
             retu trim(matchstr(frontText, '[-&[:ident:]]*$'))
         endif
