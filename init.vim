@@ -561,6 +561,13 @@ fu! OmniJumpBoot(backNormFlag)
 endf
 nn <leader>j :cal OmniJumpBoot(0)<CR>
 nn <leader><leader> :cal OmniJumpBoot(1)<cr>
+" past and auto-indent
+fu! IIP() " If Indent Past
+    let lines = count(getreg(v:register), "\<NL>")
+    retu lines
+endf
+nn <silent> p @=(IIP() > 0 ? "p=".(IIP() == 1 ? "l" : (IIP()-1)."j") : "p")<CR>
+nn <silent> P @=(IIP() > 0 ? "P=".(IIP() == 1 ? "l" : (IIP()-1)."j") : "P")<CR>
 
 " Hiraishin  -------------------- {{{
 let g:HRSmode=1 " HiRaiShin mode
@@ -1196,9 +1203,9 @@ fu! ReplaceOp(type)
         sil exe 'norm! `z'
         sil cal execute('DMarks z')
     elseif a:type ==# 'V'
-        exe printf('norm! `<V`>"_d"%sP', b:reg_name)
+        exe printf('norm `<V`>"_d"%sP', b:reg_name)
     elseif a:type ==# 'line'
-        exe printf('norm! `]$v`[0"_d"%sP', b:reg_name)
+        exe printf('norm `]$v`[0"_d"%sP', b:reg_name)
     en
 endf
 " Surround-Operator
