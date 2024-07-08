@@ -47,7 +47,10 @@ ${@com.core.backend.common.CommonConst@`!v getreg('"')`}
 endsnippet
 
 snippet in "isnull" w
-ISNULL(`!v getreg('"')`, '') AS `!v substitute(getreg('"'), '^\w*\.', '', '')`
+ISNULL(`!v getreg('"')`, 0)
+endsnippet
+snippet as "as" w
+AS `!v getreg('"')`
 endsnippet
 
 snippet loginuser "login user" w

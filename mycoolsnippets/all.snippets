@@ -8,13 +8,13 @@ snippet r "vim register" w
 \`!v getreg('"')\`
 endsnippet
 
-snippet 0 "$0" w
+snippet 0 "$0" "re.match('snippets', vim.eval('&ft'))" we
 \$0
 endsnippet
-snippet 1 "$1" w
+snippet 1 "$1" "re.match('snippets', vim.eval('&ft'))" we
 \$1
 endsnippet
-snippet 2 "$2" w
+snippet 2 "$2" "re.match('snippets', vim.eval('&ft'))" we
 \$2
 endsnippet
 

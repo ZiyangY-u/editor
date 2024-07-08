@@ -1,4 +1,4 @@
-snippet main "main function" w
+snippet m "main function" w
 int main(void)
 {
 	$0
@@ -28,7 +28,14 @@ else if ($0)
 endsnippet
 snippet switch "switch" w
 switch ($0) {
+	default:
+	break;
 }
+endsnippet
+
+snippet case "switch-case" w
+case $0:
+break;
 endsnippet
 
 snippet br "break" w
@@ -42,4 +49,9 @@ snippet do "do-while" w
 do {
 $0
 } while ();
+endsnippet
+snippet for "for" w
+for ($1 ; $2 ; $3) {
+$0
+}
 endsnippet
