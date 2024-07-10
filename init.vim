@@ -1009,6 +1009,7 @@ fu! AnonExpand() " Anon Expand: regex match and regex replace and expand!
 endf
 " leap.nvim
 nn <leader>f :lua require('leap').leap{ target_windows = { vim.fn.win_getid() } }<cr>
+hi LeapLabel cterm=bold ctermfg=red ctermbg=none
 " quick-scope
 let g:qs_highlight_on_keys = ['f', 'F', 't', 'T']
 hi QuickScopePrimary ctermfg=red

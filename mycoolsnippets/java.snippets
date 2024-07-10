@@ -121,10 +121,10 @@ endsnippet
 snippet inf "log.info" w
 log.info("$0");
 endsnippet
-snippet is "log.info start" w
-log.info("start running $0`!v getreg('"')`");
-log.info("end running $0`!v getreg('"')`");
-endsnippet
+# snippet is "log.info start" w
+# log.info("start running $0`!v getreg('"')`");
+# log.info("end running $0`!v getreg('"')`");
+# endsnippet
 snippet log4j "log4j" w
 import lombok.extern.slf4j.Slf4j;
 @Slf4j
@@ -204,4 +204,7 @@ snippet te "time elapsed" w
 long `!v getreg('"')`Start = System.currentTimeMillis();
 long `!v getreg('"')`Finish = System.currentTimeMillis();
 log.info("`!v getreg('"')` elapsed {}", `!v getreg('"')`Finish - `!v getreg('"')`Start);
+endsnippet
+snippet is "in string" w
+" + $0 + "
 endsnippet
