@@ -609,6 +609,8 @@ if __name__ == '__main__':
         for path_enc in set(dict.fromkeys(paths)):
             # print('adding path:', path_enc)
             path, enc = path_enc.split(':')
+            if path.endswith('.log'):
+                continue
             add_words(path, enc)
     if sys.argv[1] == '-add_word':
         word = sys.argv[2]

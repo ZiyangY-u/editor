@@ -116,6 +116,9 @@ endsnippet
 snippet mc "description" w
 MUR_COMPANY MC
 endsnippet
+snippet mu "M_USER" w
+M_USER MU
+endsnippet
 
 snippet gd "getdate" w
 CONVERT(VARCHAR, GETDATE(), 121)
@@ -229,6 +232,9 @@ endsnippet
 snippet ubiw "USE [SASBI_WUHAN]" w
 USE [SASBI_WUHAN]
 endsnippet
+snippet ubiy "USE [SASBI_YZY]" w
+USE [SASBI_YZY]
+endsnippet
 
 snippet ston "statistics on" w
 set statistics time on
@@ -248,9 +254,9 @@ snippet cv "convert" w
 case `!v getreg('"')` when null then 'NULL' else convert(varchar(100), `!v getreg('"')`) end
 endsnippet
 snippet isn "isnull" w
-ISNULL(`!v getreg('"')`, '')
+ISNULL(${VISUAL}, 0)
 endsnippet
 
 snippet na "null as" w
-null as $0
+(ISNULL(`!v getreg('"')`, '') <> '' OR `!v getreg('"')` <> 0)
 endsnippet
