@@ -50,7 +50,7 @@ snippet map "new hash map"
 Map<String, String> $1 = new HashMap<>();
 endsnippet
 snippet listp "new List"
-List<`!v getreg('"')`> `!v
+ArrayList<`!v getreg('"')`> `!v
 substitute(getreg('"'), '\<.', '\l&', '')`List = new ArrayList<>();
 endsnippet
 snippet new "new object from class"
@@ -207,4 +207,44 @@ log.info("`!v getreg('"')` elapsed {}", `!v getreg('"')`Finish - `!v getreg('"')
 endsnippet
 snippet is "in string" w
 " + $0 + "
+endsnippet
+
+snippet cache "" w
+public void cache`!v getreg('"')`(`!v getreg('a')` param, ArrayList<`!v getreg('b')`> result) {
+	log.info("cache `!v getreg('"')` Param:" + param);
+	for (var ele : result) {
+		logResult("`!v getreg('"')`", true, ele);
+	}
+	`!v getreg('"')`.put(param, result);
+}
+public boolean `!v getreg('"')`Hit(`!v getreg('a')` param) {
+	return `!v getreg('"')`.containsKey(param);
+}
+public ArrayList<`!v getreg('b')`> `!v getreg('"')`(`!v getreg('a')` param) {
+	ArrayList<`!v getreg('b')`> result = `!v getreg('"')`.get(param);
+	for (var ele : result) {
+		logResult("`!v getreg('"')`", false, ele);
+	}
+	return result;
+}
+endsnippet
+
+snippet infs "info start" w
+log.info("`!v getreg('"')` start");
+endsnippet
+
+snippet cc "CacheContainer" w
+import com.core.backend.modules.common.CacheContainer;
+@Resource
+private CacheContainer cacheContainer;
+cacheContainer.init();
+endsnippet
+
+snippet bc "BeanUtils.copyProperties" w
+private void copyProperties(`!v getreg('"')` to, `!v getreg('"')` from) {
+$0
+}
+endsnippet
+snippet add "list add" w
+`!v getreg('"')`.add($0);
 endsnippet

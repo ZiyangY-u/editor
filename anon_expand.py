@@ -57,7 +57,7 @@ java_type = {
         'd': 'double',
         'B': 'BigDecimal',
         'b': 'boolean',
-        'v': 'var',
+        'v': 'void',
         'M': 'Map',
         }
 
@@ -66,8 +66,8 @@ def java_expand(word:str):
     # p[r]ivate/p[u]blic/pr[o]tected [s]tatic [f]inal type
     if re.compile(r'[ruo]s?f?\w?').match(word): return java_variable(word)
     # tail G/S for GetXxxXxx/SetXxxXxx without ()
-    if re.compile(r'.*G$').match(word): return 'get' + word[0].capitalize() + word[1:-1]
-    if re.compile(r'.*S$').match(word): return 'set' + word[0].capitalize() + word[1:-1]
+    if re.compile(r'.+G$').match(word): return 'get' + word[0].capitalize() + word[1:-1]
+    if re.compile(r'.+S$').match(word): return 'set' + word[0].capitalize() + word[1:-1]
     if len(word) == 1 and word in java_type: return java_type[word]
 
     return expand

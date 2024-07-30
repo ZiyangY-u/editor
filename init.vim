@@ -911,7 +911,7 @@ cal plug#begin('~/.vim/plugged')
     Plug 'tpope/vim-sleuth'
     Plug 'tpope/vim-scriptease'
     Plug 'unblevable/quick-scope'
-    Plug 'wellle/context.vim'
+    " Plug 'wellle/context.vim'
     Plug 'wellle/targets.vim'
     Plug 'williamboman/nvim-lsp-installer'
     Plug 'yuezk/vim-js'
