@@ -1155,6 +1155,7 @@ fu! QuickRun()
     if &ft == 'vim' | so %
     elseif &ft == 'tex' | cal CompileTex()
     elseif &ft == 'python' | :!python3 %
+    elseif &ft == 'c' | :silent !cc %
     en
 endf
 nn <silent> <f5> :cal QuickRun()<cr>
