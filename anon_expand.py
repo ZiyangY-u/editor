@@ -399,6 +399,11 @@ def ark_expand(word:str):
     #     return word.capitalize()
     return ''
 
+def c_expand(word:str):
+    if word.endswith('i'):
+        return word[:-1] + '[i]'
+    return '';
+
 
 if __name__ == '__main__':
     [word, ft, reg] = ['', '', '']
@@ -422,6 +427,8 @@ if __name__ == '__main__':
     #     expand = text_expand(word)
     if ft == 'ark':
         expand = ark_expand(word)
+    if ft == 'c':
+        expand = c_expand(word)
     if ft == 'javascript' or ft == 'css' or ft == 'less':
         expand = css_expand(word)
 

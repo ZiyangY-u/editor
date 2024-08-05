@@ -46,13 +46,16 @@ while ($0) {
 }
 endsnippet
 snippet do "do-while" w
-do {
-$0
+do {$0
 } while ();
 endsnippet
 snippet for "for" w
 for ($1 ; $2 ; $3) {
 $0
+}
+endsnippet
+snippet fori "for index" w
+for (int i = 0 ; $0 ; i++) {
 }
 endsnippet
 
@@ -65,4 +68,7 @@ endsnippet
 
 snippet eos "end of string" w
 '\0'
+endsnippet
+snippet ik "ijk" w
+i, j, k
 endsnippet
