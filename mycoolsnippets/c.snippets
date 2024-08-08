@@ -1,5 +1,8 @@
+snippet inc "include" w
+#include <
+endsnippet
 snippet m "main function" w
-int main(void)
+int main(int argc, char *argv[])
 {
 	$0
 	return 0;
@@ -11,6 +14,9 @@ snippet io "stdio" w
 endsnippet
 snippet pr "printf" w
 printf("$0");
+endsnippet
+snippet nl "new line" w
+\n
 endsnippet
 snippet sc "scanf" w
 scanf("%$1", &$0);
