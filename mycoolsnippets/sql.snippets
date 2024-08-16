@@ -254,7 +254,7 @@ snippet cv "convert" w
 case `!v getreg('"')` when null then 'NULL' else convert(varchar(100), `!v getreg('"')`) end
 endsnippet
 snippet isn "isnull" w
-ISNULL(${VISUAL}, 0)
+ISNULL(${VISUAL}, '')
 endsnippet
 snippet rnd "round" w
 ROUND(${VISUAL}, 0, 0)
@@ -262,4 +262,10 @@ endsnippet
 
 snippet na "null as" w
 (ISNULL(`!v getreg('"')`, '') <> '' OR `!v getreg('"')` <> 0)
+endsnippet
+
+snippet oa "OUTER APPLY" w
+OUTER APPLY (
+$0
+)
 endsnippet
