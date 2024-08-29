@@ -248,3 +248,10 @@ endsnippet
 snippet add "list add" w
 `!v getreg('"')`.add($0);
 endsnippet
+
+snippet smap "stream map" w
+`!v getreg('"')`.stream().map($0).collect(Collectors.joining(","))
+endsnippet
+snippet svo "String.valueOf" w
+String.valueOf(${VISUAL})
+endsnippet

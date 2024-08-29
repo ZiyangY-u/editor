@@ -1000,7 +1000,7 @@ endf
 fu! AnonRefresh()
     let cw = InsertingWord()
     if cw == '' | retu | en
-    let cmd = g:jpIme ? ("~/.config/nvim/romaji_hirakana '".substitute(cw, '^\\', '', '')."'") : ('~/.config/nvim/anon_expand.py '.cw.' '.&ft)
+    let cmd = g:jpIme ? ("~/.config/nvim/romaji_hirakana '".substitute(cw, '^\\', '', '')."'") : ('~/.config/nvim/anon_expand '.cw.' '.&ft)
     let g:expandingId = jobstart(cmd, {'on_stdout': function('s:GetExpanded'), 'stdout_buffered':v:true})
 endf
 fu! AnonExpand() " Anon Expand: regex match and regex replace and expand!

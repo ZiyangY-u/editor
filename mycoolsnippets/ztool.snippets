@@ -57,3 +57,6 @@ snippet quote "Backlog quote" w
 $0
 {/quote}
 endsnippet
+snippet f "" w
+=IF(VLOOKUP(CONCAT(`!v getreg('"')`\$2,\$AD4),AG本番データ!\$A:\$H,6,FALSE)=1,"1","")
+endsnippet

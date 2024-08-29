@@ -63,6 +63,28 @@ AND
 ...
 endsnippet
 
+snippet recovery_ins "" w
+USE [$1]
+
+-- 1、バックアップテーブル作成全件コピーする
+SELECT * INTO WKDB.DBO.`!v getreg('"')`_BAK_`date +%Y%m%d`_1 FROM $1.DBO.`!v getreg('"')`
+SELECT * INTO WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 FROM $1.DBO.`!v getreg('"')`
+ALTER TABLE WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 ADD R_DATE smalldatetime, U_FLAG smallint
+SELECT '`!v getreg('"')`', COUNT(1) FROM $1.DBO.`!v getreg('"')` union all
+SELECT '`!v getreg('"')`_BAK_`date +%Y%m%d`_1', COUNT(1) FROM WKDB.DBO.`!v getreg('"')`_BAK_`date +%Y%m%d`_1 union all
+SELECT '`!v getreg('"')`_WK_`date +%Y%m%d`_1', COUNT(1) FROM WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1
+-- ２、ワークテーブル更新 - WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1
+INSERT INTO WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1
+-- ３、データリカバリー（本番テーブル）
+-- 本番テーブル更新前チェック - WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1
+SELECT A.* FROM WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 A WHERE A.U_FLAG = 1
+-- 本番テーブル更新 - $1.DBO.`!v getreg('"')`
+INSERT INTO $1.DBO.`!v getreg('"')`
+SELECT ...
+FROM WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 A WHERE A.U_FLAG = 1
+
+endsnippet
+
 snippet chargeall "請求書まとめ" w
 SELECT * FROM TUR_CHARGE CRG WHERE CRG.CHARGE_NO IN ($1)
 SELECT * FROM TUR_CHARGE_PRINT_HEAD HED
@@ -121,7 +143,7 @@ M_USER MU
 endsnippet
 
 snippet gd "getdate" w
-CONVERT(VARCHAR, GETDATE(), 121)
+GETDATE()
 endsnippet
 
 snippet openquery "openquery" w
@@ -142,7 +164,7 @@ snippet od "ORDER BY ASC" w
 ORDER BY
 endsnippet
 snippet odd "ORDER BY DESC" w
-ORDER BY ${1} DESC
+ORDER BY $0 DESC
 endsnippet
 
 post_expand "from UltiSnips import vim_helper; vim_helper.command('echom 1')"
@@ -264,8 +286,7 @@ snippet na "null as" w
 (ISNULL(`!v getreg('"')`, '') <> '' OR `!v getreg('"')` <> 0)
 endsnippet
 
-snippet oa "OUTER APPLY" w
-OUTER APPLY (
-$0
-)
+snippet synonym "synonym" w
+DROP SYNONYM [dbo].[`!v getreg('"')`]
+CREATE SYNONYM [dbo].[`!v getreg('"')`] FOR [SASAGDBLINKSERVER].[AGDB].[dbo].[`!v getreg('"')`]
 endsnippet
