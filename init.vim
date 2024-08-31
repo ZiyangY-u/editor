@@ -163,6 +163,7 @@ fu GDelAttach(pattern)
     let g:ColorAttachs = string(_ca) " save to global
     exe printf('syntax clear pat_%s', sha256(a:pattern))
 endf
+let g:BufColors={}
 au SessionLoadPost,BufWinEnter * cal RecoverGAttach()
 let MColors = {'': 196, 'red':196, 'green':118, 'blue':33, 'yellow':220, 'purple':135, 'white':255, 'aqua':45, 'orange':202}
 for color in keys(MColors)
@@ -170,10 +171,12 @@ for color in keys(MColors)
     exe printf('com! -nargs=* SEMark%s :cal SetExMark(bufnr(""), line(".")-1, "MVText%s", <f-args>)', color, color)
     exe printf('com! -bang -range -nargs=0 Attach%s :cal AttachColor(Selected(), %d, <bang>0, 0)', color, MColors[color])
     exe printf('com! -bang -range -nargs=0 GAttach%s : cal AttachColor(Selected(), %d, <bang>0, 1)', color, MColors[color])
+    exe printf('com! -nargs=0 BAttach%s :let g:BufColors[bufnr()]=%d', color, MColors[color])
 endfor
 com! -nargs=0 DEMarks :cal DelLineExtMark(g:extmk, [line('.')-1,0], [line('.')-1,0])
 com! -range -nargs=0 DAttach :exe printf('syntax clear pat_%s', sha256(Selected()))
 com! -range -nargs=0 GDAttach :cal GDelAttach(Selected())
+com! -nargs=0 DBAttach :unlet g:BufColors[bufnr()]
 
 " Vertical Quick Scope
 let g:vertLineMark = nvim_create_namespace('vertLineMark')
@@ -732,12 +735,15 @@ fu! ActTal()
     let [tal, curr] = ['', tabpagenr()]
     hi cc ctermfg=black ctermbg=lightgreen
     for tn in range(1, tabpagenr('$'))
-        let bg = 244-(tn % 6)
-        exe printf('hi c%s ctermfg=white ctermbg=%s', bg, bg)
-        exe printf('hi ct%s ctermfg=lightred ctermbg=%s', bg, bg)
+        let [fg, bg] = ['white', 244-(tn % 6)]
         let winIds = gettabinfo(tn)[0]['windows']
         let bufnrs = uniq(map(winIds, {_,wi -> getwininfo(wi)[0]['bufnr']}))
+        for bn in bufnrs
+            if has_key(g:BufColors, bn) | let fg = string(g:BufColors[bn]) | en
+        endfor
         let fname = map(bufnrs, {_,bn -> Shortf(bufname(bn))})
+        exe printf('hi c%s ctermfg=%s ctermbg=%s', bg, fg, bg)
+        exe printf('hi ct%s ctermfg=lightred ctermbg=%s', bg, bg)
         let tal .= (tn==curr?'':'%#ct'.bg.'#%  '.tn).'%#c'.(tn==curr?'c':bg).'#%  '.join(fname,'|').' '
     endfor
     let tal .= "%#TabLine#%="
