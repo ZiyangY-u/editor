@@ -331,18 +331,17 @@ fu! s:MarkRst(jobId, data, event)
     if match(rst, '^\d\+ \d\+') >= 0
         let pairs = map(split(rst, ' '), {_,v -> str2nr(v)})
         let [start, end] = pairs[:1] | cal MarkPair(start, end, 'PairHint')
-        if len(pairs) == 4
+        if len(pairs) >= 4
             let [start, end] = pairs[2:3] | cal MarkPair(start, end, 'PairHintNext')
         endif
     endif
 endf
 fu! PairHint()
     if virtcol('.') > virtcol('$')-1 | retu | en
-    let col = strchars(getline('.')[:col('.')-1])
     if !empty(getline('.')) && mode() == 'n'
         let bs = system("hexdump -v -e '/1 \"%02x\"'", getline('.'))
-        let b:phJid = jobstart(join(['/root/.config/nvim/pair_hint.py', col, bs, &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
-        let b:qhJid = jobstart(join(['/root/.config/nvim/quote_hint.py', col, bs, &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
+        let b:phJid = jobstart('echo ' . bs .' | '. join(['/root/.config/nvim/pair_hint', virtcol('.'), &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
+        let b:qhJid = jobstart('echo ' . bs . ' | '. join(['/root/.config/nvim/quote_hint', virtcol('.'), &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
     endif
 endf
 au CursorHold * cal PairHint()
@@ -1363,7 +1362,9 @@ com! -nargs=0 WSLview exe 'sil !wslview %'
 com! -nargs=0 Notepad exe 'sil !subl.exe -a '.WinPath(expand('%')).':'.line('.')
 com! -nargs=0 Directory exe 'sil !explorer.exe ' . substitute(WinPath(expand('%:p:h')), '/', '\\\\', 'g')
 com! -nargs=0 EditComplete e ~/.config/nvim/complete_service.py
-com! -nargs=0 EditAnon e ~/.config/nvim/anon_expand.py
+com! -nargs=0 EditAnon e ~/.config/nvim/anon_expand.py ~/.config/nvim/anon_expand.c
+ca emk AsyncRun -cwd=~/.config/nvim ./compile.sh
+
 vn <c-c> "+y
 nn <c-c> :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>"+y
 nn ,<c-c> "+p
