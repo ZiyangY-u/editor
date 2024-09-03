@@ -8,10 +8,17 @@
 #define w3 word[3]
 #define w4 word[4]
 
+/* exact match */
+int ematch(char *pat, char *word) {
+    if (strncmp(pat, word, strlen(pat)) == 0)
+        return 1;
+    return 0;
+}
+
 void vim_expand(char *word) {
-    if (strncmp("fu", word, 2) == 0)
+    if (ematch("fu", word))
         printf("fu! %s()<cr>endf", word+2);
-    if (strncmp("hl", word, 2) == 0)
+    else if (ematch("hl", word))
         printf("hi %s cterm=bold ctermfg=$1 ctermbg=$2", word+2);
 }
 
@@ -20,6 +27,10 @@ void sql_expand(char *word) {
         printf("TOP ");
         while (isdigit(*++word)) printf("%c", *word);
     }
+    if (ematch("uc", word))
+        printf("UNIQUE CLUSTERED ");
+    else if (ematch("u", word))
+        printf("UNIQUE ");
 }
 
 void _java_variabe(char c) {
