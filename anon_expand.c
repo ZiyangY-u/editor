@@ -22,6 +22,17 @@ void vim_expand(char *word) {
         printf("hi %s cterm=bold ctermfg=$1 ctermbg=$2", word+2);
 }
 
+void xml_expand(char *word) {
+    if (ematch("s", word)) 
+        printf("SELECT ");
+    else if (ematch("d", word)) 
+        printf("DISTINCT ");
+    else if (ematch("f", word))
+        printf("FROM ");
+    else if (ematch("#", word))
+        printf("#{$0}");
+}
+
 void sql_expand(char *word) {
     if (strlen(word) >= 2 && word[0] == 't' && isdigit(word[1])) {
         printf("TOP ");
@@ -38,6 +49,7 @@ void _java_variabe(char c) {
         case 's': printf("String"); break;
         case 'i': printf("int"); break;
         case 'I': printf("Integer"); break;
+        case 'L': printf("Long"); break;
         case 'v': printf("void"); break;
         case 'b': printf("boolean"); break;
         case 'B': printf("BigDecimal"); break;
@@ -125,6 +137,8 @@ int main(int argc, char *argv[])
         ark_expand(argv[1]);
     if (strcmp("css", argv[2]) == 0)
         css_expand(argv[1]);
+    if (strcmp("xml", argv[2]) == 0)
+        xml_expand(argv[1]);
 
     return 0;
 }

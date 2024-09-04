@@ -60,3 +60,7 @@ endsnippet
 snippet ifn "if null" w
 <choose> <when test="`!v getreg('"')` == null"> NULL </when> <otherwise> #{`!v getreg('"')`} </otherwise> </choose>
 endsnippet
+
+snippet # "#{}" w
+#{$0}
+endsnippet
