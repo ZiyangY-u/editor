@@ -319,20 +319,23 @@ com! -nargs=0 Dfthese :cal Diffthese()
 " Pair Hint
 hi PairHint cterm=bold ctermfg=red ctermbg=black
 hi PairHintNext cterm=bold ctermfg=yellow ctermbg=black
-fu! MarkPair(start, end, hl)
-    let left = getline('.')[virtcol2col(0, line('.'), a:start-1)]
-    let right = getline('.')[virtcol2col(0, line('.'), a:end-1)]
-    cal VirtualMarkWrapper(line('.')-1, a:start-1, left, a:hl)
-    cal VirtualMarkWrapper(line('.')-1, a:end-1, right, a:hl)
+fu! MarkPair(start, end, left, right, hl)
+    if a:start > 0 | cal VirtualMarkWrapper(line('.')-1, a:start-1, a:left, a:hl) | en
+    if a:end > 0 | cal VirtualMarkWrapper(line('.')-1, a:end-1, a:right, a:hl) | en
 endf
 fu! s:MarkRst(jobId, data, event)
     if (!exists('b:phJid') && !exists('b:qhJid')) || a:jobId != b:phJid && a:jobId != b:qhJid | retu | en
     let rst = trim(a:data[0])
-    if match(rst, '^\d\+ \d\+') >= 0
-        let pairs = map(split(rst, ' '), {_,v -> str2nr(v)})
-        let [start, end] = pairs[:1] | cal MarkPair(start, end, 'PairHint')
+    if match(rst, '\v^-?\d+. -?\d+.') >= 0
+        let _col = wincol()-getwininfo(win_getid())[0]['textoff']
+        let pairs = split(rst, ' ')
+        let [_start, _end] = pairs[:1]
+        let [_l1, _l2] = [strlen(_start)-1, strlen(_end)-1]
+        cal MarkPair(_col + _start[:_l1-1], _col + _end[:_l2-1], _start[_l1], _end[_l2], 'PairHint')
         if len(pairs) >= 4
-            let [start, end] = pairs[2:3] | cal MarkPair(start, end, 'PairHintNext')
+            let [_start, _end] = pairs[2:3]
+            let [_l1, _l2] = [strlen(_start)-1, strlen(_end)-1]
+            cal MarkPair(_col + _start[:_l1-1], _col + _end[:_l2-1], _start[_l1], _end[_l2], 'PairHintNext')
         endif
     endif
 endf
@@ -1362,7 +1365,7 @@ com! -nargs=0 WSLview exe 'sil !wslview %'
 com! -nargs=0 Notepad exe 'sil !subl.exe -a '.WinPath(expand('%')).':'.line('.')
 com! -nargs=0 Directory exe 'sil !explorer.exe ' . substitute(WinPath(expand('%:p:h')), '/', '\\\\', 'g')
 com! -nargs=0 EditComplete e ~/.config/nvim/complete_service.py
-com! -nargs=0 EditAnon e ~/.config/nvim/anon_expand.c
+com! -nargs=0 EditAnon tabe | e ~/.config/nvim/anon_expand.c
 ca emk AsyncRun -cwd=~/.config/nvim ./compile.sh
 
 vn <c-c> "+y

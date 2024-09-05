@@ -33,6 +33,11 @@ void xml_expand(char *word) {
         printf("#{$0}");
 }
 
+void c_expand(char* word) {
+    if (ematch("cu", word))
+        printf("const uint32_t ");
+}
+
 void sql_expand(char *word) {
     if (strlen(word) >= 2 && word[0] == 't' && isdigit(word[1])) {
         printf("TOP ");
@@ -139,6 +144,8 @@ int main(int argc, char *argv[])
         css_expand(argv[1]);
     if (strcmp("xml", argv[2]) == 0)
         xml_expand(argv[1]);
+    if (strcmp("c", argv[2]) == 0)
+        c_expand(argv[1]);
 
     return 0;
 }

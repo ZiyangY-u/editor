@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <wchar.h>
+#include <stdint.h>
 
 #define STACK_DEEP 1000
 
@@ -75,11 +77,11 @@ int find_close_bracket(int start_sp) {
         if (is_left_bracket(i))
             bdepth++;
         if (bdepth == 0 && is_right_bracket(i) && target == stack[i].bracket)
-            return stack[i].vcol;
+            return i;
         if (bdepth != 0 && is_right_bracket(i))
             bdepth--;
     }
-    return 0;
+    return -1;
 }
 
 int find_start_brackt(int start_sp) {
@@ -89,11 +91,43 @@ int find_start_brackt(int start_sp) {
         if (is_right_bracket(i))
             bdepth++;
         if (bdepth == 0 && is_left_bracket(i) && target == stack[i].bracket)
-            return stack[i].vcol;
+            return i;
         if (bdepth != 0 && is_left_bracket(i))
             bdepth--;
     }
-    return 0;
+    return -1;
+}
+
+ // Function to decode a single UTF-8 character to a Unicode code point
+uint32_t utf8_to_unicode(const char *utf8) {
+    uint32_t codepoint = 0;
+    int bytes = 0;
+
+    // Determine the number of bytes in the UTF-8 character
+    if ((utf8[0] & 0x80) == 0) {
+        // 1-byte character (ASCII)
+        codepoint = utf8[0];
+        bytes = 1;
+    } else if ((utf8[0] & 0xE0) == 0xC0) {
+        // 2-byte character
+        codepoint = utf8[0] & 0x1F;
+        bytes = 2;
+    } else if ((utf8[0] & 0xF0) == 0xE0) {
+        // 3-byte character
+        codepoint = utf8[0] & 0x0F;
+        bytes = 3;
+    } else if ((utf8[0] & 0xF8) == 0xF0) {
+        // 4-byte character
+        codepoint = utf8[0] & 0x07;
+        bytes = 4;
+    }
+
+    // Decode the remaining bytes
+    for (int i = 1; i < bytes; ++i) {
+        codepoint = (codepoint << 6) | (utf8[i] & 0x3F);
+    }
+
+    return codepoint;
 }
 
 /* pair hint:
@@ -115,8 +149,9 @@ int main(int argc, char *argv[])
             vcol += ts;
             continue;
         }
+        unicode = 0x0;
         if ((c & 0xF0) == 0xF0) { /* four-byte unicode */
-            unicode = c;
+            unicode += c;
             for (int i = 0 ; i < 3 ; i++) {
                 c1 = getchar(); c2 = getchar();
                 unicode = unicode << 8;
@@ -157,25 +192,26 @@ int main(int argc, char *argv[])
 
     int brackt_depth = 0;
     int colp = 0;
-    int close_col;
+    int cci; // close col index
     int find_surround_flg = 1;
 
     while (stack[colp+1].vcol <= col)
         if (++colp == sp) break;
 
+    /* print column number relative to current column */
     if (stack[colp].vcol == col) {
-        if (is_left_bracket(colp) && (close_col = find_close_bracket(colp)) != 0)
-            printf("%d %d", stack[colp].vcol, close_col);
-        if (is_right_bracket(colp) && (close_col = find_start_brackt(colp)) != 0)
-            printf("%d %d", close_col, stack[colp].vcol);
+        if (is_left_bracket(colp) && (cci = find_close_bracket(colp)) != -1)
+            printf("%d%c %d%c", stack[colp].vcol - col, stack[colp].bracket, stack[cci].vcol - col, stack[cci].bracket);
+        if (is_right_bracket(colp) && (cci = find_start_brackt(colp)) != -1)
+            printf("%d%c %d%c", stack[cci].vcol - col, stack[cci].bracket, stack[colp].vcol - col, stack[colp].bracket);
         find_surround_flg = 0;
     }
 
     /* find surrounding bracket */
     if (find_surround_flg == 1)
         for (int i = colp ; i >= 0 ; i--) {
-            if (brackt_depth == 0 && is_left_bracket(i) && (close_col = find_close_bracket(i)) != 0) {
-                printf(" %d %d", stack[i].vcol, close_col);
+            if (brackt_depth == 0 && is_left_bracket(i) && (cci = find_close_bracket(i)) != -1) {
+                printf(" %d%c %d%c", stack[i].vcol - col, stack[i].bracket, stack[cci].vcol - col, stack[cci].bracket);
                 break;
             }
             if (is_right_bracket(i))
@@ -186,11 +222,24 @@ int main(int argc, char *argv[])
 
     /* find next bracket */
     for (int i = colp+1 ; i < sp ; i++) {
-        if (is_left_bracket(i) && (close_col = find_close_bracket(i)) != 0) {
-            printf(" %d %d", stack[i].vcol, close_col);
+        if (is_left_bracket(i) && (cci = find_close_bracket(i)) != -1) {
+            printf(" %d%c %d%c", stack[i].vcol - col, stack[i].bracket, stack[cci].vcol - col, stack[cci].bracket);
             break;
         }
     }
 
     return 0;
 }
+
+/* int main() { */
+/*     // Example UTF-8 encoded string (Japanese character "世") */
+/*     const char *utf8 = "\xE4\xB8\x96"; */
+
+/*     // Convert to Unicode code point */
+/*     uint32_t unicode = utf8_to_unicode(utf8); */
+
+/*     // Print the Unicode code point */
+/*     printf("Unicode code point: U+%04X\n", unicode); */
+
+/*     return 0; */
+/* } */
