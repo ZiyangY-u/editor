@@ -342,9 +342,11 @@ endf
 fu! PairHint()
     if virtcol('.') > virtcol('$')-1 | retu | en
     if !empty(getline('.')) && mode() == 'n'
+        " let ccol = virtcol('.') + match(nr2char(strgetchar(getline('.')[col('.') - 1:], 0)), '[\x00-\x7f]')
+        let ccol = wincol()-getwininfo(win_getid())[0]['textoff']
         let bs = system("hexdump -v -e '/1 \"%02x\"'", getline('.'))
-        let b:phJid = jobstart('echo ' . bs .' | '. join(['/root/.config/nvim/pair_hint', virtcol('.'), &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
-        let b:qhJid = jobstart('echo ' . bs . ' | '. join(['/root/.config/nvim/quote_hint', virtcol('.'), &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
+        let b:phJid = jobstart('echo ' . bs .' | '. join(['/root/.config/nvim/pair_hint', ccol, &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
+        let b:qhJid = jobstart('echo ' . bs . ' | '. join(['/root/.config/nvim/quote_hint', ccol, &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
     endif
 endf
 au CursorHold * cal PairHint()

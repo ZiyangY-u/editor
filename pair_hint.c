@@ -19,12 +19,9 @@ void push(struct pair p) {
         perror("error: stack full, can't push\n");
 }
 
-/* lbs 28 (
- * rbs 29 )
- * lbm 5b [
- * rbm 5d ]
- * lbb 7b {
- * rbb 7d }
+/* lbs 28 ( rbs 29 )
+ * lbm 5b [ rbm 5d ]
+ * lbb 7b { rbb 7d }
  * tab 09
  * */
 
@@ -98,38 +95,6 @@ int find_start_brackt(int start_sp) {
     return -1;
 }
 
- // Function to decode a single UTF-8 character to a Unicode code point
-uint32_t utf8_to_unicode(const char *utf8) {
-    uint32_t codepoint = 0;
-    int bytes = 0;
-
-    // Determine the number of bytes in the UTF-8 character
-    if ((utf8[0] & 0x80) == 0) {
-        // 1-byte character (ASCII)
-        codepoint = utf8[0];
-        bytes = 1;
-    } else if ((utf8[0] & 0xE0) == 0xC0) {
-        // 2-byte character
-        codepoint = utf8[0] & 0x1F;
-        bytes = 2;
-    } else if ((utf8[0] & 0xF0) == 0xE0) {
-        // 3-byte character
-        codepoint = utf8[0] & 0x0F;
-        bytes = 3;
-    } else if ((utf8[0] & 0xF8) == 0xF0) {
-        // 4-byte character
-        codepoint = utf8[0] & 0x07;
-        bytes = 4;
-    }
-
-    // Decode the remaining bytes
-    for (int i = 1; i < bytes; ++i) {
-        codepoint = (codepoint << 6) | (utf8[i] & 0x3F);
-    }
-
-    return codepoint;
-}
-
 /* pair hint:
  * first param : cursor column
  * second param : tabstop */
@@ -139,7 +104,7 @@ int main(int argc, char *argv[])
     int ts = atoi(argv[2]);
     int vcol = 1;
     char c1, c2, c;
-    unsigned int unicode;
+    uint32_t unicode;
     struct pair p;
     /* store all bracket to stack */
     while ((c1 = getchar()) != EOF) {
@@ -149,30 +114,46 @@ int main(int argc, char *argv[])
             vcol += ts;
             continue;
         }
-        unicode = 0x0;
-        if ((c & 0xF0) == 0xF0) { /* four-byte unicode */
-            unicode += c;
-            for (int i = 0 ; i < 3 ; i++) {
-                c1 = getchar(); c2 = getchar();
-                unicode = unicode << 8;
-                unicode += hex_to_char(c1, c2);
-            }
-            vcol++;
-        } else if ((c & 0xE0) == 0xE0) { /* three-byte unicode */
+        if ((c & 0x80) == 0) {
+            /* 1-byte character (ASCII) */
             unicode = c;
+        } else if (((c & 0xE0) == 0xC0)) {
+            /* 2-byte character */
+            unicode = c & 0x1F;
+            c1 = getchar(); c2 = getchar();
+            unicode = (unicode << 6) | (hex_to_char(c1, c2) & 0x3f);
+        } else if ((c & 0xF0) == 0xE0) {
+            /* 3-byte character */
+            unicode = c & 0x0F;
             for (int i = 0 ; i < 2 ; i++) {
                 c1 = getchar(); c2 = getchar();
-                unicode = unicode << 8;
-                unicode |= hex_to_char(c1, c2);
+                unicode = (unicode << 6) | (hex_to_char(c1, c2) & 0x3f);
             }
-            vcol++;
-        } else if ((c & 0xC0) == 0xC0) { /* two-byte unicode */
-            unicode = c;
-            c1 = getchar(); c2 = getchar();
-            unicode = unicode << 8;
-            unicode += hex_to_char(c1, c2);
-            vcol++;
+        } else if ((c & 0xF8) == 0xF0) {
+            /* 4-byte character */
+            unicode = c & 0x07;
+            for (int i = 0 ; i < 3 ; i++) {
+                c1 = getchar(); c2 = getchar();
+                unicode = (unicode << 6) | (hex_to_char(c1, c2) & 0x3f);
+            }
         }
+
+        /* printf("Unicode code point: U+%04X\n", unicode); */
+        if (0xff01 <= unicode && unicode <= 0xff5e)
+            vcol++; /* printf("2 col: U+%04X\n", unicode); */
+        else if (unicode == 0xff5f && unicode == 0xff60)
+            vcol++; /* printf("2 col: U+%04X\n", unicode); */
+        else if (0xffe0 <= unicode && unicode <= 0xffe6)
+            vcol++; /* printf("2 col: U+%04X\n", unicode); */
+        else if (0x3041 <= unicode && unicode <= 0x3096) // Hiragana
+            vcol++; /* printf("2 col: U+%04X\n", unicode); */
+        else if (0x30a1 <= unicode && unicode <= 0x30ff) // Katakana
+            vcol++; /* printf("2 col: U+%04X\n", unicode); */
+        else if (0x4e00 <= unicode && unicode <= 0x9fff) // kannji
+            vcol++; /* printf("2 col: U+%04X\n", unicode); */
+        else if (0x3000 <= unicode && unicode <= 0x303f) // CJK Symbols and Punctuation Block
+            vcol++; /* printf("2 col: U+%04X\n", unicode); */
+
         if (is_lb(c) || is_rb(c)) {
             p.vcol = vcol;
             p.bracket = c;
@@ -188,7 +169,6 @@ int main(int argc, char *argv[])
 
     if (sp == 0) /* no brakets */
         return 0;
-
 
     int brackt_depth = 0;
     int colp = 0;
@@ -230,16 +210,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
-/* int main() { */
-/*     // Example UTF-8 encoded string (Japanese character "世") */
-/*     const char *utf8 = "\xE4\xB8\x96"; */
-
-/*     // Convert to Unicode code point */
-/*     uint32_t unicode = utf8_to_unicode(utf8); */
-
-/*     // Print the Unicode code point */
-/*     printf("Unicode code point: U+%04X\n", unicode); */
-
-/*     return 0; */
-/* } */
