@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <wchar.h>
 #include <stdint.h>
 
 #define STACK_DEEP 1000

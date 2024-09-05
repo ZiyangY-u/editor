@@ -341,9 +341,10 @@ fu! s:MarkRst(jobId, data, event)
 endf
 fu! PairHint()
     if virtcol('.') > virtcol('$')-1 | retu | en
-    if !empty(getline('.')) && mode() == 'n'
-        " let ccol = virtcol('.') + match(nr2char(strgetchar(getline('.')[col('.') - 1:], 0)), '[\x00-\x7f]')
-        let ccol = wincol()-getwininfo(win_getid())[0]['textoff']
+    let cchar_nr = strgetchar(getline('.')[col('.') - 1:], 0)
+    if !empty(getline('.')) && mode() == 'n' && cchar_nr >= 0
+        let ch_width = system("hexdump -v -e '/1 \"%02x\"' | /root/.config/nvim/char_width", nr2char(cchar_nr))
+        let ccol = virtcol('.') - (ch_width-1)
         let bs = system("hexdump -v -e '/1 \"%02x\"'", getline('.'))
         let b:phJid = jobstart('echo ' . bs .' | '. join(['/root/.config/nvim/pair_hint', ccol, &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
         let b:qhJid = jobstart('echo ' . bs . ' | '. join(['/root/.config/nvim/quote_hint', ccol, &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
