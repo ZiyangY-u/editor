@@ -332,7 +332,7 @@ fu! s:MarkRst(jobId, data, event)
         let [_start, _end] = pairs[:1]
         let [_l1, _l2] = [strlen(_start)-1, strlen(_end)-1]
         cal MarkPair(_col + _start[:_l1-1], _col + _end[:_l2-1], _start[_l1], _end[_l2], 'PairHint')
-        if len(pairs) >= 4
+        if len(pairs) >= 4 && str2nr(_start[:_l1-1]) <= 0
             let [_start, _end] = pairs[2:3]
             let [_l1, _l2] = [strlen(_start)-1, strlen(_end)-1]
             cal MarkPair(_col + _start[:_l1-1], _col + _end[:_l2-1], _start[_l1], _end[_l2], 'PairHintNext')
