@@ -320,7 +320,6 @@ com! -nargs=0 Dfthese :cal Diffthese()
 hi PairHint cterm=bold ctermfg=red ctermbg=black
 hi PairHintNext cterm=bold ctermfg=yellow ctermbg=black
 fu! MarkPair(start, end, left, right, hl)
-    cal ClearVirtualTxt()
     if a:start > 0 | cal VirtualMarkWrapper(line('.')-1, a:start-1, a:left, a:hl) | en
     if a:end > 0 | cal VirtualMarkWrapper(line('.')-1, a:end-1, a:right, a:hl) | en
 endf
