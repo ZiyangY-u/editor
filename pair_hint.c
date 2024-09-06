@@ -23,6 +23,8 @@ void push(struct pair p) {
  * lbb 7b { rbb 7d }
  * tab 09
  * */
+int is_fullwidth(uint32_t unicode);
+unsigned int hex_to_char(char c1, char c2);
 
 int is_lb(char c) {
     if (c == '(' || c == '[' || c == '{')
@@ -45,12 +47,6 @@ int is_right_bracket(int stack_idx) {
     if (stack[stack_idx].bracket == ')' || stack[stack_idx].bracket == ']' || stack[stack_idx].bracket == '}')
         return 1;
     return 0;
-}
-
-unsigned int hex_to_char(char c1, char c2) {
-    unsigned int a = ('a' <= c1 && c1 <= 'f') ? (c1 - 'a' + 10) : (c1 - '0');
-    unsigned int b = ('a' <= c2 && c2 <= 'f') ? (c2 - 'a' + 10) : (c2 - '0');
-    return (a << 4) + b;
 }
 
 char get_target(char bracket) {
@@ -137,22 +133,8 @@ int main(int argc, char *argv[])
             }
         }
 
-        /* printf("Unicode code point: U+%04X\n", unicode); */
-        if (0xff01 <= unicode && unicode <= 0xff5e)
-            vcol++; /* printf("2 col: U+%04X\n", unicode); */
-        else if (unicode == 0xff5f && unicode == 0xff60)
-            vcol++; /* printf("2 col: U+%04X\n", unicode); */
-        else if (0xffe0 <= unicode && unicode <= 0xffe6)
-            vcol++; /* printf("2 col: U+%04X\n", unicode); */
-        else if (0x3041 <= unicode && unicode <= 0x3096) // Hiragana
-            vcol++; /* printf("2 col: U+%04X\n", unicode); */
-        else if (0x30a1 <= unicode && unicode <= 0x30ff) // Katakana
-            vcol++; /* printf("2 col: U+%04X\n", unicode); */
-        else if (0x4e00 <= unicode && unicode <= 0x9fff) // kannji
-            vcol++; /* printf("2 col: U+%04X\n", unicode); */
-        else if (0x3000 <= unicode && unicode <= 0x303f) // CJK Symbols and Punctuation Block
-            vcol++; /* printf("2 col: U+%04X\n", unicode); */
-
+        if (is_fullwidth(unicode))
+            vcol++;
         if (is_lb(c) || is_rb(c)) {
             p.vcol = vcol;
             p.bracket = c;

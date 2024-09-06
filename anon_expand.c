@@ -47,6 +47,10 @@ void sql_expand(char *word) {
         printf("UNIQUE CLUSTERED ");
     else if (ematch("u", word))
         printf("UNIQUE ");
+    else if (ematch("sd", word))
+        printf("SELECT DISTINCT * FROM");
+    else if (ematch("s", word))
+        printf("SELECT * FROM");
 }
 
 void _java_variabe(char c) {

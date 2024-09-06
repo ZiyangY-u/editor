@@ -1,11 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
-unsigned int hex_to_char(char c1, char c2) {
-    unsigned int a = ('a' <= c1 && c1 <= 'f') ? (c1 - 'a' + 10) : (c1 - '0');
-    unsigned int b = ('a' <= c2 && c2 <= 'f') ? (c2 - 'a' + 10) : (c2 - '0');
-    return (a << 4) + b;
-}
+int is_fullwidth(uint32_t unicode);
+unsigned int hex_to_char(char c1, char c2);
 
 int main(int argc, char *argv[])
 {
@@ -38,23 +35,11 @@ int main(int argc, char *argv[])
             }
         }
 
-        /* printf("Unicode code point: U+%04X\n", unicode); */
-        if (0xff01 <= unicode && unicode <= 0xff5e)
-        { printf("2"); return 0; }
-        else if (unicode == 0xff5f && unicode == 0xff60)
-        { printf("2"); return 0; }
-        else if (0xffe0 <= unicode && unicode <= 0xffe6)
-        { printf("2"); return 0; }
-        else if (0x3041 <= unicode && unicode <= 0x3096) // Hiragana
-        { printf("2"); return 0; }
-        else if (0x30a1 <= unicode && unicode <= 0x30ff) // Katakana
-        { printf("2"); return 0; }
-        else if (0x4e00 <= unicode && unicode <= 0x9fff) // kannji
-        { printf("2"); return 0; }
-        else if (0x3000 <= unicode && unicode <= 0x303f) // CJK Symbols and Punctuation Block
-        { printf("2"); return 0; }
-        else
-        { printf("1"); return 0; }
+        if (is_fullwidth(unicode)) {
+            printf("2");
+            return 0;
+        }
+        printf("1");
     }
     
     return 0;
