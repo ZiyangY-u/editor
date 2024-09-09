@@ -290,3 +290,13 @@ snippet synonym "synonym" w
 DROP SYNONYM [dbo].[`!v getreg('"')`]
 CREATE SYNONYM [dbo].[`!v getreg('"')`] FOR [SASAGDBLINKSERVER].[AGDB].[dbo].[`!v getreg('"')`]
 endsnippet
+
+snippet rbk "" w
+-- 片側無効依頼`!v getreg('"')`
+UPDATE A SET A.`!v getreg('"')` = BK.`!v getreg('"')`
+FROM MUR_COMPANY MC
+JOIN WKDB.DBO.MUR_COMPANY_WK_20240805_1 WK ON MC.COM_ID = WK.COM_ID
+JOIN WKDB.DBO.MUR_COMPANY_BAK_20240805_1 BK ON WK.COM_ID = BK.COM_ID
+WHERE U_FLAG3 = 1
+AND WK.`!v getreg('"')` <> BK.`!v getreg('"')`
+endsnippet

@@ -19,25 +19,28 @@ int is_fullwidth(uint32_t unicode)
         return true;
     else if (0x3000 <= unicode && unicode <= 0x303f) // CJK Symbols and Punctuation Block
         return true;
+    else
+        return false;
 
-    return false;
 }
 
-unsigned int hex_to_char(char c1, char c2) {
+unsigned int hex_to_char(char c1, char c2)
+{
     unsigned int a, b;
+
     if ('a' <= c1 && c1 <= 'f')
         a = (c1 - 'a' + 10);
     else if ('A' <= c1 && c1 <= 'F')
         a = (c1 - 'A' + 10);
     else
-        a = c1 - '0';
+        a = (c1 - '0');
 
     if ('a' <= c2 && c2 <= 'f')
         b = (c2 - 'a' + 10);
     else if ('A' <= c2 && c2 <= 'F')
         b = (c2 - 'A' + 10);
     else
-        b = c2 - '0';
+        b = (c2 - '0');
 
     return (a << 4) + b;
 }
