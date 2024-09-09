@@ -48,7 +48,7 @@ void sql_expand(char *word) {
     else if (ematch("u", word))
         printf("UNIQUE ");
     else if (ematch("sd", word))
-        printf("SELECT DISTINCT * FROM");
+        printf("SELECT DISTINCT ");
     else if (ematch("s", word))
         printf("SELECT * FROM");
 }

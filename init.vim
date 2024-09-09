@@ -319,6 +319,12 @@ com! -nargs=0 Dfthese :cal Diffthese()
 " Pair Hint
 hi PairHint cterm=bold ctermfg=red ctermbg=black
 hi PairHintNext cterm=bold ctermfg=yellow ctermbg=black
+fu! MarkPairs(pair_info)
+    cal ClearVirtualTxt()
+    for pi in a:pair_info
+        cal MarkPair(pi.start, pi.end, pi.left, pi.right, pi.hl)
+    endfor
+endf
 fu! MarkPair(start, end, left, right, hl)
     if a:start > 0 | cal VirtualMarkWrapper(line('.')-1, a:start-1, a:left, a:hl) | en
     if a:end > 0 | cal VirtualMarkWrapper(line('.')-1, a:end-1, a:right, a:hl) | en
@@ -328,15 +334,16 @@ fu! s:MarkRst(jobId, data, event)
     let rst = trim(a:data[0])
     if match(rst, '\v^-?\d+. -?\d+.') >= 0
         let _col = wincol()-getwininfo(win_getid())[0]['textoff']
-        let pairs = split(rst, ' ')
+        let [pairs, pair_info] = [split(rst, ' '), []]
         let [_start, _end] = pairs[:1]
         let [_l1, _l2] = [strlen(_start)-1, strlen(_end)-1]
-        cal MarkPair(_col + _start[:_l1-1], _col + _end[:_l2-1], _start[_l1], _end[_l2], 'PairHint')
+        cal add(pair_info, {'start': _col + _start[:_l1-1], 'end':_col + _end[:_l2-1], 'left':_start[_l1], 'right':_end[_l2], 'hl':'PairHint'})
         if len(pairs) >= 4 && str2nr(_start[:_l1-1]) <= 0
             let [_start, _end] = pairs[2:3]
             let [_l1, _l2] = [strlen(_start)-1, strlen(_end)-1]
-            cal MarkPair(_col + _start[:_l1-1], _col + _end[:_l2-1], _start[_l1], _end[_l2], 'PairHintNext')
+            cal add(pair_info, {'start': _col + _start[:_l1-1], 'end':_col + _end[:_l2-1], 'left':_start[_l1], 'right':_end[_l2], 'hl':'PairHintNext'})
         endif
+        cal MarkPairs(pair_info)
     endif
 endf
 fu! PairHint()
