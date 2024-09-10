@@ -49,8 +49,8 @@ void sql_expand(char *word) {
         printf("UNIQUE ");
     else if (ematch("sd", word))
         printf("SELECT DISTINCT ");
-    else if (ematch("s", word))
-        printf("SELECT * FROM");
+    else if (ematch("inn", word))
+        printf("IS NOT NULL");
 }
 
 void _java_variabe(char c) {

@@ -1468,7 +1468,7 @@ lua << EOF
 require("nvim-lsp-installer").setup {}
 local lspconfig = require('lspconfig')
 lspconfig.pyright.setup{}
-lspconfig.tsserver.setup{}
+lspconfig.eslint.setup{}
 lspconfig.html.setup{}
 lspconfig.cssls.setup{}
 lspconfig.vimls.setup{}
