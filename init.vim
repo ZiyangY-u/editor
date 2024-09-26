@@ -1469,6 +1469,7 @@ require("nvim-lsp-installer").setup {}
 local lspconfig = require('lspconfig')
 lspconfig.pyright.setup{}
 lspconfig.eslint.setup{}
+lspconfig.rome.setup{}
 lspconfig.html.setup{}
 lspconfig.cssls.setup{}
 lspconfig.vimls.setup{}

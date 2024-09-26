@@ -1,9 +1,37 @@
 #!/usr/bin/python3
 
 # completion_buf.db schema:
-# create table words (word text, chosen int, src, recent_chosen_time datetime, import_date datetime);
+
+# create table words (word text, chosen int, src, recent_chosen_time datetime, import_date datetime,inc_a int,inc_b int,inc_c int,inc_d int,inc_e int,inc_f int,inc_g int,inc_h int,inc_i int,inc_j int,inc_k int,inc_l int,inc_m int,inc_n int,inc_o int,inc_p int,inc_q int,inc_r int,inc_s int,inc_t int,inc_u int,inc_v int,inc_w int,inc_x int,inc_y int,inc_z int);
 # create index idx_words on words(word, chosen);
 # create index idx_words_src on words(src);
+# create index idx_words_a on words(inc_a);
+# create index idx_words_a on words(inc_a);
+# create index idx_words_b on words(inc_b);
+# create index idx_words_c on words(inc_c);
+# create index idx_words_d on words(inc_d);
+# create index idx_words_e on words(inc_e);
+# create index idx_words_f on words(inc_f);
+# create index idx_words_g on words(inc_g);
+# create index idx_words_h on words(inc_h);
+# create index idx_words_i on words(inc_i);
+# create index idx_words_j on words(inc_j);
+# create index idx_words_k on words(inc_k);
+# create index idx_words_l on words(inc_l);
+# create index idx_words_m on words(inc_m);
+# create index idx_words_n on words(inc_n);
+# create index idx_words_o on words(inc_o);
+# create index idx_words_p on words(inc_p);
+# create index idx_words_q on words(inc_q);
+# create index idx_words_r on words(inc_r);
+# create index idx_words_s on words(inc_s);
+# create index idx_words_t on words(inc_t);
+# create index idx_words_u on words(inc_u);
+# create index idx_words_v on words(inc_v);
+# create index idx_words_w on words(inc_w);
+# create index idx_words_x on words(inc_x);
+# create index idx_words_y on words(inc_y);
+# create index idx_words_z on words(inc_z);
 # create table path_history (path text, hash text, import_date datetime);
 # create index idx_path_history on path_history(path, hash);
 
@@ -146,6 +174,19 @@ def query_and_inflect(sql:str, indicate:str, patch:str, tail_decor:str, connecti
     for item in cur.fetchall():
         rst.append(CompletionItem(item[0][:-1] + patch + tail_decor, indicate, float(item[1]) + float(item[2])))
 
+def create_insert_word_sql(word:str, path:str, chosen:bool) -> str:
+    # word text, chosen int, src, recent_chosen_time datetime, import_date
+    chars = set([c.lower() for c in word if re.match("[A-Za-z]", c)])
+    sql = 'insert into words (word, chosen, src, recent_chosen_time, import_date'
+    if len(chars) == 0:
+        sql =  sql + ') values ("{}", 0, "{}", {}, datetime("now"))'.format(word, path, 'null' if not chosen else 'datetime("now")')
+    else:
+        sql = sql + ',' + ','.join('inc_'+c for c in chars) + ') values ("{}", 0, "{}", {}, datetime("now"),'.format(word, path, 'null' if not chosen else 'datetime("now")') \
+                + ','.join('1' for _ in chars) + ')'
+    return sql
+
+
+
 def add_word(word:str, path:str) -> None:
     """
     add word to words table.
@@ -157,7 +198,7 @@ def add_word(word:str, path:str) -> None:
     cur.execute('select count(1) from words where word = "' + word + '"')
     cnt = cur.fetchall()[0][0]
     if cnt == 0:
-        cur.execute('insert into words values ("' + word + '", 0, "' + path + '", datetime("now"), datetime("now"))')
+        cur.execute(create_insert_word_sql(word, path, True))
     con_completion.commit()
 
 def has_path_history(path:str, hashcode:str) -> bool:
@@ -205,7 +246,7 @@ def add_words(path:str, enc:str) -> None:
             cur.execute('select count(1) from words where word = "' + w + '"')
             cnt = cur.fetchall()[0][0]
             if cnt == 0:
-                cur.execute('insert into words values ("' + w + '", 0, "' + path + '", null, datetime("now"))')
+                cur.execute(create_insert_word_sql(w, path, False))
         cur.execute('insert into path_history values ("' + path + '", "' + hashcode + '", datetime("now"))') # add path to history
     # clear not chosen words imported 1 days ago
     # and they will be recruited next time the file involved
@@ -225,22 +266,25 @@ def query_word(word:str, src:str) -> list:
     con_completion = sqlite3.connect(COMPLETE_BUF_DB_PATH)
     # create like pattern: query -> %q%u%e%r%y%
     like_pat = '%' + '%'.join((ch for ch in word)) + '%'
+    chars = set([c.lower() for c in word if re.match("[A-Za-z]", c)])
+    and_pat = ' AND ' + ' AND '.join('inc_' + c + '=1' for c in chars)
     # recent hot words, recent 2 hours chosen
     sql = '''SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE
             LENGTH(WORD) < 100 AND WORD LIKE "''' + like_pat + '''" COLLATE NOCASE
             AND RECENT_CHOSEN_TIME IS NOT NULL
+            ''' + and_pat + '''
             AND RECENT_CHOSEN_TIME >= DATETIME("NOW", "-1 HOUR")
             ORDER BY RECENT_CHOSEN_TIME DESC, CHOSEN DESC LIMIT 5'''
     query(sql, '󰈸 hot data', con_completion, rst_list)
 
     # from current file
-    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE SRC="' + src + '" AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ORDER BY CHOSEN DESC LIMIT 5'
+    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE SRC="' + src + '" AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ' + and_pat + ' ORDER BY CHOSEN DESC LIMIT 5'
     query(sql, '󰈝 this file', con_completion, rst_list)
     # chosen history
-    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE CHOSEN > 0 AND LENGTH(WORD) < 100 AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ORDER BY CHOSEN DESC LIMIT 15'
+    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE CHOSEN > 0 AND LENGTH(WORD) < 100 AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ' + and_pat + ' ORDER BY CHOSEN DESC LIMIT 15'
     query(sql, '󱈅 chosen history', con_completion, rst_list)
     # unchosen words
-    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE CHOSEN = 0 AND LENGTH(WORD) < 100 AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ORDER BY LENGTH(WORD) LIMIT 20'
+    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE CHOSEN = 0 AND LENGTH(WORD) < 100 AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ' + and_pat + ' ORDER BY LENGTH(WORD) LIMIT 20'
     query(sql, '󰄮 unchosen', con_completion, rst_list)
 
     return rst_list
