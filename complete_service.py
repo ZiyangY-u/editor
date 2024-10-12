@@ -6,7 +6,6 @@
 # create index idx_words on words(word, chosen);
 # create index idx_words_src on words(src);
 # create index idx_words_a on words(inc_a);
-# create index idx_words_a on words(inc_a);
 # create index idx_words_b on words(inc_b);
 # create index idx_words_c on words(inc_c);
 # create index idx_words_d on words(inc_d);
@@ -265,12 +264,14 @@ def query_word(word:str, src:str) -> list:
     rst_list = []
     con_completion = sqlite3.connect(COMPLETE_BUF_DB_PATH)
     # create like pattern: query -> %q%u%e%r%y%
-    like_pat = '%' + '%'.join((ch for ch in word)) + '%'
+    like_pat = '"%' + '%'.join((ch for ch in word)) + '%"'
     chars = set([c.lower() for c in word if re.match("[A-Za-z]", c)])
+    # if all(re.match("[a-z]", c) for c in word):
+    #     like_pat += ' COLLATE NOCASE  '
     and_pat = ' AND ' + ' AND '.join('inc_' + c + '=1' for c in chars)
     # recent hot words, recent 2 hours chosen
     sql = '''SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE
-            LENGTH(WORD) < 100 AND WORD LIKE "''' + like_pat + '''" COLLATE NOCASE
+            LENGTH(WORD) < 100 AND WORD LIKE ''' + like_pat + '''
             AND RECENT_CHOSEN_TIME IS NOT NULL
             ''' + and_pat + '''
             AND RECENT_CHOSEN_TIME >= DATETIME("NOW", "-1 HOUR")
@@ -278,13 +279,13 @@ def query_word(word:str, src:str) -> list:
     query(sql, '󰈸 hot data', con_completion, rst_list)
 
     # from current file
-    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE SRC="' + src + '" AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ' + and_pat + ' ORDER BY CHOSEN DESC LIMIT 5'
+    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE SRC="' + src + '" AND WORD LIKE ' + like_pat + and_pat + ' ORDER BY CHOSEN DESC LIMIT 5'
     query(sql, '󰈝 this file', con_completion, rst_list)
     # chosen history
-    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE CHOSEN > 0 AND LENGTH(WORD) < 100 AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ' + and_pat + ' ORDER BY CHOSEN DESC LIMIT 15'
+    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE CHOSEN > 0 AND LENGTH(WORD) < 100 AND WORD LIKE ' + like_pat + and_pat + ' ORDER BY CHOSEN DESC LIMIT 15'
     query(sql, '󱈅 chosen history', con_completion, rst_list)
     # unchosen words
-    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE CHOSEN = 0 AND LENGTH(WORD) < 100 AND WORD LIKE "' + like_pat + '" COLLATE NOCASE ' + and_pat + ' ORDER BY LENGTH(WORD) LIMIT 20'
+    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE CHOSEN = 0 AND LENGTH(WORD) < 100 AND WORD LIKE ' + like_pat + and_pat + ' ORDER BY LENGTH(WORD) LIMIT 20'
     query(sql, '󰄮 unchosen', con_completion, rst_list)
 
     return rst_list

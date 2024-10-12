@@ -122,7 +122,6 @@ fu! SignMarks()
         let qfIdx += 1
     endfor
 endf
-nn <silent> <F3> :sil cal SignMarks()\|ContextToggle<CR>
 com! -nargs=* DMarks :sil exe len(<q-args>)==0?'delm a-z':':delm '.expand(<f-args>)|cal SignMarks()
 au WinEnter,BufReadPost <buffer> cal SignMarks()
 
@@ -577,7 +576,9 @@ endf
 nn <leader>j :cal OmniJumpBoot(0)<CR>
 nn <leader><leader> :cal OmniJumpBoot(1)<cr>
 " past and auto-indent
+let g:autoIndentFlg = 1
 fu! IIP() " If Indent Past
+    if g:autoIndentFlg != 1 | retu -1 | en
     let lines = count(getreg(v:register), "\<NL>")
     retu lines
 endf
@@ -851,7 +852,17 @@ fu! GoToTag(edit, query)
     cal fzf#run({'source':entries, 'sink':function('execute'), 'options':g:MfzfOpts})
 endfu
 " Toggle
-nn <expr> <f2> &list==1 ? ':setl nolist<cr>':':setl list<cr>'
+fu! ToggleAll()
+    echoh MoreMsg | echo '[C]ontext [B]lankChar auto[I]ndent' | echoh None
+    let ch = nr2char(getchar())
+    if ch == 'c' | sil exe ':cal SignMarks()|ContextToggle'| en
+    if ch == 'b' | exe ':setl '.(&list == 1 ? 'nolist' : 'list') | en
+    if ch == 'i'
+        let g:autoIndentFlg = (g:autoIndentFlg == 1 ? 0 : 1)
+        echo 'auto indent '.(g:autoIndentFlg == 1 ? 'ON' : 'OFF')
+    endif
+endf
+nn <f2> :cal ToggleAll()<cr>
 
 " Repeat Enhance
 nn <leader>; :History!:<CR>
@@ -929,7 +940,7 @@ cal plug#begin('~/.vim/plugged')
     Plug 'tpope/vim-sleuth'
     Plug 'tpope/vim-scriptease'
     Plug 'unblevable/quick-scope'
-    " Plug 'wellle/context.vim'
+    Plug 'wellle/context.vim'
     Plug 'wellle/targets.vim'
     Plug 'williamboman/nvim-lsp-installer'
     Plug 'yuezk/vim-js'
