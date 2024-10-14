@@ -1385,7 +1385,7 @@ fu WinPath(mntPath) " convert wsl mnt path to windows path
 endf
 com! -nargs=0 WSLview exe 'sil !wslview %'
 com! -nargs=0 Notepad exe 'sil !subl.exe -a '.WinPath(expand('%')).':'.line('.')
-com! -nargs=0 Directory exe 'sil !explorer.exe ' . substitute(WinPath(expand('%:p:h')), '/', '\\\\', 'g')
+com! -nargs=0 Directory exe 'sil !explorer.exe /select,' . substitute(WinPath(expand('%:p')), '/', '\\\\', 'g')
 com! -nargs=0 EditComplete e ~/.config/nvim/complete_service.py
 com! -nargs=0 EditAnon tabe | e ~/.config/nvim/anon_expand.c
 ca emk AsyncRun -cwd=~/.config/nvim ./compile.sh
