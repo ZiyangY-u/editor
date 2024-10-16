@@ -578,7 +578,7 @@ nn <leader><leader> :cal OmniJumpBoot(1)<cr>
 " past and auto-indent
 let g:autoIndentFlg = 1
 fu! IIP() " If Indent Past
-    if g:autoIndentFlg != 1 | retu -1 | en
+    if g:autoIndentFlg != 1 || &ft == '' | retu -1 | en
     let lines = count(getreg(v:register), "\<NL>")
     retu lines
 endf
