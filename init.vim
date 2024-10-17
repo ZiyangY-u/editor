@@ -703,6 +703,9 @@ fu! SplitOp(sc, query) " run a split cmd first, then operate
     elseif (op ==# 'f') " temporary file
         let tempname = tempname()
         cal fzf#run({'source': [tempname], 'sink': {tf->execute(a:sc.'MEdit '.tf)}, 'options':opts,})
+    elseif (op ==# 'g') " Git modified file
+        let git_cmd = 'git status --porcelain | ag "(^ M )|(^A  )" | sed "s/\(^ M \)\|\(^A  \)//"'
+        cal fzf#run({'source': git_cmd, 'dir':expand('%:p:h'), 'sink': {tf->execute(a:sc.'MEdit '.tf)}, 'options':opts,})
     el
         exe a:sc."|norm \<C-L>"
     en
