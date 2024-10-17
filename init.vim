@@ -815,6 +815,7 @@ vn r :<c-u>let b:reg_name = v:register<cr>:cal ReplaceOp(visualmode())<cr>
 vn ,r :cal ReplaceOpFzf(visualmode())<cr>
 "   fzf commands
 nn ,c :Commands!<cr>
+nn ,C :%!
 "   compensate for Visual Edition
 nn D Dh
 "   quick to command, line macro need of visual selection
