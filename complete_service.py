@@ -52,6 +52,12 @@ WORD_PAT = re.compile('(?u)([\w]{3,})')
 VOWELS = 'aeiou'
 DELIMITATOR = '/'
 
+TOTAL_CANDIDATES_ORDER_MODE = 4
+NORMAL_ORDER = 0
+RECENT_RECRUIT_ORDER = 1
+WORD_LEN_ORDER = 2
+MOST_CHOSEN_ORDER = 3
+
 DIGITS = { '0': '０', '1': '１', '2': '２', '3': '３', '4': '４', '5': '５', '6': '６', '7': '７', '8': '８', '9': '９', ',': '，', }
 
 GOBI = {
@@ -194,7 +200,7 @@ def add_word(word:str, path:str) -> None:
     """
     con_completion = sqlite3.connect(COMPLETE_BUF_DB_PATH)
     cur = con_completion.cursor()
-    cur.execute('select count(1) from words where word = "' + word + '"')
+    cur.execute(f"select count(1) from words where word = '{word}'")
     cnt = cur.fetchall()[0][0]
     if cnt == 0:
         cur.execute(create_insert_word_sql(word, path, True))
@@ -208,7 +214,7 @@ def has_path_history(path:str, hashcode:str) -> bool:
     """
     con_completion = sqlite3.connect(COMPLETE_BUF_DB_PATH)
     cur = con_completion.cursor()
-    cur.execute('select count(1) from path_history where path = "' + path + '" and hash = "' + hashcode + '"')
+    cur.execute(f"select count(1) from path_history where path = '{path}' and hash = '{hashcode}'")
     cnt = cur.fetchall()[0][0]
     return cnt != 0
 
@@ -242,7 +248,7 @@ def add_words(path:str, enc:str) -> None:
         for w in tmp:
             if not w.isascii():
                 continue
-            cur.execute('select count(1) from words where word = "' + w + '"')
+            cur.execute(f"select count(1) from words where word = '{w}'")
             cnt = cur.fetchall()[0][0]
             if cnt == 0:
                 cur.execute(create_insert_word_sql(w, path, False))
@@ -255,7 +261,7 @@ def add_words(path:str, enc:str) -> None:
     con_completion.commit()
 
 
-def query_word(word:str, src:str) -> list:
+def query_word(word:str, src:str, order_mode:int) -> list:
     """
     get candidates from word complition
     :param word: word to query
@@ -269,24 +275,16 @@ def query_word(word:str, src:str) -> list:
     # if all(re.match("[a-z]", c) for c in word):
     #     like_pat += ' COLLATE NOCASE  '
     and_pat = ' AND ' + ' AND '.join('inc_' + c + '=1' for c in chars)
-    # recent hot words, recent 2 hours chosen
-    sql = '''SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE
-            LENGTH(WORD) < 100 AND WORD LIKE ''' + like_pat + '''
-            AND RECENT_CHOSEN_TIME IS NOT NULL
-            ''' + and_pat + '''
-            AND RECENT_CHOSEN_TIME >= DATETIME("NOW", "-1 HOUR")
-            ORDER BY RECENT_CHOSEN_TIME DESC, CHOSEN DESC LIMIT 5'''
-    query(sql, '󰈸 hot data', con_completion, rst_list)
-
-    # from current file
-    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE SRC="' + src + '" AND WORD LIKE ' + like_pat + and_pat + ' ORDER BY CHOSEN DESC LIMIT 5'
-    query(sql, '󰈝 this file', con_completion, rst_list)
+    order_clause = ' ORDER BY CHOSEN DESC, RECENT_CHOSEN_TIME DESC'
+    if mode == RECENT_RECRUIT_ORDER:
+        order_clause = ' ORDER BY IMPORT_DATE DESC, LENGTH(WORD) ASC'
+    if mode == WORD_LEN_ORDER:
+        order_clause = ' ORDER BY LENGTH(WORD) ASC, CHOSEN DESC, RECENT_CHOSEN_TIME DESC'
+    if mode == MOST_CHOSEN_ORDER:
+        order_clause = ' ORDER BY CHOSEN DESC, LENGTH(WORD) ASC, RECENT_CHOSEN_TIME DESC'
     # chosen history
-    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE CHOSEN > 0 AND LENGTH(WORD) < 100 AND WORD LIKE ' + like_pat + and_pat + ' ORDER BY CHOSEN DESC LIMIT 15'
-    query(sql, '󱈅 chosen history', con_completion, rst_list)
-    # unchosen words
-    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE CHOSEN = 0 AND LENGTH(WORD) < 100 AND WORD LIKE ' + like_pat + and_pat + ' ORDER BY LENGTH(WORD) LIMIT 20'
-    query(sql, '󰄮 unchosen', con_completion, rst_list)
+    sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE LENGTH(WORD) < 100 AND WORD LIKE ' + like_pat + and_pat + order_clause
+    query(sql, '󱈅 word', con_completion, rst_list)
 
     return rst_list
 
@@ -297,11 +295,11 @@ def choose(word:str) -> None:
     """
     con_completion = sqlite3.connect(COMPLETE_BUF_DB_PATH)
     cur = con_completion.cursor()
-    cur.execute('select chosen from words where word = "' + word + '" limit 1')
+    cur.execute(f"select chosen from words where word = '{word}' limit 1")
     chosen_cnt = cur.fetchall()
     if len(chosen_cnt) == 1:
         cnt = chosen_cnt[0][0] + 1
-        sql = 'update words set chosen = ' + str(cnt) + ', recent_chosen_time = datetime("now") where word = "' + word + '"'
+        sql = f"update words set chosen = {str(cnt)}, recent_chosen_time = datetime('now') where word = '{word}'"
         cur.execute(sql)
         con_completion.commit()
     else:
@@ -666,7 +664,8 @@ if __name__ == '__main__':
     if sys.argv[1] == '-query':
         word = sys.argv[2]
         src = sys.argv[3]
-        rst_list = query_word(word, src)
+        mode = int(sys.argv[4]) % TOTAL_CANDIDATES_ORDER_MODE
+        rst_list = query_word(word, src, mode)
     if sys.argv[1] == '-chosen':
         chosen_word = sys.argv[2]
         if chosen_word.isascii():

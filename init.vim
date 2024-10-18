@@ -410,23 +410,29 @@ fu! s:GotCandidates(jobId, data, event)
         endif
     endif
 endf
+let g:CMN = {0:'Normal', 1:'New', 2:'Length', 3:'Chosen'} " CandidateModeName
 fu! PumPageLoc(pn)
     let c_len = len(b:c_items)
     if 0 < a:pn && a:pn * 10 <= (c_len + (c_len % 10 > 0 ? 10 : 0))
         let [start, end, b:c_page] = [(a:pn-1)*10, 10*a:pn-1, a:pn]
         cal complete(col('.') - len(InsertingWord()), b:c_items[start:end])
+        let total_page = len(b:c_items)/10 + (len(b:c_items)%10>0?1:0)
         cal nvim_buf_set_extmark(bufnr(), g:vertLineMark, line(".")-1, 0,
-                    \ { "virt_text":[[printf('[%d/%d]', b:c_page, len(b:c_items)/10 + (len(b:c_items)%10>0?1:0)), 'SnipAnon']], "hl_mode":"combine" })
+                    \ { "virt_text":[[printf('[%d/%d]', b:c_page, total_page), 'SnipAnon'], 
+                    \[printf(' %s', g:CMN[g:candidatesOrderMode%4] ), 'SnipMark']],
+                    \"hl_mode":"combine" })
     endif
     retu ''
 endf
 ino <m-,> <c-r>=PumPageLoc(b:c_page-1)<cr>
 ino <m-.> <c-r>=PumPageLoc(b:c_page+1)<cr>
+let g:candidatesOrderMode = 0
+ino <m-i> <c-\><c-o>:let g:candidatesOrderMode+=1 \| cal RefreshCandidates()<cr>
 fu! RefreshCandidates()
     let cw = InsertingWord()
     if len(cw) < 1 | retu | en
     let query = g:jpIme ? '-query_jp' : g:cnIme ? '-query_cn' : '-query'.(g:pLang == '' ? '' : '_'.g:pLang)
-    let g:completingId = jobstart(SendService(query, '"'.cw.'" "'.expand('%p').'"'), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
+    let g:completingId = jobstart(SendService(query, printf("\"%s\" \"%s\" %d", cw, expand('%p'), g:candidatesOrderMode)), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
 endf
 fu! RefreshService(timer)
     if g:refreshFlag == 1 || empty(g:pathQueue) | retu | en
