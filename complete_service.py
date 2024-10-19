@@ -275,7 +275,7 @@ def query_word(word:str, src:str, order_mode:int) -> list:
     # if all(re.match("[a-z]", c) for c in word):
     #     like_pat += ' COLLATE NOCASE  '
     and_pat = ' AND ' + ' AND '.join('inc_' + c + '=1' for c in chars)
-    order_clause = ' ORDER BY CHOSEN DESC, RECENT_CHOSEN_TIME DESC'
+    order_clause = ' ORDER BY RECENT_CHOSEN_TIME DESC, CHOSEN DESC'
     if mode == RECENT_RECRUIT_ORDER:
         order_clause = ' ORDER BY IMPORT_DATE DESC, LENGTH(WORD) ASC'
     if mode == WORD_LEN_ORDER:

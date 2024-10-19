@@ -517,6 +517,9 @@ fu! FzfFloatWin()
 endf
 nn <c-p> :cal fzf#run(extend({'sinklist': function('PutYankHist')}, FzfFloatWin()))<cr>
 ino <expr> <c-p> fzf#vim#complete(extend(FzfFloatWin(), {'source':reverse(filter(copy(g:yankHistory), {_,his -> stridx(his, "\n") == -1}))}))
+" awk misc
+ca awkf awk -f ~/.config/nvim/awk-template.awk
+ca ewk tabe \| e ~/.config/nvim/awk-template.awk
 
 " }}}
 " => Handle -------------------- {{{
@@ -1496,5 +1499,6 @@ lspconfig.cssls.setup{}
 lspconfig.vimls.setup{}
 lspconfig.clangd.setup{}
 lspconfig.texlab.setup{}
+lspconfig.awk_ls.setup{}
 EOF
 " }}}
