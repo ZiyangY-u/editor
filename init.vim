@@ -518,8 +518,16 @@ endf
 nn <c-p> :cal fzf#run(extend({'sinklist': function('PutYankHist')}, FzfFloatWin()))<cr>
 ino <expr> <c-p> fzf#vim#complete(extend(FzfFloatWin(), {'source':reverse(filter(copy(g:yankHistory), {_,his -> stridx(his, "\n") == -1}))}))
 " awk misc
-ca awkf awk -f ~/.config/nvim/awk-template.awk
-ca ewk tabe \| e ~/.config/nvim/awk-template.awk
+let g:awk_file = '~/.config/nvim/awk-template.awk'
+ca aa %!awk -f <c-r>=g:awk_file<cr>
+ca al .!awk -f <c-r>=g:awk_file<cr>
+ca af !awk -f <c-r>=g:awk_file<cr>
+ca an cal AwkToTemp()<cr>
+ca ae tabe \| e <c-r>=g:awk_file<cr>
+fu! AwkToTemp() " direct awk result to a new temporary file
+    execute(printf('tabe | e %s | r !awk -f %s %s', tempname(), g:awk_file, expand('%:p')))
+    exe "norm ggdd:w\n"
+endf
 
 " }}}
 " => Handle -------------------- {{{

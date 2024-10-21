@@ -1,18 +1,19 @@
 BEGIN {
-    # CONVFMT = %.6g # conversion format for numbers
-    # FS = "|" # Field Separator
-    maxemp="Jerry"
-    maxrate=0
-    names=""
+    # IGNORECASE = 1
+    FS = "\t" # Field Separator
+    # RS = "\n" # Record Separator
+    # OFS = ";" # Output Field Separator for `print`
+    # ORS = "\n" # Output Record Separator for `print`
+}
+
+function print_rest(start_col) { # print_rest(2): print col 3, 4, 5...
+    for (i = 1; i <= start_col; i++) { $i = "" }
+    print substr($0, start_col+1)
 }
 
 {
-    print ;
-    names = names $1 " "
-}
-$2 > maxrate { maxrate = $2 ; maxemp = $1 }
+    print_rest(2)
+    }
 
 END {
-    printf "highest hourly rate: %f, for %s\n", maxrate, maxemp
-    print names
 }
