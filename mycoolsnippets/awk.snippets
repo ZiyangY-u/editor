@@ -31,6 +31,9 @@ endsnippet
 snippet p "print" w
 print $0
 endsnippet
+snippet p0 "print $0" w
+print \$0
+endsnippet
 snippet pf "printf" w
 printf "$0"
 endsnippet
@@ -47,4 +50,16 @@ endsnippet
 
 snippet if "if" w
 if ($0)
+endsnippet
+snippet l "like" w
+~ /$0/
+endsnippet
+snippet nl "not like" w
+!~ /$0/
+endsnippet
+snippet 0l "$0 like" w
+\$0 ~ /$0/
+endsnippet
+snippet 0nl "$0 not like" w
+\$0 !~ /$0/
 endsnippet

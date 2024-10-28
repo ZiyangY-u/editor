@@ -528,6 +528,44 @@ fu! AwkToTemp() " direct awk result to a new temporary file
     execute(printf('tabe | e %s | r !awk -f %s %s', tempname(), g:awk_file, expand('%:p')))
     exe "norm ggdd:w\n"
 endf
+" QuickFix Reflection
+fu! OpenQfBuf()
+    let [g:qfbufnr, idx] = [bufadd(''), 1]
+    cal bufload(g:qfbufnr)
+    cal setbufvar(g:qfbufnr, '&ft', 'qfedit')
+    for qfItem in getqflist()
+        cal setbufline(g:qfbufnr, idx, [printf("%4d | %5d |%s", qfItem['bufnr'], qfItem['lnum'], qfItem['text'])])
+        let idx += 1
+    endfor
+    exe 'tabe |b'.g:qfbufnr
+endf
+fu! ReflectOneline(ln)
+    let raw = getline(a:ln)
+    let bn = str2nr(raw[:match(raw, '|')-1])
+    let raw = raw[match(raw, '|')+1:]
+    let ln = str2nr(raw[:match(raw, '|')-1])
+    let raw = raw[match(raw, '|')+1:]
+    cal bufload(bn) | cal setbufline(bn, ln, [raw])
+    return bn
+endf
+fu! ReflectAll()
+    let target = {}
+    for ln in range(line('$'))
+        let bn = ReflectOneline(ln+1)
+        redraw | echo printf('Reflecting (%d/%d)', ln+1, line('$'))
+        let target[bn] = 1
+    endfor
+    for bn in keys(target)
+        exe 'b'.bn
+        update
+    endfor
+    exe 'bd!'.g:qfbufnr
+    redraw | echo 'Done!'
+    norm :q
+endf
+com! -nargs=0 QfEdit :cal OpenQfBuf()
+com! -nargs=0 QfReflect :cal ReflectAll()
+
 
 " }}}
 " => Handle -------------------- {{{
