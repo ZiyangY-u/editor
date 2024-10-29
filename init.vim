@@ -530,7 +530,7 @@ fu! AwkToTemp() " direct awk result to a new temporary file
 endf
 " QuickFix Reflection
 fu! OpenQfBuf()
-    let [g:qfbufnr, idx] = [bufadd(''), 1]
+    let [g:qfbufnr, idx] = [bufadd('QuickFix-Reflection'), 1]
     cal bufload(g:qfbufnr)
     cal setbufvar(g:qfbufnr, '&ft', 'qfedit')
     for qfItem in getqflist()
@@ -545,27 +545,25 @@ fu! ReflectOneline(ln)
     let raw = raw[match(raw, '|')+1:]
     let ln = str2nr(raw[:match(raw, '|')-1])
     let raw = raw[match(raw, '|')+1:]
-    cal bufload(bn) | cal setbufline(bn, ln, [raw])
+    if !bufloaded(bn) | cal bufload(bn) | endif
+    cal setbufline(bn, ln, [raw])
     return bn
 endf
 fu! ReflectAll()
     let target = {}
     for ln in range(line('$'))
         let bn = ReflectOneline(ln+1)
-        redraw | echo printf('Reflecting (%d/%d)', ln+1, line('$'))
+        redraw | echo printf('Reflecting... (%d/%d)', ln+1, line('$'))
         let target[bn] = 1
     endfor
     for bn in keys(target)
-        exe 'b'.bn
-        update
+        exe 'b'.bn | update
     endfor
     exe 'bd!'.g:qfbufnr
     redraw | echo 'Done!'
     norm :q
 endf
 com! -nargs=0 QfEdit :cal OpenQfBuf()
-com! -nargs=0 QfReflect :cal ReflectAll()
-
 
 " }}}
 " => Handle -------------------- {{{
@@ -853,7 +851,7 @@ nn <expr> <a-i> (line('$') == line('.') \|\| line('.') == 1) ? 'ddP' : 'ddkP'
 nn ,q @=((expand('%')=='')?':quit!':((&mod==0)?':quit':':echo"Not Saved"'))<CR><CR>
 tmap ,q jk:quit<cr>
 nn ,Q :quita!<CR>
-nn ,w :update<CR>
+nn ,w @=(&ft == 'qfedit' ? ':cal ReflectAll()' : ':update')<CR><CR>
 "   surround operations ('s' for surround, 'S' for remove surround)
 nn s :set opfunc=SurroundOp<cr>g@
 vn s :<c-u>cal SurroundOp(visualmode())<cr>
