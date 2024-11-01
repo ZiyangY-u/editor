@@ -522,6 +522,7 @@ let g:awk_file = '~/.config/nvim/awk-template.awk'
 ca aa %!awk -f <c-r>=g:awk_file<cr>
 ca al .!awk -f <c-r>=g:awk_file<cr>
 ca af !awk -f <c-r>=g:awk_file<cr>
+ca raf r !awk -f <c-r>=g:awk_file<cr>
 ca an cal AwkToTemp()<cr>
 ca ae tabe \| e <c-r>=g:awk_file<cr>
 fu! AwkToTemp() " direct awk result to a new temporary file
