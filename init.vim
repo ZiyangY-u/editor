@@ -564,6 +564,8 @@ fu! DynamicLoad(start, end)
     exe '$d|update'
 endf
 fu! DyRelocate(ln)
+    if a:ln == 'top' | cal DynamicLoad(1, 100) | sil exe 'norm gg' | retu | endif
+    if a:ln == 'end' | cal DynamicLoad(b:dy_total_ln-99, b:dy_total_ln) | sil exe 'norm G' | retu | endif
     let ln = str2nr(a:ln)
     if ln > b:dy_total_ln | echoerr 'Over total line' | retu | en
     let [start, end] = [(ln-50 >= 1 ? ln-50 : 1), (ln+50 <= b:dy_total_ln ? ln+50 : b:dy_total_ln)]
