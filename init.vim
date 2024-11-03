@@ -44,6 +44,7 @@ hi texPage ctermbg=128
 let g:asyncCnt = 0
 fu! ActStl(isActive)
     if &ft == 'qf' && a:isActive == 1 | retu " QuickFix List %l/%L %P" | en
+    if exists('b:is_dy_buf') && b:is_dy_buf == 1 | retu DyStl() | en
     if a:isActive == 0
         retu "%#error#%r%#mod#%m%#sleepWindow# %t %y %= ln:%l/%L %P "
     en
@@ -58,6 +59,13 @@ fu! ActStl(isActive)
     if &ft == 'tex' | let stl.='%#texPage# 󰗚 [%{GetPdfLoc()}]' | en " tex Pdf page number
     let stl.="%#posBar#%  %v[%c] %P %#totalL#%L% "
     let stl.=" %#fileType#% %y %{strlen(&fenc)?&fenc:'none'}/%{strlen(&ff)?&ff:''} "
+    retu stl
+endf
+fu! DyStl()
+    let stl="%#error#Dy-Reading:"
+    let stl.="%<%#c1# %{b:dy_file}"
+    let stl.="%=" " left/right separator
+    let stl.="%#posBar# %{b:dy_total_ln} "
     retu stl
 endf
 
@@ -526,9 +534,62 @@ ca raf r !awk -f <c-r>=g:awk_file<cr>
 ca an cal AwkToTemp()<cr>
 ca ae tabe \| e <c-r>=g:awk_file<cr>
 fu! AwkToTemp() " direct awk result to a new temporary file
-    execute(printf('tabe | e %s | r !awk -f %s %s', tempname(), g:awk_file, expand('%:p')))
+    cal execute(printf('tabe | e %s | r !awk -f %s %s', tempname(), g:awk_file, expand('%:p')))
     exe "norm ggdd:w\n"
 endf
+" awk-dynamic read
+let g:dynamic_script = '~/.config/nvim/dynamic-read.awk'
+fu! DynamicOpen(file)
+    let tempname = tempname()
+    let bn = bufnr(tempname, 1)
+    cal setbufvar(bn, 'dy_file', a:file)
+    cal setbufvar(bn, 'is_dy_buf', 1)
+    cal setbufvar(bn, 'dy_total_ln', split(system('wc -l '.a:file))[0])
+    exe 'tabe '.tempname
+    cal DynamicLoad(1, 100)
+    sil exe ':1|norm zt'
+    setl nonu
+endf
+com! -nargs=1 MDyOpen :cal DynamicOpen(<f-args>)
+com! -nargs=0 DyOpen :cal HiraishinOpen('', 'MDyOpen')
+com! -nargs=1 DyLocate :cal DyRelocate(<f-args>)
+fu! DyAwkCmd(pos, start, end, file)
+    let ln_len = len(''.a:end)
+    let fmt = '\%'.(ln_len<4 ? 4 : ln_len)."d |"
+    return a:pos.printf('r !awk -f %s start_ln=%d end_ln=%d fmt="%s" %s', g:dynamic_script, a:start, a:end, fmt, a:file)
+endf
+fu! DynamicLoad(start, end)
+    let cmd = '%d|'.DyAwkCmd('0', a:start, a:end, b:dy_file)
+    exe cmd
+    exe '$d|update'
+endf
+fu! DyRelocate(ln)
+    let ln = str2nr(a:ln)
+    if ln > b:dy_total_ln | echoerr 'Over total line' | retu | en
+    let [start, end] = [(ln-50 >= 1 ? ln-50 : 1), (ln+50 <= b:dy_total_ln ? ln+50 : b:dy_total_ln)]
+    cal DynamicLoad(start, end)
+    sil exe printf(':%d|norm zz', ln-start+1)
+endf
+fu! DyExpandUp()
+    let [b:line_num, b:winline, upper_ln] = [line('.'), winline(), str2nr(split(getline(1), '|')[0]) - 1]
+    if upper_ln == 1 | retu | en
+    let [start, end] = [(upper_ln-100 >= 1 ? upper_ln-100 : 1) ,upper_ln]
+    let b:line_num += (end - start + 1)
+    let cmd = DyAwkCmd('0', start, end, b:dy_file)
+    cal ExpandAndRecoverWinPos(cmd)
+endf
+fu! DyExpandDown()
+    let [b:line_num, b:winline, lower_ln] = [line('.'), winline(), str2nr(split(getline('$'), '|')[0]) + 1]
+    let [start, end] = [lower_ln, (lower_ln+100 >= b:dy_total_ln ? b:dy_total_ln : lower_ln+100)]
+    let cmd = DyAwkCmd('$', start, end, b:dy_file)
+    cal ExpandAndRecoverWinPos(cmd)
+endf
+fu! ExpandAndRecoverWinPos(cmd)
+    silent exe a:cmd | update
+    sil exe ':'.b:line_num.'|norm zt'.(b:winline-1)."\<c-y>"
+endf
+au CursorHold * if exists('b:is_dy_buf') && b:is_dy_buf==1 && line('$')-line('.') < 20 | cal DyExpandDown() | en
+au CursorHold * if exists('b:is_dy_buf') && b:is_dy_buf==1 && line('.') < 20 | cal DyExpandUp() | en
 " QuickFix Reflection
 fu! OpenQfBuf()
     let [g:qfbufnr, idx] = [bufadd('QuickFix-Reflection'), 1]
