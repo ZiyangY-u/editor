@@ -65,7 +65,10 @@ fu! DyStl()
     let stl="%#error#Dy-Reading:"
     let stl.="%<%#c1# %{b:dy_file}"
     let stl.="%=" " left/right separator
-    let stl.="%#posBar# %{b:dy_total_ln} "
+    let stl.="%#posBar# %{string(b:dy_endln*100.0/b:dy_total_ln).'%'} %{b:dy_total_ln} "
+    if exists('b:dy_search_rst')
+        let stl.="[%{b:dy_cursor+1}/%{len(b:dy_search_rst)}] "
+    endif
     retu stl
 endf
 
@@ -426,7 +429,7 @@ fu! PumPageLoc(pn)
         cal complete(col('.') - len(InsertingWord()), b:c_items[start:end])
         let total_page = len(b:c_items)/10 + (len(b:c_items)%10>0?1:0)
         cal nvim_buf_set_extmark(bufnr(), g:vertLineMark, line(".")-1, 0,
-                    \ { "virt_text":[[printf('[%d/%d]', b:c_page, total_page), 'SnipAnon'], 
+                    \ { "virt_text":[[printf('[%d/%d]', b:c_page, total_page), 'SnipAnon'],
                     \[printf(' %s', g:CMN[g:candidatesOrderMode%4] ), 'SnipMark']],
                     \"hl_mode":"combine" })
     endif
@@ -539,19 +542,20 @@ fu! AwkToTemp() " direct awk result to a new temporary file
 endf
 " awk-dynamic read
 let g:dynamic_script = '~/.config/nvim/dynamic-read.awk'
+let g:dynamic_bufsize = 1000
 fu! DynamicOpen(file)
-    let tempname = tempname()
+    let [tempname, file] = [tempname(), trim(split(a:file, '|')[1])]
     let bn = bufnr(tempname, 1)
-    cal setbufvar(bn, 'dy_file', a:file)
+    cal setbufvar(bn, 'dy_file', file)
     cal setbufvar(bn, 'is_dy_buf', 1)
-    cal setbufvar(bn, 'dy_total_ln', split(system('wc -l '.a:file))[0])
+    cal setbufvar(bn, 'dy_total_ln', split(system('wc -l '.file))[0])
     exe 'tabe '.tempname
-    cal DynamicLoad(1, 100)
+    cal DynamicLoad(1, g:dynamic_bufsize)
     sil exe ':1|norm zt'
     setl nonu
 endf
-com! -nargs=1 MDyOpen :cal DynamicOpen(<f-args>)
-com! -nargs=0 DyOpen :cal HiraishinOpen('', 'MDyOpen')
+com! -nargs=1 MDyOpen :cal DynamicOpen(<f-args>) " the first column is size
+com! -nargs=0 DyOpen :cal HiraishinOpen('', 'MDyOpen', 1)
 com! -nargs=1 DyLocate :cal DyRelocate(<f-args>)
 fu! DyAwkCmd(pos, start, end, file)
     let ln_len = len(''.a:end)
@@ -561,37 +565,61 @@ endf
 fu! DynamicLoad(start, end)
     let cmd = '%d|'.DyAwkCmd('0', a:start, a:end, b:dy_file)
     exe cmd
-    exe '$d|update'
+    exe '$d|silent update'
+    let [b:dy_topln, b:dy_endln] = [a:start, a:end]
 endf
 fu! DyRelocate(ln)
-    if a:ln == 'top' | cal DynamicLoad(1, 100) | sil exe 'norm gg' | retu | endif
-    if a:ln == 'end' | cal DynamicLoad(b:dy_total_ln-99, b:dy_total_ln) | sil exe 'norm G' | retu | endif
-    let ln = str2nr(a:ln)
+    if a:ln == 'top' | cal DynamicLoad(1, g:dynamic_bufsize) | sil exe 'norm gg' | retu | endif
+    if a:ln == 'end' | cal DynamicLoad(b:dy_total_ln-g:dynamic_bufsize, b:dy_total_ln) | sil exe 'norm G' | retu | endif
+    let [ln, half_bs] = [str2nr(a:ln), g:dynamic_bufsize/2]
     if ln > b:dy_total_ln | echoerr 'Over total line' | retu | en
-    let [start, end] = [(ln-50 >= 1 ? ln-50 : 1), (ln+50 <= b:dy_total_ln ? ln+50 : b:dy_total_ln)]
+    let [start, end] = [(ln-half_bs >= 1 ? ln-half_bs : 1), (ln+half_bs <= b:dy_total_ln ? ln+half_bs : b:dy_total_ln)]
     cal DynamicLoad(start, end)
     sil exe printf(':%d|norm zz', ln-start+1)
 endf
 fu! DyExpandUp()
     let [b:line_num, b:winline, upper_ln] = [line('.'), winline(), str2nr(split(getline(1), '|')[0]) - 1]
     if upper_ln == 1 | retu | en
-    let [start, end] = [(upper_ln-100 >= 1 ? upper_ln-100 : 1) ,upper_ln]
+    let [start, end] = [(upper_ln-g:dynamic_bufsize >= 1 ? upper_ln-g:dynamic_bufsize : 1) ,upper_ln]
     let b:line_num += (end - start + 1)
     let cmd = DyAwkCmd('0', start, end, b:dy_file)
+    let b:dy_topln = start
     cal ExpandAndRecoverWinPos(cmd)
 endf
 fu! DyExpandDown()
     let [b:line_num, b:winline, lower_ln] = [line('.'), winline(), str2nr(split(getline('$'), '|')[0]) + 1]
-    let [start, end] = [lower_ln, (lower_ln+100 >= b:dy_total_ln ? b:dy_total_ln : lower_ln+100)]
+    let [start, end] = [lower_ln, (lower_ln+g:dynamic_bufsize >= b:dy_total_ln ? b:dy_total_ln : lower_ln+g:dynamic_bufsize)]
     let cmd = DyAwkCmd('$', start, end, b:dy_file)
+    let b:dy_endln = end
     cal ExpandAndRecoverWinPos(cmd)
 endf
-fu! ExpandAndRecoverWinPos(cmd)
-    silent exe a:cmd | update
-    sil exe ':'.b:line_num.'|norm zt'.(b:winline-1)."\<c-y>"
+fu! DyNext()
+    let b:dy_cursor = (b:dy_cursor == len(b:dy_search_rst) - 1 ? len(b:dy_search_rst) - 1 : b:dy_cursor+1)
+    return b:dy_cursor
 endf
-au CursorHold * if exists('b:is_dy_buf') && b:is_dy_buf==1 && line('$')-line('.') < 20 | cal DyExpandDown() | en
-au CursorHold * if exists('b:is_dy_buf') && b:is_dy_buf==1 && line('.') < 20 | cal DyExpandUp() | en
+fu! DyPrev()
+    let b:dy_cursor = (b:dy_cursor == 0 ? 0 : b:dy_cursor-1)
+    return b:dy_cursor
+endf
+fu! DySearch(target)
+    if exists('b:dy_target') | exe printf('syntax clear pat_%s', sha256(b:dy_target)) | endif
+    cal AttachColor(a:target, 196, 0, 0)
+    let [cmd, b:dy_target] = [printf('ag %s %s | cut -f1 -d:', a:target, b:dy_file), a:target]
+    let b:dy_search_rst = split(system(cmd), '\n')
+    let [b:dy_cursor, raw] = [0, getline('.')]
+    let ln = str2nr(raw[:match(raw, '|')-1])
+    while b:dy_cursor < len(b:dy_search_rst) && ln > b:dy_search_rst[b:dy_cursor] | let b:dy_cursor+=1 | endwhile
+    cal DyRelocate(b:dy_search_rst[b:dy_cursor])
+    nn <silent><buffer> n :cal DyRelocate(b:dy_search_rst[DyNext()])<cr>
+    nn <silent><buffer> N :cal DyRelocate(b:dy_search_rst[DyPrev()])<cr>
+endf
+com! -nargs=1 DySearch :cal DySearch(<f-args>)
+fu! ExpandAndRecoverWinPos(cmd)
+    silent exe a:cmd | silent update
+    sil exe ':'.b:line_num.'|norm zt'.(b:winline-2)."\<c-y>"
+endf
+au CursorHold * if exists('b:is_dy_buf') && b:is_dy_buf==1 && line('$')-line('.') < 20 && b:dy_endln < b:dy_total_ln | cal DyExpandDown() | en
+au CursorHold * if exists('b:is_dy_buf') && b:is_dy_buf==1 && line('.') < 20 && b:dy_topln > 1 | cal DyExpandUp() | en
 " QuickFix Reflection
 fu! OpenQfBuf()
     let [g:qfbufnr, idx] = [bufadd('QuickFix-Reflection'), 1]
@@ -708,9 +736,9 @@ let g:hda=(exists('g:hda') ? g:hda : {}) " hda for 'hiraishin directory anchors'
 nn <leader>H @=(has_key(g:hda,getcwd())==1 ? ':unlet g:hda[getcwd()]' : ':let g:hda[getcwd()]=1')<CR><CR>
 nn <silent> <leader>Y :cal fzf#run({'source': keys(g:hda), 'sink': 'lcd','window':{'width':0.9,'height':0.6}})<CR>
 nn <silent> <leader>D :cal fzf#run({'source': keys(g:hda), 'sink': {p -> execute('unlet g:hda["'.p.'"]')}, 'window':{'width':0.9,'height':0.6}})<CR>
-nn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen("", "MEdit")':':Files')<CR><CR>
-vn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen(Selected(), "MEdit")':':Files')<CR><CR>
-vn <silent> <leader>O @=(g:HRSmode==1?':cal HiraishinOpen(".".Selected(), "MEdit")':':Files')<CR><CR>
+nn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen("", "MEdit", 0)':':Files')<CR><CR>
+vn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen(Selected(, 0), "MEdit")':':Files')<CR><CR>
+vn <silent> <leader>O @=(g:HRSmode==1?':cal HiraishinOpen(".".Selected(, 0), "MEdit")':':Files')<CR><CR>
 let g:openExclude = ['"*.class"']
 let g:openExcludePath = ['"*/target/*"', '"*/.git/*"']
 fu! OpenByFile(fn)
@@ -738,7 +766,7 @@ fu MEdit(path)
     exe cmd
 endf
 com! -nargs=1 MEdit :cal MEdit(<f-args>)
-fu! HiraishinOpen(query, sink) " query.target
+fu! HiraishinOpen(query, sink, showSize) " query.target
     let queries = split(' '.a:query, '[\./@]')
     let q = a:query=='' ? '' : queries[0] " query for file
     let t = len(queries) > 1 ? (exists('*ReduceTarget') ? ReduceTarget(queries[1]) : queries[1]) : '' " target for content
@@ -750,6 +778,7 @@ fu! HiraishinOpen(query, sink) " query.target
     el
         let findCmds = OpenByFile(trim(q))   " file name orient
     en
+    if a:showSize == 1 | let findCmds.= " -print0 | xargs -0 ls -lhS | awk '{printf \"%5s|%s\\n\", $5, $9}'" | endif
     cal fzf#run({'source':findCmds, 'sink':a:sink, 'options':extend(copy(g:MfzfOpts), ['--query='.trim(q)])})
 endf
 " }}}
@@ -800,9 +829,9 @@ fu! SplitOp(sc, query) " run a split cmd first, then operate
     let op = nr2char(getchar())
     let opts = extend(copy(g:MfzfOpts), ['--query='.a:query])
     if (op ==# 'o') " Open File
-        cal HiraishinOpen(a:query, a:sc.'MEdit')
+        cal HiraishinOpen(a:query, a:sc.'MEdit', 0)
     elseif (op ==# 'O')
-        cal HiraishinOpen('.'.a:query, a:sc.'MEdit')
+        cal HiraishinOpen('.'.a:query, a:sc.'MEdit', 0)
     elseif (op == 'b') " Buffer
         cal ClearNoName()
         let sorted = fzf#vim#_buflisted_sorted()
