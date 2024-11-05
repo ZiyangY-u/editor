@@ -537,18 +537,24 @@ ca raf r !awk -f <c-r>=g:awk_file<cr>
 ca an cal AwkToTemp()<cr>
 ca ae tabe \| e <c-r>=g:awk_file<cr>
 fu! AwkToTemp() " direct awk result to a new temporary file
-    cal execute(printf('tabe | e %s | r !awk -f %s %s', tempname(), g:awk_file, expand('%:p')))
+    let target_file = expand('%:p')
+    if exists('b:is_dy_buf') && b:is_dy_buf == 1 | let target_file = b:dy_file | endif
+    cal execute(printf('tabe | e %s | r !awk -f %s %s', tempname(), g:awk_file, target_file))
     exe "norm ggdd:w\n"
 endf
 " awk-dynamic read
-let g:dynamic_script = '~/.config/nvim/dynamic-read.awk'
+let g:dynamic_chunk_calc = '~/.config/nvim/dy-chunk-calc'
+let g:dynamic_read = '~/.config/nvim/dy-read'
 let g:dynamic_bufsize = 1000
+let g:dy_line_chunk_size = 10000
 fu! DynamicOpen(file)
-    let [tempname, file] = [tempname(), trim(split(a:file, '|')[1])]
+    echom 'Openining...'
+    let [tempname, file] = [tempname(), trim(system('realpath '.split(a:file, '|')[1]))]
     let bn = bufnr(tempname, 1)
     cal setbufvar(bn, 'dy_file', file)
     cal setbufvar(bn, 'is_dy_buf', 1)
     cal setbufvar(bn, 'dy_total_ln', split(system('wc -l '.file))[0])
+    cal setbufvar(bn, 'chunk_mark', ['0'] + split(system(g:dynamic_chunk_calc.' '.file.' '.g:dy_line_chunk_size), '\n'))
     exe 'tabe '.tempname
     cal DynamicLoad(1, g:dynamic_bufsize)
     sil exe ':1|norm zt'
@@ -558,9 +564,9 @@ com! -nargs=1 MDyOpen :cal DynamicOpen(<f-args>) " the first column is size
 com! -nargs=0 DyOpen :cal HiraishinOpen('', 'MDyOpen', 1)
 com! -nargs=1 DyLocate :cal DyRelocate(<f-args>)
 fu! DyAwkCmd(pos, start, end, file)
-    let ln_len = len(''.a:end)
-    let fmt = '\%'.(ln_len<4 ? 4 : ln_len)."d |"
-    return a:pos.printf('r !awk -f %s start_ln=%d end_ln=%d fmt="%s" %s', g:dynamic_script, a:start, a:end, fmt, a:file)
+    let offset = b:chunk_mark[a:start/g:dy_line_chunk_size]
+    let offset_ln = a:start - (a:start % g:dy_line_chunk_size)
+    return a:pos.printf('r !%s %s %d %d %d %d', g:dynamic_read, a:file, offset, a:start, a:end, offset_ln)
 endf
 fu! DynamicLoad(start, end)
     let cmd = '%d|'.DyAwkCmd('0', a:start, a:end, b:dy_file)

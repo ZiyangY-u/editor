@@ -131,6 +131,11 @@ void css_expand(char *word) {
         _margin_padding(word);
 }
 
+void git_expand(char *word) {
+    if (strcmp("bl", word) ==0)
+        printf("Backlog URL:");
+}
+
 /* argv[1]: word, argv[2]: filetype */
 int main(int argc, char *argv[])
 {
@@ -150,6 +155,8 @@ int main(int argc, char *argv[])
         xml_expand(argv[1]);
     if (strcmp("c", argv[2]) == 0)
         c_expand(argv[1]);
+    if (strcmp("gitcommit", argv[2]) == 0)
+        git_expand(argv[1]);
 
     return 0;
 }
