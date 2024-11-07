@@ -1546,7 +1546,7 @@ vn <silent> <tab>nx c<C-R>=OmniTranslit('NumTrans', ['x'], '<C-R>-')<CR><ESC>
 vn <silent> <tab>nb c<C-R>=OmniTranslit('NumTrans', ['b'], '<C-R>-')<CR><ESC>
 vn <silent> <tab>nd c<C-R>=OmniTranslit('NumTrans', ['d'], '<C-R>-')<CR><ESC>
 " calculate expression and replace
-vn ,C <esc>gvc<c-r>=<c-r>"<CR><esc>
+vn ,C <esc>gvc<c-r>=eval(substitute(getreg('"'), "\n", '', 'g'))<CR><esc><c-l>
 " ------------------- Windows Misc -----------------------
 fu WinPath(mntPath) " convert wsl mnt path to windows path
     retu substitute(a:mntPath, '/mnt/\([a-zA-Z]\)', '\1:', '')
