@@ -43,19 +43,24 @@ function capitalize(word) {
 function java_get(word) { _w = "get" toupper(substr(word, 1, 1)) substr(word, 2); return _w }
 function java_set(word) { _w = "set" toupper(substr(word, 1, 1)) substr(word, 2); return _w }
 
+function ltrim(s) { sub(/^[ \t\r\n]+/, "", s); return s }
+function rtrim(s) { sub(/[ \t\r\n]+$/, "", s); return s }
+function trim(s)  { return rtrim(ltrim(s)); }
+
 BEGIN {
     # IGNORECASE = 1
-    # FS = "|" # Field Separator
+    FS = "." # Field Separator
     # RS = "\n" # Record Separator
     # OFS = "\t" # Output Field Separator for `print`
     # ORS = "\n" # Output Record Separator for `print`
+    output_flag = 0
+    tmp = ""
     }
 
 # main here
 {
-    # printf "=EXACT(A%d,LP%d)\n", NR, NR
-    if ($0 ~ /name=/) {
-        print $0
+    if (ltrim($0) ~ /^let/) {
+        print ltrim($0)
     }
 }
 
