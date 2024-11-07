@@ -535,7 +535,8 @@ ca al .!awk -f <c-r>=g:awk_file<cr>
 ca af !awk -f <c-r>=g:awk_file<cr>
 ca raf r !awk -f <c-r>=g:awk_file<cr>
 ca an cal AwkToTemp()<cr>
-ca ae tabe \| e <c-r>=g:awk_file<cr>
+ca ae tabe \| e +46 <c-r>=g:awk_file<cr>
+ca ase bo vsplit \| e +46 <c-r>=g:awk_file<cr>
 fu! AwkToTemp() " direct awk result to a new temporary file
     let target_file = expand('%:p')
     if exists('b:is_dy_buf') && b:is_dy_buf == 1 | let target_file = b:dy_file | endif
@@ -974,7 +975,18 @@ nn D Dh
 vn ,q :norm! @
 "   leave current window open
 nn <leader>n :only<CR>
-nn <leader>N :tabonly<CR>
+nn <leader>N :cal CloseTab()<CR>
+fu! CloseTab()
+    echoh MoreMsg | echo '[j]left [o]ther [l]right' | echoh None
+    let op = nr2char(getchar())
+    if op ==# 'o'
+        tabonly
+    elseif op ==# 'h'
+        while tabpagenr() != 1 | -tabc | endwhile
+    elseif op ==# 'l'
+        while tabpagenr() != tabpagenr('$') | +tabc | endwhile
+    endif
+endf
 "   quick for register
 map - "_
 nn x "_x

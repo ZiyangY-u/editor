@@ -35,11 +35,7 @@ snippet p0 "print $0" w
 print \$0
 endsnippet
 snippet pf "printf" w
-printf "$0"
-endsnippet
-
-snippet / "pattern" w
-/$0/
+printf "$0\n"
 endsnippet
 
 snippet for "for" w
@@ -50,11 +46,10 @@ endsnippet
 
 snippet if "if" w
 if ($0) {
-} else print \$0
-endsnippet
-snippet of "" w
-if ($0) {
 }
+endsnippet
+snippet ep "else print" w
+else print \$0
 endsnippet
 snippet l "like" w
 ~ /$0/
