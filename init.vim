@@ -977,7 +977,7 @@ vn ,q :norm! @
 nn <leader>n :only<CR>
 nn <leader>N :cal CloseTab()<CR>
 fu! CloseTab()
-    echoh MoreMsg | echo '[j]left [o]ther [l]right' | echoh None
+    echoh MoreMsg | echo '[h]left [o]ther [l]right' | echoh None
     let op = nr2char(getchar())
     if op ==# 'o'
         tabonly
