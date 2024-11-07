@@ -530,13 +530,13 @@ nn <c-p> :cal fzf#run(extend({'sinklist': function('PutYankHist')}, FzfFloatWin(
 ino <expr> <c-p> fzf#vim#complete(extend(FzfFloatWin(), {'source':reverse(filter(copy(g:yankHistory), {_,his -> stridx(his, "\n") == -1}))}))
 " awk misc
 let g:awk_file = '~/.config/nvim/awk-template.awk'
-ca aa %!awk -f <c-r>=g:awk_file<cr>
-ca al .!awk -f <c-r>=g:awk_file<cr>
-ca af !awk -f <c-r>=g:awk_file<cr>
-ca raf r !awk -f <c-r>=g:awk_file<cr>
+ca aa %!awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
+ca al .!awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
+ca af !awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
+ca raf r !awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
 ca an cal AwkToTemp()<cr>
-ca ae tabe \| e +50 <c-r>=g:awk_file<cr>
-ca ase bo vsplit \| e +50 <c-r>=g:awk_file<cr>
+ca ae tabe \| e +45 <c-r>=g:awk_file<cr>
+ca ase bo vsplit \| e +45 <c-r>=g:awk_file<cr>
 fu! AwkToTemp() " direct awk result to a new temporary file
     let target_file = expand('%:p')
     if exists('b:is_dy_buf') && b:is_dy_buf == 1 | let target_file = b:dy_file | endif

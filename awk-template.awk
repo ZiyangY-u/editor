@@ -27,18 +27,13 @@ function camelcase_to_underscores(content) {
     return rst
 }
 
-function is_comment_line() {
-    if ($0 ~ /^[ \t]*\/\//)
+function is_comment_line(fname) {
+    if ($0 ~ /^[ \t]*\/\// && (fname ~ /\.java$/ || fname ~ /\.js/))
         return 1
     return 0
 }
 
-function capitalize(word) {
-    first = toupper(substr(word, 1, 1))
-    rest = substr(word, 2)
-    first = first rest
-    return first
-}
+function capitalize(word) { _w = toupper(substr(word, 1, 1)) substr(word, 2); return _w }
 
 function java_get(word) { _w = "get" toupper(substr(word, 1, 1)) substr(word, 2); return _w }
 function java_set(word) { _w = "set" toupper(substr(word, 1, 1)) substr(word, 2); return _w }
@@ -49,7 +44,7 @@ function trim(s)  { return rtrim(ltrim(s)); }
 
 BEGIN {
     # IGNORECASE = 1
-    FS = "." # Field Separator
+    # FS = "." # Field Separator
     # RS = "\n" # Record Separator
     # OFS = "\t" # Output Field Separator for `print`
     # ORS = "\n" # Output Record Separator for `print`
@@ -59,8 +54,8 @@ BEGIN {
 
 # main here
 {
-    if (ltrim($0) ~ /^let/) {
-        print ltrim($0)
+    if (!is_comment_line(FILE_NAME)) {
+        print $0
     }
 }
 
