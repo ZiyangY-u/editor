@@ -1309,6 +1309,7 @@ aug END
 " }}}
 " => Functions -------------------- {{{
 com! -nargs=0 ClearTailBlank :%s/\s\+$//
+com! -nargs=0 ClearHeadBlank :%s/^\s\+//
 com! -nargs=0 Ztool :e ~/desktop/tool.ztool
 com! -nargs=0 Zawk :e ~/desktop/my-awk.awk
 
