@@ -1021,10 +1021,11 @@ fu! GoToTag(edit, query)
 endfu
 " Toggle
 fu! ToggleAll()
-    echoh MoreMsg | echo '[C]ontext [B]lankChar auto[I]ndent' | echoh None
+    echoh MoreMsg | echo '[C]ontext [B]lankChar auto[I]ndent [H]orizonCursor' | echoh None
     let ch = nr2char(getchar())
     if ch == 'c' | sil exe ':cal SignMarks()|ContextToggle'| en
     if ch == 'b' | exe ':setl '.(&list == 1 ? 'nolist' : 'list') | en
+    if ch == 'h' | exe (&cuc == 1 ? 'setl nocuc' : 'setl cuc') | en
     if ch == 'i'
         let g:autoIndentFlg = (g:autoIndentFlg == 1 ? 0 : 1)
         echo 'auto indent '.(g:autoIndentFlg == 1 ? 'ON' : 'OFF')
