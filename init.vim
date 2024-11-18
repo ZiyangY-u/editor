@@ -744,8 +744,8 @@ nn <leader>H @=(has_key(g:hda,getcwd())==1 ? ':unlet g:hda[getcwd()]' : ':let g:
 nn <silent> <leader>Y :cal fzf#run({'source': keys(g:hda), 'sink': 'lcd','window':{'width':0.9,'height':0.6}})<CR>
 nn <silent> <leader>D :cal fzf#run({'source': keys(g:hda), 'sink': {p -> execute('unlet g:hda["'.p.'"]')}, 'window':{'width':0.9,'height':0.6}})<CR>
 nn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen("", "MEdit", 0)':':Files')<CR><CR>
-vn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen(Selected(, 0), "MEdit")':':Files')<CR><CR>
-vn <silent> <leader>O @=(g:HRSmode==1?':cal HiraishinOpen(".".Selected(, 0), "MEdit")':':Files')<CR><CR>
+vn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen(Selected(), "MEdit", 0)':':Files')<CR><CR>
+vn <silent> <leader>O @=(g:HRSmode==1?':cal HiraishinOpen(".".Selected(), "MEdit", 0)':':Files')<CR><CR>
 let g:openExclude = ['"*.class"']
 let g:openExcludePath = ['"*/target/*"', '"*/.git/*"']
 fu! OpenByFile(fn)
