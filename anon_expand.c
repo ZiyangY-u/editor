@@ -136,6 +136,13 @@ void git_expand(char *word) {
         printf("Backlog URL:");
 }
 
+void awk_expand(char *word) {
+    if (w0 == 'p' && w1 >= '0' && w1 <= '9' && strlen(word) == 2)
+        printf("print \\$%d", w1 - '0');
+    if (w0 >= '0' && w0 <= '9' && strlen(word) == 1)
+        printf("\\$%d", w0 - '0');
+}
+
 /* argv[1]: word, argv[2]: filetype */
 int main(int argc, char *argv[])
 {
@@ -157,6 +164,8 @@ int main(int argc, char *argv[])
         c_expand(argv[1]);
     if (strcmp("gitcommit", argv[2]) == 0)
         git_expand(argv[1]);
+    if (strcmp("awk", argv[2]) == 0)
+        awk_expand(argv[1]);
 
     return 0;
 }
