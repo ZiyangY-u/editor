@@ -57,62 +57,12 @@ BEGIN {
     output_flag = 0
     tmp = ""
 
-    calens_o = "\tカレンダー"         "\tー"   "\tYYYY/MM"
-    calenl_o = "\tカレンダー"         "\tー"   "\tYYYY/MM/DD"
-    pop_o    = "\tポップアップ"       "\t可"   "\tイベント・処理詳細参照"
-    text_o   = "\tテキストボックス"   "\t可"   "\tー"
-    num_o    = "\tテキストボックス"   "\tー"   "\tー"
-    drops_o  = "\tドロップダウン"     "\tー"   "\tー"
-    dropm_o  = "\tドロップダウン"     "\t可"   "\tー"
-    check_o  = "\tチェックボックス"   "\tー"   "\tー"
-    link_o   = "\tリンク"             "\tー"   "\tー"
-
-    # printf "AND ("
     }
 
 # main here
 {
-
-    # gsub(" calens", calens_o, $0)
-    # gsub(" calenl", calenl_o, $0)
-    # gsub(" pop", pop_o, $0)
-    # gsub(" text", text_o, $0)
-    # gsub(" num", num_o, $0)
-    # gsub(" drops", drops_o, $0)
-    # gsub(" dropm", dropm_o, $0)
-    # gsub(" check", check_o, $0)
-    # gsub(" link", link_o, $0)
-    # print NR, $0
-
-    # printf "%d\t%s", NR, $1
-    # if ($2 ~ /btn/) { printf "\tボタン\n" }
-    # if ($2 ~ /check/) { printf "\tチェックボックス\n" }
-    # if ($2 ~ /lbl/) { printf "\tラベル\n" }
-    # if ($2 ~ /lnk/) { printf "\tラベル/リンク\n" }
-
-
-    # printf "◆%d.\n", NR
-    # printf "%s\n", $2
-
-    # if (NR > 1)
-    #     printf "OR %s LIKE '%入力したメニュー%'\n", $0
-    # else
-    #     printf "%s LIKE '%入力したメニュー%'\n", $0
-
-    # if (NR > 1)
-    #     printf "AND %s NOT LIKE '%入力したメニュー%'\n", $0
-    # else
-    #     printf "%s NOT LIKE '%入力したメニュー%'\n", $0
-
-    # gsub("入力したサイト", "入力したメニュー", $0)
-    # print $0
-
-    # printf "%d\t%s\t%s\n", NR, $2, $3
-
-    # printf "%sが入力されているかつ限定される場合\n", $0
 }
 
 
 END {
-    # printf ")"
     }
