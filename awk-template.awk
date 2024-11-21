@@ -5,7 +5,7 @@ function print_rest(start_col) { # print_rest(2): print col 3, 4, 5...
 
 # print line except `col`
 function print_except(col) {
-    for (i = 1; i <= NF; i++) 
+    for (i = 1; i <= NF; i++)
         if (i != col) printf "%s%s", $i, OFS
 }
 
@@ -48,15 +48,40 @@ function ltrim(s) { sub(/^[ \t\r\n]+/, "", s); return s }
 function rtrim(s) { sub(/[ \t\r\n]+$/, "", s); return s }
 function trim(s)  { return rtrim(ltrim(s)); }
 
+function get_excel_col_name(n) {
+    rst = ""
+    n1 = n % 26
+    rst = rst sprintf("%c", 64+(n1 == 0 ? 26 : n1))
+
+    if (n > 26) {
+        _n2 = (n - 26)
+        n2 = int((n - 26) / 26) % 26
+        c = 65+(_n2%26 == 0 ? n2-1 : n2)
+        if (c == 64) c = 90
+
+        rst = rst sprintf("%c", c)
+    }
+
+    if (n > 702) {
+        _n3 = (n - 26) % (26 * 26)
+        n3 = int((n-26)/ (26 * 26)) % 26
+        c = 64 + (_n3 == 0 ? n3-1 : n3)
+        rst = rst sprintf("%c", c)
+    }
+    rs = ""
+    for (i = length(rst); i > 0; i--)
+        rs = rs substr(rst, i, 1)
+
+    return rs
+
+}
+
 BEGIN {
     IGNORECASE = 1
-    # FS = "//" # Field Separator
+    # FS = "," # Field Separator
     # RS = "\n" # Record Separator
     # OFS = "\t" # Output Field Separator for `print`
     # ORS = "\n" # Output Record Separator for `print`
-    output_flag = 0
-    tmp = ""
-
     }
 
 # main here
@@ -65,4 +90,5 @@ BEGIN {
 
 
 END {
+    # printf ")"
     }

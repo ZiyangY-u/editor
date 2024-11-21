@@ -533,17 +533,24 @@ let g:awk_file = '~/.config/nvim/awk-template.awk'
 ca aa %!awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
 ca al .!awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
 ca af !awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
+ca ar AwkRange
 ca raf r !awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
 ca an cal AwkToTemp()<cr>
-ca ae tabe \| e +51;norm\ zt <c-r>=g:awk_file<cr>
-ca ase bo vsplit \| e +51;norm\ zt <c-r>=g:awk_file<cr>
+ca ae tabe \| e +79;norm\ zt <c-r>=g:awk_file<cr>
+ca ase bo vsplit \| e +79;norm\ zt <c-r>=g:awk_file<cr>
 fu! AwkToTemp() " direct awk result to a new temporary file
     let target_file = expand('%:p')
     if exists('b:is_dy_buf') && b:is_dy_buf == 1 | let target_file = b:dy_file | endif
     cal execute(printf('tabe | e %s | r !awk -f %s %s', tempname(), g:awk_file, target_file))
     exe "norm ggdd:w\n"
 endf
-" awk-dynamic read
+fu! AwkRange(n)
+    exec printf('.r !for run in {1..%d} ; do echo ; done', a:n)
+    exec printf('norm %dk', a:n-1)
+    sil exec printf('.,.+%d !awk -f %s FILE_NAME=%s', a:n-1, g:awk_file, expand('%:p'))
+endf
+com! -nargs=1 AwkRange :cal AwkRange(<f-args>)
+" dynamic read
 let g:dynamic_chunk_calc = '~/.config/nvim/dy-chunk-calc'
 let g:dynamic_read = '~/.config/nvim/dy-read'
 let g:dynamic_bufsize = 1000
