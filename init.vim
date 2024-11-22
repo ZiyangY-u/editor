@@ -227,8 +227,7 @@ fu! IsBlankLine()
     retu len(substitute(ln, '\s', '', 'g')) == 0
 endf
 nn <silent> d :let b:reg_name = IsBlankLine() ? '_' : v:register<cr>:cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>@=('"'.b:reg_name.'d')<cr>
-nn <silent> y :hi HighlightedyankRegion ctermbg=191<cr>:let b:rn = v:register<cr>:cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>@=('"'.b:rn.'y')<cr>
-au ModeChanged *:[vV\x16]* if !exists('b:skipCYH') || b:skipCYH != v:true | sil hi HighlightedyankRegion ctermbg=191 | let b:skipCYH = v:false | en
+nn <silent> y :let b:rn = v:register<cr>:cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>@=('"'.b:rn.'y')<cr>
 nn <silent> c :let b:reg_name = IsBlankLine() ? '_' : v:register<cr>:cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>@=('"'.b:reg_name.'c')<cr>
 nn = :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>=
 nn zf :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>zf
@@ -1569,14 +1568,16 @@ com! -nargs=0 EditComplete e ~/.config/nvim/complete_service.py
 com! -nargs=0 EditAnon tabe | e ~/.config/nvim/anon_expand.c
 ca emk AsyncRun -cwd=~/.config/nvim ./compile.sh
 
-" vn <leader>y "+y
 vn <silent><leader>y <esc>:cal VisYankToWinClipboard()<cr>
 fu! VisYankToWinClipboard()
     hi HighlightedyankRegion ctermbg=lightblue
-    let b:skipCYH = v:true " skipChangeYankHighlight
     norm! gv"+y
 endf
+fu! s:RecoverHl(jobId, data, event) abort
+    hi HighlightedyankRegion ctermbg=191
+endf
 nn <silent><leader>y :hi HighlightedyankRegion ctermbg=lightblue<cr>:cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>"+y
+au TextYankPost * cal jobstart('sleep 0.5', {'on_exit':function('s:RecoverHl')})
 nn ,<c-v> "+p
 nn ,,<c-v> "+P
 nmap ,R "+r
