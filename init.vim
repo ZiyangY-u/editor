@@ -1570,13 +1570,13 @@ ca emk AsyncRun -cwd=~/.config/nvim ./compile.sh
 
 vn <silent><leader>y <esc>:cal VisYankToWinClipboard()<cr>
 fu! VisYankToWinClipboard()
-    hi HighlightedyankRegion ctermbg=lightblue
+    hi HighlightedyankRegion ctermbg=97
     norm! gv"+y
 endf
 fu! s:RecoverHl(jobId, data, event) abort
     hi HighlightedyankRegion ctermbg=191
 endf
-nn <silent><leader>y :hi HighlightedyankRegion ctermbg=lightblue<cr>:cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>"+y
+nn <silent><leader>y :hi HighlightedyankRegion ctermbg=97<cr>:cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>"+y
 au TextYankPost * cal jobstart('sleep 0.5', {'on_exit':function('s:RecoverHl')})
 nn ,<c-v> "+p
 nn ,,<c-v> "+P
