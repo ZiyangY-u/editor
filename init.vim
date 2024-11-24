@@ -367,7 +367,7 @@ fu! PairHint()
         let b:qhJid = jobstart('echo ' . bs . ' | '. join(['/root/.config/nvim/quote_hint', ccol, &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
     endif
 endf
-au CursorHold * cal PairHint()
+au CursorHold * if &ft!='xxd' | cal PairHint() | en
 " }}}
 " => Automatic -------------------- {{{
 " au InsertLeave * :execute 'sil! .s/\s\+$//'
@@ -1659,6 +1659,7 @@ fu! Xearch(...) " bang, target, opts...
     en
 endf
 " }}}
+exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/hex_open.vim'
 
 " => LSP -------------------- {{{
 lua << EOF
