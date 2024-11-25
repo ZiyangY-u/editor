@@ -17,6 +17,7 @@ set mmp=10000
 
 " Indention
 set ai et sta ts=4  " autoindent expandtab smarttab tabstop
+ca utab setl noet nosta ts=4
 set sr sw=4         " shiftround shiftwidth
 " Selection
 set virtualedit=all " Very useful!!

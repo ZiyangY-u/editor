@@ -78,14 +78,26 @@ function get_excel_col_name(n) {
 
 BEGIN {
     IGNORECASE = 1
-    # FS = "," # Field Separator
+    # FS = "(" # Field Separator
     # RS = "\n" # Record Separator
     # OFS = "\t" # Output Field Separator for `print`
     # ORS = "\n" # Output Record Separator for `print`
+
+    calens_o = "\tカレンダー"         "\tー"   "\tYYYY/MM"
+    calenl_o = "\tカレンダー"         "\tー"   "\tYYYY/MM/DD"
+    pop_o    = "\tポップアップ"       "\t可"   "\tイベント・処理詳細参照"
+    text_o   = "\tテキストボックス"   "\t可"   "\tー"
+    num_o    = "\tテキストボックス"   "\tー"   "\tー"
+    drops_o  = "\tドロップダウン"     "\tー"   "\tー"
+    dropm_o  = "\tドロップダウン"     "\t可"   "\tー"
+    check_o  = "\tチェックボックス"   "\tー"   "\tー"
+    link_o   = "\tリンク"             "\tー"   "\tー"
+
     }
 
 # main here
 {
+    printf "%s\n", get_excel_col_name(NR)
 }
 
 
