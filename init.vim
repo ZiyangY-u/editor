@@ -17,6 +17,7 @@ set mmp=10000
 
 " Indention
 set ai et sta ts=4  " autoindent expandtab smarttab tabstop
+ca utab setl noet nosta ts=4
 set sr sw=4         " shiftround shiftwidth
 " Selection
 set virtualedit=all " Very useful!!
@@ -78,8 +79,8 @@ au WinLeave * setl stl=%!ActStl(0) nocuc
 au WinLeave * if !nvim_get_option_value('diff', {'scope':'local'}) | setl nocul | en
 
 " Non-text display
-set lcs=eol:$,tab:>-,lead:∙,space:•,trail:●
-hi nontext ctermfg=10
+set lcs=eol:$,tab:<->,lead:∙,space:•,trail:●,nbsp:█
+hi nontext ctermfg=244
 
 " High-light colors
 "   see more high-light groups using :h highlight-groups
