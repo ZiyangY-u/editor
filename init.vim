@@ -79,7 +79,7 @@ au WinLeave * setl stl=%!ActStl(0) nocuc
 au WinLeave * if !nvim_get_option_value('diff', {'scope':'local'}) | setl nocul | en
 
 " Non-text display
-set lcs=eol:$,tab:>-,lead:∙,space:•,trail:●
+set lcs=eol:$,tab:<->,lead:∙,space:•,trail:●,nbsp:█
 hi nontext ctermfg=244
 
 " High-light colors
