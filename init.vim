@@ -80,7 +80,7 @@ au WinLeave * if !nvim_get_option_value('diff', {'scope':'local'}) | setl nocul 
 
 " Non-text display
 set lcs=eol:$,tab:>-,lead:∙,space:•,trail:●
-hi nontext ctermfg=10
+hi nontext ctermfg=244
 
 " High-light colors
 "   see more high-light groups using :h highlight-groups
