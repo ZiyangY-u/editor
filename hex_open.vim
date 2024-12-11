@@ -12,6 +12,7 @@ fu! HexOpen(file)
 endfu
 com! -nargs=1 MHexOpen :cal HexOpen(<f-args>)
 com! -nargs=0 HexOpen :cal HiraishinOpen('', 'MHexOpen', 0)
+com! -nargs=0 HexReopen :cal HexOpen(expand('%:p'))
 let g:hexHighlight = nvim_create_namespace('hexHighlight')
 hi HexHl cterm=underline ctermfg=red
 
