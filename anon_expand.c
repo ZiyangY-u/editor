@@ -139,7 +139,7 @@ void git_expand(char *word) {
 void awk_expand(char *word) {
     if (w0 == 'p' && w1 >= '0' && w1 <= '9' && strlen(word) == 2)
         printf("print \\$%d", w1 - '0');
-    if (w0 >= '0' && w0 <= '9' && strlen(word) == 1)
+    else if (w0 >= '0' && w0 <= '9' && strlen(word) == 1)
         printf("\\$%d", w0 - '0');
 }
 

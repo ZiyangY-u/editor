@@ -15,9 +15,12 @@ endsnippet
 snippet pd "print digit" w
 printf "%d\n", $0
 endsnippet
+snippet psd "print digit string" w
+printf "%d\t%s\n", NR, \$0
+endsnippet
 
 snippet for "for" w
-for (i = 1; i < NF; i++) {
+for (i = 1; i <= NF; i++) {
 $0
 }
 endsnippet
@@ -68,4 +71,27 @@ endsnippet
 
 snippet rmcr "remove cr" w
 gsub("\r", "", \$0)
+print \$0
 endsnippet
+
+snippet join "merge rows" w
+if (NR == 1) printf "%s", trim(\$0)
+else printf "$0%s", trim(\$0)
+endsnippet
+snippet split "split row" w
+for (i = 1; i <= NF; i++) { printf "%s\n", \$i }
+endsnippet
+
+snippet a "[a-z]" w
+[a-z]
+endsnippet
+snippet aa "[a-zA-Z]" w
+[a-zA-Z]
+endsnippet
+snippet ad "[a-z0-9]" w
+[a-z0-9]
+endsnippet
+snippet aad "[a-zA-Z0-9]" w
+[a-zA-Z0-9]
+endsnippet
+
