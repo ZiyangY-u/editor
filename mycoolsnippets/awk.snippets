@@ -44,6 +44,7 @@ endsnippet
 snippet 0nl "$0 not like" w
 \$0 !~ /$0/
 endsnippet
+
 snippet il "if $0 like" w
 if (\$0 ~ /$0/) {
 }
@@ -51,6 +52,13 @@ endsnippet
 snippet inl "" w
 if (\$0 !~ /$0/) {
 }
+endsnippet
+
+snippet ilp "match print" w
+if (\$0 ~ /$0/) { print \$0 }
+endsnippet
+snippet inlp "not match print" w
+if (\$0 !~ /$0/) { print \$0 }
 endsnippet
 
 snippet sub "gsub" w
