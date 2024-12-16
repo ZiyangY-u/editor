@@ -837,6 +837,7 @@ com! -nargs=0 QfMark :cal QfMark()
 
 " Fold
 set fdm=manual fdl=99 fdc=auto:7
+hi FoldColumn ctermbg=None ctermfg=blue
 
 " Windows
 "   split
