@@ -765,16 +765,15 @@ fu! OpenByFile(fn)
     retu printf('find %s %s -type f %s', paths, ' -ipath "*'.trim(a:fn).'*"', e)
 endf
 fu! OpenByTarget(q, t)
-    let [agCmds, e] = ['', empty(g:openExclude) ? '' : ' --ignore '.join(g:openExclude, ' --ignore ')]
-    let e .= empty(g:openExcludePath) ? '' : ' --ignore '.join(g:openExcludePath, ' --ignore ')
+    let rgCmds = ''
     if trim(a:q) != ''
         let findCmd = OpenByFile(a:q)
-        retu printf('%s | xargs ag -l --hidden -F %s "%s"', findCmd, e, a:t)
+        retu printf('%s | xargs rg -l --hidden -F "%s"', findCmd, a:t)
     en
     for anchor in keys(extend(copy(g:hda), {getcwd():1})) " include cwd
-        let agCmds .= printf('ag -l --hidden -F %s "%s" %s;', e, a:t, anchor)
+        let rgCmds .= printf('rg -l --hidden -F "%s" %s;', a:t, anchor)
     endfor
-    retu agCmds
+    retu rgCmds
 endf
 fu MEdit(path)
     let cmd = bufnr(a:path) > 0 ? ('b'.bufnr(a:path)) : ('edit'.a:path)
