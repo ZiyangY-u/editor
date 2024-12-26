@@ -1661,14 +1661,13 @@ fu! Xearch(...) " bang, target, opts...
 endf
 " }}}
 exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/hex_open.vim'
+exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/properties_open.vim'
 
 " => LSP -------------------- {{{
 lua << EOF
 require("nvim-lsp-installer").setup {}
 local lspconfig = require('lspconfig')
 lspconfig.pyright.setup{}
-lspconfig.eslint.setup{}
-lspconfig.rome.setup{}
 lspconfig.html.setup{}
 lspconfig.cssls.setup{}
 lspconfig.vimls.setup{}
