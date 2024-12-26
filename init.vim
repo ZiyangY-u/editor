@@ -294,7 +294,7 @@ fu! GetMarks() " marks for road map and jumping
     if FugitiveStatusline() != '' && filereadable(expand('%:p')) " git diffs
         let path = getcwd()
         cal chdir(expand('%:p:h'))
-        for dif in split(system('git diff --unified=0 '.expand('%').'| ag ^@@'), '\n')
+        for dif in split(system('git diff --unified=0 '.expand('%').'| rg ^@@'), '\n')
             let ln = trim(matchstr(dif, '+\d*'))[1:]
             let marks[ln] = " ".trim(getline(ln))
         endfor
@@ -619,7 +619,7 @@ endf
 fu! DySearch(target)
     if exists('b:dy_target') | exe printf('syntax clear pat_%s', sha256(b:dy_target)) | endif
     cal AttachColor(a:target, 196, 0, 0)
-    let [cmd, b:dy_target] = [printf('ag %s %s | cut -f1 -d:', a:target, b:dy_file), a:target]
+    let [cmd, b:dy_target] = [printf('rg -n %s %s | cut -f1 -d:', a:target, b:dy_file), a:target]
     let b:dy_search_rst = split(system(cmd), '\n')
     let [b:dy_cursor, raw] = [0, getline('.')]
     let ln = str2nr(raw[:match(raw, '|')-1])
@@ -865,7 +865,7 @@ fu! SplitOp(sc, query) " run a split cmd first, then operate
         let tempname = tempname()
         cal fzf#run({'source': [tempname], 'sink': {tf->execute(a:sc.'MEdit '.tf)}, 'options':opts,})
     elseif (op ==# 'g') " Git modified file
-        let git_cmd = 'git status --porcelain | ag "(^ M )|(^A  )" | sed "s/\(^ M \)\|\(^A  \)//"'
+        let git_cmd = 'git status --porcelain | rg "(^ M )|(^A  )" | sed "s/\(^ M \)\|\(^A  \)//"'
         cal fzf#run({'source': git_cmd, 'dir':expand('%:p:h'), 'sink': {tf->execute(a:sc.'MEdit '.tf)}, 'options':opts,})
     el
         exe a:sc."|norm \<C-L>"
