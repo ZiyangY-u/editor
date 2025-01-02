@@ -83,11 +83,10 @@ print \$0
 endsnippet
 
 snippet join "merge rows" w
-if (NR == 1) printf "%s", trim(\$0)
-else printf "$0%s", trim(\$0)
+printf "%s", (NR == 1 ? "" : "$0") trim(\$0) # join rows
 endsnippet
 snippet split "split row" w
-for (i = 1; i <= NF; i++) { printf "%s\n", \$i }
+for (i = 1; i <= NF; i++) { printf "%s\n", \$i } # split row
 endsnippet
 
 snippet a "[a-z]" w

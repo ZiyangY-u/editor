@@ -551,6 +551,13 @@ fu! AwkRange(n)
     sil exec printf('.,.+%d !awk -f %s FILE_NAME=%s', a:n-1, g:awk_file, expand('%:p'))
 endf
 com! -nargs=1 AwkRange :cal AwkRange(<f-args>)
+fu! AwkOp(type)
+    echom 'AwkOp:'.a:type
+    if a:type ==# 'line'
+        exe printf("'[,']!awk -f %s FILE_NAME=%s", g:awk_file, expand('%:p'))
+    en
+endf
+nn <silent> ,ar :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=AwkOp<cr>g@
 " dynamic read
 let g:dynamic_chunk_calc = '~/.config/nvim/dy-chunk-calc'
 let g:dynamic_read = '~/.config/nvim/dy-read'
