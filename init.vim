@@ -906,6 +906,8 @@ hi CSInfo cterm=bold ctermfg=white ctermbg=blue
 hi PreferLang ctermfg=black ctermbg=135
 nn ,t :cal SplitOp('tabe \|', '')<CR>
 vn ,t :cal SplitOp('tabe \|', Selected())<CR>
+nn ,T :cal SplitOp('-tabe \|', '')<CR>
+vn ,T :cal SplitOp('-tabe \|', Selected())<CR>
 nn t gt
 nn T gT
 fu! Shortf(fname)
