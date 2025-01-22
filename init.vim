@@ -557,7 +557,7 @@ fu! AwkOp(type)
         exe printf("'[,']!awk -f %s FILE_NAME=%s", g:awk_file, expand('%:p'))
     en
 endf
-nn <silent> ,ar :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=AwkOp<cr>g@
+nn <silent> ,a :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=AwkOp<cr>g@
 " dynamic read
 let g:dynamic_chunk_calc = '~/.config/nvim/dy-chunk-calc'
 let g:dynamic_read = '~/.config/nvim/dy-read'
