@@ -103,3 +103,6 @@ snippet aad "[a-zA-Z0-9]" w
 [a-zA-Z0-9]
 endsnippet
 
+snippet dm "delete match" w
+if (\$0 !~ /$0/) print \$0 # delete match
+endsnippet
