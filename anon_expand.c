@@ -136,11 +136,33 @@ void git_expand(char *word) {
         printf("Backlog URL:");
 }
 
+void awk_printf(char* word) {
+    int slen = strlen(word);
+    printf("printf \"");
+    for (int i = 1 ; i < slen ; i++) {
+        switch (word[i]) {
+            case 'd': printf("%%d"); break;
+            case 's': printf("%%s"); break;
+            case 'f': printf("%%f"); break;
+            default: break;
+        }
+    }
+    // tail char
+    switch (word[slen-1]) {
+        case 'n': printf("\\n"); break;
+        case 't': printf("\\t"); break;
+        default: break;
+    }
+    printf("\", ");
+}
+
 void awk_expand(char *word) {
     if (w0 == 'p' && w1 >= '0' && w1 <= '9' && strlen(word) == 2)
         printf("print \\$%d", w1 - '0');
     else if (w0 >= '0' && w0 <= '9' && strlen(word) == 1)
         printf("\\$%d", w0 - '0');
+    else if (w0 == 'p')
+        awk_printf(word);
 }
 
 /* argv[1]: word, argv[2]: filetype */
