@@ -1,3 +1,7 @@
+snippet i "$i" w
+\$i
+endsnippet
+
 snippet or "or" w
 ||
 endsnippet
@@ -8,7 +12,12 @@ endsnippet
 
 snippet for "for" w
 for (i = 1; i <= NF; i++) {
-$0
+    $0
+}
+endsnippet
+snippet fornf "for i in field" w
+for (i = 1; i < NF; i++) {
+    $0
 }
 endsnippet
 
@@ -92,4 +101,7 @@ endsnippet
 
 snippet dm "delete match" w
 if (\$0 !~ /$0/) print \$0 # delete match
+endsnippet
+snippet lm "leave match" w
+if (\$0 ~ /$0/) print \$0 # leave match
 endsnippet

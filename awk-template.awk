@@ -1,22 +1,22 @@
 function print_rest(start_col) { # print_rest(2): print col 3, 4, 5...
-    for (i = 1; i <= start_col; i++) { $i = "" }
+    for (_i = 1; _i <= start_col; _i++) { $_i = "" }
     print substr($0, start_col+1)
 }
 
 # print line except `col`
 function print_except(col) {
-    for (i = 1; i <= NF; i++)
-        if (i != col) printf "%s%s", $i, OFS
+    for (_i = 1; _i <= NF; _i++)
+        if (_i != col) printf "%s%s", $_i, OFS
 }
 
 function underscores_to_camelcase(content) {
     split(content, arr, "")
     rst = ""
-    for (i = 0; i < length(arr); i++) {
-        if (arr[i] == "_")
-            rst = rst toupper(arr[++i])
+    for (_i = 0; _i < length(arr); _i++) {
+        if (arr[_i] == "_")
+            rst = rst toupper(arr[++_i])
         else
-            rst = rst tolower(arr[i])
+            rst = rst tolower(arr[_i])
     }
     return rst
 }
@@ -24,11 +24,11 @@ function underscores_to_camelcase(content) {
 function camelcase_to_underscores(content) {
     split(content, arr, "")
     rst = tolower(arr[1])
-    for (i = 2; i <= length(arr); i++) {
-        if (arr[i] ~ /[A-Z]/)
-            rst = rst "_" tolower(arr[i])
+    for (_i = 2; _i <= length(arr); _i++) {
+        if (arr[_i] ~ /[A-Z]/)
+            rst = rst "_" tolower(arr[_i])
         else
-            rst = rst arr[i]
+            rst = rst arr[_i]
     }
     return rst
 }
@@ -69,35 +69,37 @@ function get_excel_col_name(n) {
         rst = rst sprintf("%c", c)
     }
     rs = ""
-    for (i = length(rst); i > 0; i--)
-        rs = rs substr(rst, i, 1)
+    for (_i = length(rst); _i > 0; _i--)
+        rs = rs substr(rst, _i, 1)
 
     return rs
 
 }
 
+# minium split for new field separator
+function second_split(content, fs, num) {
+    split(content, arr, fs)
+    for (_i = 0; _i <= length(arr); _i++) {
+        if (_i == num) return arr[_i]
+    }
+}
+
 BEGIN {
-    IGNORECASE = 1
-    # FS = "(" # Field Separator
+    # IGNORECASE = 1
+    # FS = "[<>]" # xml/html
+    # FS = "[{}]" # Field Separator
+    FS = "," # Field Separator
     # RS = "\n" # Record Separator
-    # OFS = "\t" # Output Field Separator for `print`
-    # ORS = "\n" # Output Record Separator for `print`
+    # OFS="\t"
 
-    calens_o = "\tカレンダー"         "\tー"   "\tYYYY/MM"
-    calenl_o = "\tカレンダー"         "\tー"   "\tYYYY/MM/DD"
-    pop_o    = "\tポップアップ"       "\t可"   "\tイベント・処理詳細参照"
-    text_o   = "\tテキストボックス"   "\t可"   "\tー"
-    num_o    = "\tテキストボックス"   "\tー"   "\tー"
-    drops_o  = "\tドロップダウン"     "\tー"   "\tー"
-    dropm_o  = "\tドロップダウン"     "\t可"   "\tー"
-    check_o  = "\tチェックボックス"   "\tー"   "\tー"
-    link_o   = "\tリンク"             "\tー"   "\tー"
-
+    name = ""
     }
 
 # main here
 {
-    printf "%s\n", get_excel_col_name(NR)
+    for (i = 1; i <= NF; i++) {
+    }
+
 }
 
 

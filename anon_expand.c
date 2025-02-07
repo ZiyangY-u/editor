@@ -144,16 +144,16 @@ void awk_printf(char* word) {
             case 'd': printf("%%d"); break;
             case 's': printf("%%s"); break;
             case 'f': printf("%%f"); break;
+            case 'n': printf("\\n"); break;
+            case 't': printf("\\t"); break;
+            case 'c': printf(","); break;
             default: break;
         }
     }
-    // tail char
-    switch (word[slen-1]) {
-        case 'n': printf("\\n"); break;
-        case 't': printf("\\t"); break;
-        default: break;
-    }
-    printf("\", ");
+    if (word[slen-1] != 'x')
+        printf("\", ");
+    else
+        printf("\"");
 }
 
 void awk_expand(char *word) {

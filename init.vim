@@ -555,8 +555,10 @@ fu! AwkOp(type)
     echom 'AwkOp:'.a:type
     if a:type ==# 'line'
         exe printf("'[,']!awk -f %s FILE_NAME=%s", g:awk_file, expand('%:p'))
-        if g:autoIndentFlg == 1 | exe 'norm! `]j=`[' | en " auto indent after AwkOp
+    elseif a:type ==# 'char'
+        exe printf(".!awk -f %s FILE_NAME=%s", g:awk_file, expand('%:p'))
     en
+    if g:autoIndentFlg == 1 | exe 'norm! `]j=`[' | en " auto indent after AwkOp
 endf
 nn <silent> ,a :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=AwkOp<cr>g@
 " dynamic read
