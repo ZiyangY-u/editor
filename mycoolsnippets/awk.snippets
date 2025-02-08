@@ -102,10 +102,19 @@ endsnippet
 snippet cp "Cartesian Product" w
 # Cartesian Product
 if (NR == 1) { # first row should be X-axis
-	split(\$0, cols, "$0")
+    split(\$0, cols, "$0")
 } else {
-	for (i = 1; i <= length(cols); i++) {
-		col = trim(cols[i]) # apply each column
-	}
+    for (i = 1; i <= length(cols); i++) {
+        col = trim(cols[i]) # apply each column
+    }
 }
+endsnippet
+
+snippet rb "reduce blank" w
+# reduce blank (leading blank remain)
+leading = match(\$0, /^ +/) ? RLENGTH : 0
+gsub("[ ]+", " ", \$0)
+gsub("^[ ]*", "", \$0)
+for (i = 0; i < leading; i++) printf " "
+print \$0
 endsnippet
