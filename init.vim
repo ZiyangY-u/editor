@@ -537,8 +537,8 @@ ca af !awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
 ca ar AwkRange
 ca raf r !awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
 ca an cal AwkToTemp()<cr>
-ca ae tabe \| e +79;norm\ zt <c-r>=g:awk_file<cr>
-ca ase bo vsplit \| e +79;norm\ zt <c-r>=g:awk_file<cr>
+ca ae tabe \| e +98;norm\ zt <c-r>=g:awk_file<cr>
+ca ase bo vsplit \| e +98;norm\ zt <c-r>=g:awk_file<cr>
 fu! AwkToTemp() " direct awk result to a new temporary file
     let target_file = expand('%:p')
     if exists('b:is_dy_buf') && b:is_dy_buf == 1 | let target_file = b:dy_file | endif
@@ -1386,6 +1386,14 @@ fu! ClearNoName() abort
         if bufname(buf.bufnr) == '' && buflisted(buf.bufnr) == 1 | sil exe 'bd'.buf.bufnr | en
     endfor
 endf
+fu! ClearTmpBuf() abort
+    for buf in getbufinfo()
+        let path = expand('#'.buf.bufnr.':p')
+        if match(path, '^/tmp/nvim') >= 0 || match(path, '^man://') >= 0
+            exe 'bd! '.path | en
+    endfor
+endf
+au ExitPre * cal ClearTmpBuf() | cal ClearNoName()
 fu! RelPath(path, anchor) " return relative path
     if a:path == '' | retu '' | en
     retu trim(system('realpath '.a:path.' --relative-to '.a:anchor))
