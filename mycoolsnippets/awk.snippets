@@ -50,13 +50,6 @@ if (\$0 !~ /$0/) {
 }
 endsnippet
 
-snippet ilp "match print" w
-if (\$0 ~ /$0/) { print \$0 }
-endsnippet
-snippet inlp "not match print" w
-if (\$0 !~ /$0/) { print \$0 }
-endsnippet
-
 snippet sub "gsub" w
 gsub("$0", "", \$0)
 print \$0
@@ -104,4 +97,15 @@ if (\$0 !~ /$0/) print \$0 # delete match
 endsnippet
 snippet lm "leave match" w
 if (\$0 ~ /$0/) print \$0 # leave match
+endsnippet
+
+snippet cp "Cartesian Product" w
+# Cartesian Product
+if (NR == 1) { # first row should be X-axis
+	split(\$0, cols, "$0")
+} else {
+	for (i = 1; i <= length(cols); i++) {
+		col = trim(cols[i]) # apply each column
+	}
+}
 endsnippet

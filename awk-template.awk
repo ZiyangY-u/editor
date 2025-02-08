@@ -76,8 +76,8 @@ function get_excel_col_name(n) {
 
 }
 
-# minium split for new field separator
-function second_split(content, fs, num) {
+# minimum split for new field separator
+function msplit(content, fs, num) {
     split(content, arr, fs)
     for (_i = 0; _i <= length(arr); _i++) {
         if (_i == num) return arr[_i]
@@ -97,9 +97,6 @@ BEGIN {
 
 # main here
 {
-    for (i = 1; i <= NF; i++) {
-    }
-
 }
 
 
