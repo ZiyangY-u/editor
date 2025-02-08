@@ -1092,7 +1092,7 @@ ca jdos e ++enc=sjis ++ff=dos
 " => plugins --------------------------- {{{
 cal plug#begin('~/.vim/plugged')
 
-    " Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+    Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
     Plug 'SirVer/ultisnips'
     Plug 'preservim/vim-pencil'
     Plug 'itchyny/vim-cursorword'
