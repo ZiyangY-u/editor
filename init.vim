@@ -957,6 +957,7 @@ nn ,db :cal fzf#run({'source': GetBufFilePath(v:false), 'sink': 'bd', 'options':
 " Shortcuts
 "   execute current line as bash cmd ('e' for 'execute')
 nn ,e :.w !bash<CR>
+vn ,e :.w !bash<CR>
 "   turn off highlight
 nn <silent> <C-l> :<C-u>noh<CR><C-l>
 "   quick to command (using ' for cover ; original function)
@@ -1674,6 +1675,7 @@ endf
 " }}}
 exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/hex_open.vim'
 exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/properties_open.vim'
+exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/rename_files.vim'
 
 " => LSP -------------------- {{{
 lua << EOF
