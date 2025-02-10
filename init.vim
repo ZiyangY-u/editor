@@ -532,7 +532,6 @@ ino <expr> <c-p> fzf#vim#complete(extend(FzfFloatWin(), {'source':reverse(filter
 " awk misc
 let g:awk_file = '~/.config/nvim/awk-template.awk'
 ca aa %!awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
-ca al .!awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
 ca af !awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
 ca ar AwkRange
 ca raf r !awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
