@@ -785,7 +785,7 @@ fu! OpenByTarget(q, t)
     retu rgCmds
 endf
 fu MEdit(path)
-    let cmd = bufnr(a:path) > 0 ? ('b'.bufnr(a:path)) : ('edit'.a:path)
+    let cmd = bufnr(a:path) > 0 ? ('b'.bufnr(a:path)) : ('edit '.a:path)
     exe cmd
 endf
 com! -nargs=1 MEdit :cal MEdit(<f-args>)
@@ -874,7 +874,7 @@ fu! SplitOp(sc, query) " run a split cmd first, then operate
         let tempname = tempname()
         cal fzf#run({'source': [tempname], 'sink': {tf->execute(a:sc.'MEdit '.tf)}, 'options':opts,})
     elseif (op ==# 'g') " Git modified file
-        let git_cmd = 'git status --porcelain | rg "(^ M )|(^A  )|(^?? )" | sed "s/\(^ M \)\|\(^A  \)\|\(^?? \)//"'
+        let git_cmd = 'git status -s | rg "(^ M )|(^A  )|(^?? )" | sed "s/\(^ M \)\|\(^A  \)\|\(^?? \)//"'
         cal fzf#run({'source': git_cmd, 'dir':expand('%:p:h'), 'sink': {tf->execute(a:sc.'MEdit '.tf)}, 'options':opts,})
     el
         exe a:sc."|norm \<C-L>"
@@ -1385,7 +1385,7 @@ fu! ClearNoName() abort
         if bufname(buf.bufnr) == '' && buflisted(buf.bufnr) == 1 | sil exe 'bd'.buf.bufnr | en
     endfor
 endf
-fu! ClearTmpBuf() abort
+fu! ClearTmpBuf()
     for buf in getbufinfo()
         let path = expand('#'.buf.bufnr.':p')
         if match(path, '^/tmp/nvim') >= 0 || match(path, '^man://') >= 0
