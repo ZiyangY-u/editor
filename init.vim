@@ -1133,6 +1133,10 @@ cal plug#begin('~/.vim/plugged')
     Plug 'wellle/targets.vim'
     Plug 'williamboman/nvim-lsp-installer'
     Plug 'yuezk/vim-js'
+    Plug 'prettier/vim-prettier', {
+                \ 'do': 'yarn install --frozen-lockfile --production',
+                \ 'branch': 'release/0.x'
+                \ }
 
 cal plug#end()
 " }}}
@@ -1304,6 +1308,8 @@ fu! AsyncRunPost()
     redrawt
 endf
 au User AsyncRunStop :cal AsyncRunPost()
+" vim-prettier
+let g:prettier#autoformat = 0
 " }}}
 " => File type Specific -------------------- {{{
 aug filetypes
