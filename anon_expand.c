@@ -43,12 +43,6 @@ void sql_expand(char *word) {
         printf("TOP ");
         while (isdigit(*++word)) printf("%c", *word);
     }
-    if (ematch("uc", word))
-        printf("UNIQUE CLUSTERED ");
-    else if (ematch("u", word))
-        printf("UNIQUE ");
-    else if (ematch("sd", word))
-        printf("SELECT DISTINCT ");
     else if (ematch("inn", word))
         printf("IS NOT NULL");
 }
@@ -157,10 +151,12 @@ void awk_printf(char* word) {
 }
 
 void awk_expand(char *word) {
-    if (w0 == 'p' && w1 >= '0' && w1 <= '9' && strlen(word) == 2)
+    if (w0 == 'p' && isdigit(w1) && strlen(word) == 2) // p3 -> print $3
         printf("print \\$%d", w1 - '0');
-    else if (w0 >= '0' && w0 <= '9' && strlen(word) == 1)
+    else if (strlen(word) == 1 && isdigit(w0)) // 3 -> $3
         printf("\\$%d", w0 - '0');
+    else if (strlen(word) == 2 && isdigit(w0) && isdigit(w1)) // 12 -> $12
+        printf("\\$%d%d", w0 - '0', w1 - '0');
     else if (w0 == 'p')
         awk_printf(word);
 }
