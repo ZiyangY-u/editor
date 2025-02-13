@@ -14,3 +14,5 @@ echo "quote_hint compiled!"
 cc dynamic-calc-chunk.c -o dy-chunk-calc
 cc dynamic-read.c -o dy-read
 echo "dynamic-read compiled!"
+
+cp awk-template.awk awk-shadow.awk

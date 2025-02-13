@@ -41,6 +41,7 @@ hi c1 ctermfg=Black ctermbg=DarkCyan
 hi ModColor cterm=bold ctermfg=white ctermbg=68
 hi sleepWindow ctermbg=DarkGray
 hi texPage ctermbg=128
+hi awkShadow ctermbg=235 ctermfg=252
 
 let g:asyncCnt = 0
 fu! ActStl(isActive)
@@ -53,6 +54,7 @@ fu! ActStl(isActive)
     let stl.="%#error#%r%#mod#%m"
     let stl.= (g:jumpMode == 'n' ? "%#ModColor#" : "%#JumpModColor#")
     let stl.="%{(mode()=='n'||mode()=='c')?'  '.g:jumpModeNames[g:jumpMode].' ':''}%{(mode()=='t')?'  TERM ':''}"
+    if g:awk_shadow | let stl.='%#awkShadow# 󰆏 ' | en
     let stl.="%<%#c1# %w%{filereadable(expand('%p')) ? Longf(expand('%:p')) : expand('%:p')}"
 
     let stl.="%=" " left/right separator
@@ -530,7 +532,7 @@ endf
 nn <c-p> :cal fzf#run(extend({'sinklist': function('PutYankHist')}, FzfFloatWin()))<cr>
 ino <expr> <c-p> fzf#vim#complete(extend(FzfFloatWin(), {'source':reverse(filter(copy(g:yankHistory), {_,his -> stridx(his, "\n") == -1}))}))
 " awk misc
-let g:awk_file = '~/.config/nvim/awk-template.awk'
+let [g:awk_file, g:awk_shadow] = ['~/.config/nvim/awk-template.awk', 0]
 ca aa %!awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
 ca af !awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
 ca ar AwkRange
@@ -1041,7 +1043,7 @@ fu! GoToTag(edit, query)
 endfu
 " Toggle
 fu! ToggleAll()
-    echoh MoreMsg | echo '[C]ontext [B]lankChar auto[I]ndent [H]orizonCursor' | echoh None
+    echoh MoreMsg | echo '[C]ontext [B]lankChar auto[I]ndent [H]orizonCursor [A]wkShadow' | echoh None
     let ch = nr2char(getchar())
     if ch == 'c' | sil exe ':cal SignMarks()|ContextToggle'| en
     if ch == 'b' | exe ':setl '.(&list == 1 ? 'nolist' : 'list') | en
@@ -1049,6 +1051,9 @@ fu! ToggleAll()
     if ch == 'i'
         let g:autoIndentFlg = (g:autoIndentFlg == 1 ? 0 : 1)
         echo 'auto indent '.(g:autoIndentFlg == 1 ? 'ON' : 'OFF')
+    endif
+    if ch == 'a'
+        let [g:awk_file, g:awk_shadow] = ['~/.config/nvim/awk-'.(g:awk_shadow ? 'template' : 'shadow').'.awk', !g:awk_shadow]
     endif
 endf
 nn <f2> :cal ToggleAll()<cr>
