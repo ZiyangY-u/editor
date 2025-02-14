@@ -150,6 +150,23 @@ void awk_printf(char* word) {
         printf("\"");
 }
 
+void awk_sprintf(char* word) {
+    int slen = strlen(word);
+    printf("s = sprintf(\"");
+    for (int i = 2 ; i < slen ; i++) {
+        switch (word[i]) {
+            case 'd': printf("%%d"); break;
+            case 's': printf("%%s"); break;
+            case 'f': printf("%%f"); break;
+            case 'n': printf("\\n"); break;
+            case 't': printf("\\t"); break;
+            case 'c': printf(","); break;
+            default: break;
+        }
+    }
+    printf("\", $0)");
+}
+
 void awk_expand(char *word) {
     if (w0 == 'p' && isdigit(w1) && strlen(word) == 2) // p3 -> print $3
         printf("print \\$%d", w1 - '0');
@@ -159,6 +176,8 @@ void awk_expand(char *word) {
         printf("\\$%d%d", w0 - '0', w1 - '0');
     else if (w0 == 'p')
         awk_printf(word);
+    else if (w0 == 's' && w1 == 'p')
+        awk_sprintf(word);
 }
 
 /* argv[1]: word, argv[2]: filetype */

@@ -2,9 +2,12 @@
 
 # completion_buf.db schema:
 
-# create table words (word text, chosen int, src, recent_chosen_time datetime, import_date datetime,inc_a int,inc_b int,inc_c int,inc_d int,inc_e int,inc_f int,inc_g int,inc_h int,inc_i int,inc_j int,inc_k int,inc_l int,inc_m int,inc_n int,inc_o int,inc_p int,inc_q int,inc_r int,inc_s int,inc_t int,inc_u int,inc_v int,inc_w int,inc_x int,inc_y int,inc_z int);
+# drop table words;
+# drop table path_history;
+# create table words (word text, chosen int, src, recent_chosen_time datetime, import_date datetime, occur_cnt int not null,inc_a int,inc_b int,inc_c int,inc_d int,inc_e int,inc_f int,inc_g int,inc_h int,inc_i int,inc_j int,inc_k int,inc_l int,inc_m int,inc_n int,inc_o int,inc_p int,inc_q int,inc_r int,inc_s int,inc_t int,inc_u int,inc_v int,inc_w int,inc_x int,inc_y int,inc_z int);
 # create index idx_words on words(word, chosen);
 # create index idx_words_src on words(src);
+# create index idx_words_occur on words(occur_cnt);
 # create index idx_words_a on words(inc_a);
 # create index idx_words_b on words(inc_b);
 # create index idx_words_c on words(inc_c);
@@ -182,11 +185,11 @@ def query_and_inflect(sql:str, indicate:str, patch:str, tail_decor:str, connecti
 def create_insert_word_sql(word:str, path:str, chosen:bool) -> str:
     # word text, chosen int, src, recent_chosen_time datetime, import_date
     chars = set([c.lower() for c in word if re.match("[A-Za-z]", c)])
-    sql = 'insert into words (word, chosen, src, recent_chosen_time, import_date'
+    sql = 'insert into words (word, chosen, occur_cnt, src, recent_chosen_time, import_date'
     if len(chars) == 0:
-        sql =  sql + ') values ("{}", 0, "{}", {}, datetime("now"))'.format(word, path, 'null' if not chosen else 'datetime("now")')
+        sql =  sql + ') values ("{}", 0, 0, "{}", {}, datetime("now"))'.format(word, path, 'null' if not chosen else 'datetime("now")')
     else:
-        sql = sql + ',' + ','.join('inc_'+c for c in chars) + ') values ("{}", 0, "{}", {}, datetime("now"),'.format(word, path, 'null' if not chosen else 'datetime("now")') \
+        sql = sql + ',' + ','.join('inc_'+c for c in chars) + ') values ("{}", 0, 0, "{}", {}, datetime("now"),'.format(word, path, 'null' if not chosen else 'datetime("now")') \
                 + ','.join('1' for _ in chars) + ')'
     return sql
 
@@ -204,6 +207,9 @@ def add_word(word:str, path:str) -> None:
     cnt = cur.fetchall()[0][0]
     if cnt == 0:
         cur.execute(create_insert_word_sql(word, path, True))
+    else: # add occur_cnt
+        cur.execute(f"update words set occur_cnt = occur_cnt + 1 where word = '{word}'")
+
     con_completion.commit()
 
 def has_path_history(path:str, hashcode:str) -> bool:
@@ -252,6 +258,8 @@ def add_words(path:str, enc:str) -> None:
             cnt = cur.fetchall()[0][0]
             if cnt == 0:
                 cur.execute(create_insert_word_sql(w, path, False))
+            else: # add occur_cnt
+                cur.execute(f"update words set occur_cnt = occur_cnt + 1 where word = '{w}'")
         cur.execute('insert into path_history values ("' + path + '", "' + hashcode + '", datetime("now"))') # add path to history
     # clear not chosen words imported 1 days ago
     # and they will be recruited next time the file involved
@@ -275,13 +283,13 @@ def query_word(word:str, src:str, order_mode:int) -> list:
     # if all(re.match("[a-z]", c) for c in word):
     #     like_pat += ' COLLATE NOCASE  '
     and_pat = ' AND ' + ' AND '.join('inc_' + c + '=1' for c in chars)
-    order_clause = ' ORDER BY RECENT_CHOSEN_TIME DESC, CHOSEN DESC'
+    order_clause = ' ORDER BY RECENT_CHOSEN_TIME DESC, CHOSEN, OCCUR_CNT DESC'
     if mode == RECENT_RECRUIT_ORDER:
-        order_clause = ' ORDER BY IMPORT_DATE DESC, LENGTH(WORD) ASC'
+        order_clause = ' ORDER BY IMPORT_DATE DESC, LENGTH(WORD), OCCUR_CNT ASC'
     if mode == WORD_LEN_ORDER:
-        order_clause = ' ORDER BY LENGTH(WORD) ASC, CHOSEN DESC, RECENT_CHOSEN_TIME DESC'
+        order_clause = ' ORDER BY LENGTH(WORD) ASC, CHOSEN DESC, RECENT_CHOSEN_TIME, OCCUR_CNT DESC'
     if mode == MOST_CHOSEN_ORDER:
-        order_clause = ' ORDER BY CHOSEN DESC, LENGTH(WORD) ASC, RECENT_CHOSEN_TIME DESC'
+        order_clause = ' ORDER BY CHOSEN DESC, LENGTH(WORD) ASC, RECENT_CHOSEN_TIME, OCCUR_CNT DESC'
     # chosen history
     sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE LENGTH(WORD) < 100 AND WORD LIKE ' + like_pat + and_pat + order_clause
     query(sql, '󱈅 word', con_completion, rst_list)

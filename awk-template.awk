@@ -88,15 +88,17 @@ BEGIN {
     # IGNORECASE = 1
     # FS = "[<>]" # xml/html
     # FS = "[{}]" # Field Separator
-    FS = "," # Field Separator
+    FS = "\t" # Field Separator
     # RS = "\n" # Record Separator
     # OFS="\t"
 
-    name = ""
+    tbl = ""
     }
 
 # main here
 {
+    gsub("C285533200", "C271337800", $0)
+    print $0
 }
 
 
