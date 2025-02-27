@@ -1594,7 +1594,8 @@ fu WinPath(mntPath) " convert wsl mnt path to windows path
     retu substitute(a:mntPath, '/mnt/\([a-zA-Z]\)', '\1:', '')
 endf
 com! -nargs=0 WSLview exe 'sil !wslview %'
-com! -nargs=0 Notepad exe 'sil !subl.exe -a '.WinPath(expand('%')).':'.line('.')
+" com! -nargs=0 Notepad exe 'sil !subl.exe -a '.WinPath(expand('%')).':'.line('.')
+com! -nargs=0 Notepad exe 'sil !powershell.exe -Command "Start-Process notepad -WindowStyle Maximized '.WinPath(expand('%')).'"'
 com! -nargs=0 Directory exe 'sil !explorer.exe /select,' . substitute(WinPath(expand('%:p')), '/', '\\\\', 'g')
 com! -nargs=0 EditComplete e ~/.config/nvim/complete_service.py
 com! -nargs=0 EditAnon tabe | e ~/.config/nvim/anon_expand.c
