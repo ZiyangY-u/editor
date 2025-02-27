@@ -167,6 +167,18 @@ void awk_sprintf(char* word) {
     printf("\", $0)");
 }
 
+void awk_sub(char* word) {
+    int slen = strlen(word);
+    char last_char = word[slen - 1];
+    switch (last_char) {
+        case 't': printf("gsub(\"\\t\", \"$0\")"); break;
+        case 'c': printf("gsub(\",\", \"$0\")"); break;
+        case 'q': printf("gsub(\"'\", \"$0\")"); break;
+        case 'Q': printf("gsub(\"\\\"\", \"$0\")"); break;
+    }
+    printf(" print \\$0");
+}
+
 void awk_expand(char *word) {
     if (w0 == 'p' && isdigit(w1) && strlen(word) == 2) // p3 -> print $3
         printf("print \\$%d", w1 - '0');
@@ -178,6 +190,8 @@ void awk_expand(char *word) {
         awk_printf(word);
     else if (w0 == 's' && w1 == 'p')
         awk_sprintf(word);
+    else if (strncmp("sub", word, 3) == 0)
+        awk_sub(word);
 }
 
 /* argv[1]: word, argv[2]: filetype */
