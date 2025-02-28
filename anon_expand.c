@@ -173,10 +173,11 @@ void awk_sub(char* word) {
     switch (last_char) {
         case 't': printf("gsub(\"\\t\", \"$0\")"); break;
         case 'c': printf("gsub(\",\", \"$0\")"); break;
+        case 's': printf("gsub(\" \", \"$0\")"); break;
         case 'q': printf("gsub(\"'\", \"$0\")"); break;
         case 'Q': printf("gsub(\"\\\"\", \"$0\")"); break;
     }
-    printf(" print \\$0");
+    printf("; print \\$0");
 }
 
 void awk_expand(char *word) {

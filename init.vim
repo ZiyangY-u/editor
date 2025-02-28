@@ -1333,6 +1333,7 @@ aug filetypes
     au FileType html,javascript,css,xml :EmmetInstall
     au FileType python,vim,c setl ofu=v:lua.vim.lsp.omnifunc
     au FileType git setl fdm=syntax fdl=0
+    au FileType sql setlocal commentstring=--\ %s
     " au BufWritePre * :sil! ClearTailBlank
     " auto save file to OneDrive
     au BufWritePost init.vim sil exe ':!cp ~/.config/nvim/init.vim ~/OneDrive'
@@ -1388,6 +1389,7 @@ fu! QuickRun()
     elseif &ft == 'tex' | cal CompileTex()
     elseif &ft == 'python' | :!python3 %
     elseif &ft == 'c' | :silent !cc %
+    elseif expand('%:p') == trim(system('realpath '.g:db_script)) | cal RunDb()
     en
 endf
 nn <silent> <f5> :cal QuickRun()<cr>
@@ -1695,6 +1697,7 @@ endf
 exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/hex_open.vim'
 exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/properties_open.vim'
 exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/rename_files.vim'
+exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/embed-sql.vim'
 
 " => LSP -------------------- {{{
 lua << EOF
