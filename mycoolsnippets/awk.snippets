@@ -72,6 +72,11 @@ gsub("\r", "", \$0)
 print \$0
 endsnippet
 
+snippet rmh "remove heading ||" w
+gsub("^\\\\|\\\\| ", "", \$0)
+print \$0
+endsnippet
+
 snippet join "merge rows" w
 printf "%s", (NR == 1 ? "" : "$0") trim(\$0) # join rows
 endsnippet
