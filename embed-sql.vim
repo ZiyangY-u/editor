@@ -1,7 +1,7 @@
 let g:db_path = '~/.config/nvim/temp.db'
 let g:db_script = '~/.config/nvim/my-db.sql'
 
-com! -nargs=0 InitDb :cal system('sqlite3 '.g:db_path.' ".exit"')
+com! -nargs=0 InitDb :cal system('rm '.g:db_path)
 ca edb tabe \| e +1;norm\ zt <c-r>=g:db_script<cr>
 
 fu! RunDb()

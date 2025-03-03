@@ -957,8 +957,8 @@ nn ,db :cal fzf#run({'source': GetBufFilePath(v:false), 'sink': 'bd', 'options':
 
 " Shortcuts
 "   execute current line as bash cmd ('e' for 'execute')
-nn ,e :.w !bash<CR>
-vn ,e :.w !bash<CR>
+nn ,E :.w !bash<CR>
+vn ,E :.w !bash<CR>
 "   turn off highlight
 nn <silent> <C-l> :<C-u>noh<CR><C-l>
 "   quick to command (using ' for cover ; original function)
@@ -990,7 +990,6 @@ vn r :<c-u>let b:reg_name = v:register<cr>:cal ReplaceOp(visualmode())<cr>
 vn ,r :cal ReplaceOpFzf(visualmode())<cr>
 "   fzf commands
 nn ,c :Commands!<cr>
-nn ,C :%!
 "   compensate for Visual Edition
 nn D Dh
 "   quick to command, line macro need of visual selection
@@ -1589,8 +1588,19 @@ endf
 vn <silent> <tab>nx c<C-R>=OmniTranslit('NumTrans', ['x'], '<C-R>-')<CR><ESC>
 vn <silent> <tab>nb c<C-R>=OmniTranslit('NumTrans', ['b'], '<C-R>-')<CR><ESC>
 vn <silent> <tab>nd c<C-R>=OmniTranslit('NumTrans', ['d'], '<C-R>-')<CR><ESC>
-" calculate expression and replace
-vn ,C <esc>gvc<c-r>=eval(substitute(getreg('"'), "\n", '', 'g'))<CR><esc><c-l>
+" evaluate expression and replace
+nn <silent> ,e :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=EvalOp<cr>g@
+nn <silent> ,,e :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=EvalFeedOp<cr>g@
+vn <silent> ,e <esc>gvc<c-r>=py3eval(getreg('"'))<CR><esc><c-l>
+fu! EvalOp(type)
+    exec printf("norm! `]$v`[0d")
+    cal setbufline(bufnr(), line('.'), [py3eval(getreg('"'))])
+endf
+fu! EvalFeedOp(type) " feed variables
+    exec printf("norm! `]$v`[0y")
+    let code = "py3 \n" . getreg('"')
+    exec code
+endf
 " ------------------- Windows Misc -----------------------
 fu WinPath(mntPath) " convert wsl mnt path to windows path
     retu substitute(a:mntPath, '/mnt/\([a-zA-Z]\)', '\1:', '')
