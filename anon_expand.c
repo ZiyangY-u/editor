@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -8,33 +9,29 @@
 #define w3 word[3]
 #define w4 word[4]
 
-/* exact match */
-int ematch(char *pat, char *word) {
-    if (strncmp(pat, word, strlen(pat)) == 0)
-        return 1;
-    return 0;
-}
+#define match(l, r) (strcmp(l, r) == 0)
+#define matchn(l, r, n) (strncmp(l, r, n) == 0)
 
 void vim_expand(char *word) {
-    if (ematch("fu", word))
+    if (match("fu", word))
         printf("fu! %s()<cr>endf", word+2);
-    else if (ematch("hl", word))
+    else if (match("hl", word))
         printf("hi %s cterm=bold ctermfg=$1 ctermbg=$2", word+2);
 }
 
 void xml_expand(char *word) {
-    if (ematch("s", word)) 
+    if (match("s", word)) 
         printf("SELECT ");
-    else if (ematch("d", word)) 
+    else if (match("d", word)) 
         printf("DISTINCT ");
-    else if (ematch("f", word))
+    else if (match("f", word))
         printf("FROM ");
-    else if (ematch("#", word))
+    else if (match("#", word))
         printf("#{$0}");
 }
 
 void c_expand(char* word) {
-    if (ematch("cu", word))
+    if (match("cu", word))
         printf("const uint32_t ");
 }
 
@@ -43,7 +40,7 @@ void sql_expand(char *word) {
         printf("TOP ");
         while (isdigit(*++word)) printf("%c", *word);
     }
-    else if (ematch("inn", word))
+    else if (match("inn", word))
         printf("IS NOT NULL");
 }
 
@@ -81,19 +78,19 @@ void java_expand(char *word) {
 void ark_expand(char *word) {
     if (isdigit(w0))
         printf("(%c strong)", w0);
-    if (strcmp("w", word) == 0)
+    if (match("w", word))
         printf("(weak)");
-    if (strcmp("iw", word) == 0)
+    if (match("iw", word))
         printf("(insep weak)");
-    if (strncmp("i", word, 1) == 0 && isdigit(w1))
+    if (strncmp("i", word, 1) && isdigit(w1))
         printf("(insep %c strong)", w1);
-    if (strcmp("sw", word) == 0)
+    if (match("sw", word))
         printf("(seq weak)");
-    if (strncmp("s", word, 1) == 0 && isdigit(w1))
+    if (strncmp("s", word, 1) && isdigit(w1))
         printf("(sep %c strong)", w1);
     if (w0 == 'C')
         printf("Cog. ");
-    if (strcmp("ff", word) == 0)
+    if (match("ff", word))
         printf("(< $0)");
 }
 
@@ -126,7 +123,7 @@ void css_expand(char *word) {
 }
 
 void git_expand(char *word) {
-    if (strcmp("bl", word) ==0)
+    if (match("bl", word))
         printf("Backlog URL:");
 }
 
@@ -180,6 +177,14 @@ void awk_sub(char* word) {
     printf("; print \\$0");
 }
 
+void awk_sql_insert(char* word) {
+    int n = atoi(word + 1);
+    printf("printf \"insert into $0 values (%%s");
+    for (int i = 1 ; i < n ; i++) printf(", %%s");
+    printf(");\\n\"");
+    for (int i = 0 ; i < n ; i++) printf(", \\$%d", i);
+}
+
 void awk_expand(char *word) {
     if (w0 == 'p' && isdigit(w1) && strlen(word) == 2) // p3 -> print $3
         printf("print \\$%d", w1 - '0');
@@ -187,12 +192,14 @@ void awk_expand(char *word) {
         printf("\\$%d", w0 - '0');
     else if (strlen(word) == 2 && isdigit(w0) && isdigit(w1)) // 12 -> $12
         printf("\\$%d%d", w0 - '0', w1 - '0');
-    else if (w0 == 'p')
+    else if (w0 == 'p') // printf
         awk_printf(word);
-    else if (w0 == 's' && w1 == 'p')
+    else if (matchn(word, "sp", 2)) // sprintf
         awk_sprintf(word);
-    else if (strncmp("sub", word, 3) == 0)
+    else if (matchn("sub", word, 3)) // quick sub
         awk_sub(word);
+    else if (strlen(word) >= 2 && w0 == 'i' && isdigit(w1)) // insert clause for embed sqlite
+        awk_sql_insert(word);
 }
 
 /* argv[1]: word, argv[2]: filetype */
@@ -200,23 +207,23 @@ int main(int argc, char *argv[])
 {
     if (argc < 3)
         return 0;
-    if (strcmp("vim", argv[2]) == 0)
+    if (match("vim", argv[2]))
         vim_expand(argv[1]);
-    if (strcmp("sql", argv[2]) == 0)
+    if (match("sql", argv[2]))
         sql_expand(argv[1]);
-    if (strcmp("java", argv[2]) == 0)
+    if (match("java", argv[2]))
         java_expand(argv[1]);
-    if (strcmp("ark", argv[2]) == 0)
+    if (match("ark", argv[2]))
         ark_expand(argv[1]);
-    if (strcmp("css", argv[2]) == 0)
+    if (match("css", argv[2]))
         css_expand(argv[1]);
-    if (strcmp("xml", argv[2]) == 0)
+    if (match("xml", argv[2]))
         xml_expand(argv[1]);
-    if (strcmp("c", argv[2]) == 0)
+    if (match("c", argv[2]))
         c_expand(argv[1]);
-    if (strcmp("gitcommit", argv[2]) == 0)
+    if (match("gitcommit", argv[2]))
         git_expand(argv[1]);
-    if (strcmp("awk", argv[2]) == 0)
+    if (match("awk", argv[2]))
         awk_expand(argv[1]);
 
     return 0;

@@ -33,7 +33,6 @@ SET ...
 , A.U_FLAG = 1
 , A.R_DATE = getdate()
 , A.UPDATE_USER_ID = 8837
-, A.UPDATE_USER = 'システム管理者'
 , A.UPDATE_DATE_TIME = getdate()
 FROM WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 A
 ...
@@ -42,25 +41,26 @@ FROM WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 A
 SELECT
 ...
 , A.UPDATE_USER_ID
-, A.UPDATE_USER
 , A.UPDATE_DATE_TIME
 FROM $1.DBO.`!v getreg('"')` B,
     WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 A
 WHERE A.U_FLAG = 1
-AND
-...
+AND A.$2 = B.$2
+AND A.$3 = B.$3
+AND A.$4 = B.$4
+
  -- 本番テーブル更新
 UPDATE B
 SET
 ...
 , B.UPDATE_USER_ID = A.UPDATE_USER_ID
-, B.UPDATE_USER = A.UPDATE_USER
 , B.UPDATE_DATE_TIME = A.UPDATE_DATE_TIME
 FROM $1.DBO.`!v getreg('"')` B,
     WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 A
 WHERE A.U_FLAG = 1
-AND
-...
+AND A.$2 = B.$2
+AND A.$3 = B.$3
+AND A.$4 = B.$4
 endsnippet
 
 snippet recovery_ins "" w
@@ -91,6 +91,7 @@ SELECT * FROM TUR_CHARGE_PRINT_HEAD HED
 JOIN TUR_CHARGE_PRINT_DETAIL DTL ON HED.CHARGE_NO = DTL.CHARGE_NO AND HED.ORIGINAL_KBN = DTL.ORIGINAL_KBN
 WHERE HED.CHARGE_NO IN ($1)
 SELECT * FROM CHARGE_CSV CSV WHERE CSV.CHARGE_NO IN ($1)
+SELECT * FROM TUR_CHARGE_TAX_BY_TAX_RATE TAX WHERE TAX.CHARGE_NO IN ($1)
 endsnippet
 
 snippet cnt "description" w
@@ -122,7 +123,7 @@ snippet umci "update MUR_CODE_ITEM" w
 UPDATE [DBO].[MUR_CODE_ITEM] SET ${1} = ${2} WHERE DIVISION = ${3} AND SEQ = ${4}
 endsnippet
 snippet smci "select MUR_CODE_ITEM" w
-SELECT * FROM [DBO].[MUR_CODE_ITEM] WHERE DIVISION IN (${1})
+SELECT * FROM [DBO].[MUR_CODE_ITEM] WHERE DIVISION IN ($0)
 endsnippet
 snippet smu "select M_USER" w
 SELECT * FROM M_USER WHERE USER_ID IN ($0)
@@ -242,8 +243,14 @@ endsnippet
 snippet uag "USE [AGDB]" w
 USE [AGDB]
 endsnippet
+snippet uagw "USE [AGDB_WUHAN]" w
+USE [AGDB_WUHAN]
+endsnippet
 snippet usas "USE [SASDB]" w
 USE [SASDB]
+endsnippet
+snippet usasw "USE [SASDB_WUHAN]" w
+USE [SASDB_WUHAN]
 endsnippet
 snippet ubi "USE [SASBI]" w
 USE [SASBI]
@@ -255,7 +262,7 @@ snippet ubiw "USE [SASBI_WUHAN]" w
 USE [SASBI_WUHAN]
 endsnippet
 snippet ubiy "USE [SASBI_YZY]" w
-USE [SASBI_YZY]
+USE [SASBI_DEV_YZY]
 endsnippet
 
 snippet ston "statistics on" w
@@ -299,4 +306,22 @@ JOIN WKDB.DBO.MUR_COMPANY_WK_20240805_1 WK ON MC.COM_ID = WK.COM_ID
 JOIN WKDB.DBO.MUR_COMPANY_BAK_20240805_1 BK ON WK.COM_ID = BK.COM_ID
 WHERE U_FLAG3 = 1
 AND WK.`!v getreg('"')` <> BK.`!v getreg('"')`
+endsnippet
+
+snippet nn "" w
+IS NOT NULL
+endsnippet
+
+snippet cno "CHARGE_NO" w
+CHARGE_NO IN ('$0')
+endsnippet
+snippet oR "ORIGINAL_KBN" w
+ORIGINAL_KBN = 'R'
+endsnippet
+
+snippet dt "drop table" w
+drop table $0;
+endsnippet
+snippet ct "create table" w
+create table $1 ($0);
 endsnippet
