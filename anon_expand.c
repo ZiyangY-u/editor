@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 #define w0 word[0]
 #define w1 word[1]
@@ -11,6 +12,7 @@
 
 #define match(l, r) (strcmp(l, r) == 0)
 #define matchn(l, r, n) (strncmp(l, r, n) == 0)
+#define todigit(x) (x - '0')
 
 void vim_expand(char *word) {
     if (match("fu", word))
@@ -39,8 +41,7 @@ void sql_expand(char *word) {
     if (strlen(word) >= 2 && word[0] == 't' && isdigit(word[1])) {
         printf("TOP ");
         while (isdigit(*++word)) printf("%c", *word);
-    }
-    else if (match("inn", word))
+    } else if (match("inn", word))
         printf("IS NOT NULL");
 }
 
@@ -137,6 +138,8 @@ void awk_printf(char* word) {
             case 'f': printf("%%f"); break;
             case 'n': printf("\\n"); break;
             case 't': printf("\\t"); break;
+            case 'q': printf("'"); break;
+            case 'Q': printf("\""); break;
             case 'c': printf(","); break;
             default: break;
         }
@@ -157,6 +160,8 @@ void awk_sprintf(char* word) {
             case 'f': printf("%%f"); break;
             case 'n': printf("\\n"); break;
             case 't': printf("\\t"); break;
+            case 'q': printf("'"); break;
+            case 'Q': printf("\""); break;
             case 'c': printf(","); break;
             default: break;
         }
@@ -182,16 +187,25 @@ void awk_sql_insert(char* word) {
     printf("printf \"insert into $0 values ('%%s'");
     for (int i = 1 ; i < n ; i++) printf(", '%%s'");
     printf(");\\n\"");
-    for (int i = 0 ; i < n ; i++) printf(", \\$%d", i);
+    for (int i = 1 ; i <= n ; i++) printf(", \\$%d", i);
 }
 
+bool is_all_digit(char* word) {
+    while (*word != '\0') {
+        if (!isdigit(*word))
+            return false;
+        word++;
+    }
+    return true;
+} 
+
 void awk_expand(char *word) {
+    if (strlen(word) == 0)
+        return;
     if (w0 == 'p' && isdigit(w1) && strlen(word) == 2) // p3 -> print $3
-        printf("print \\$%d", w1 - '0');
+        printf("print \\$%d", todigit(w1));
     else if (strlen(word) == 1 && isdigit(w0)) // 3 -> $3
-        printf("\\$%d", w0 - '0');
-    else if (strlen(word) == 2 && isdigit(w0) && isdigit(w1)) // 12 -> $12
-        printf("\\$%d%d", w0 - '0', w1 - '0');
+        printf("\\$%d", todigit(w0));
     else if (w0 == 'p') // printf
         awk_printf(word);
     else if (matchn(word, "sp", 2)) // sprintf
@@ -200,6 +214,10 @@ void awk_expand(char *word) {
         awk_sub(word);
     else if (strlen(word) >= 2 && w0 == 'i' && isdigit(w1)) // insert clause for embed sqlite
         awk_sql_insert(word);
+    else if (is_all_digit(word)) {
+        printf("\\$%d", todigit(w0));
+        while (*(++word) != '\0') printf(", \\$%d", todigit(*word));
+    }
 }
 
 /* argv[1]: word, argv[2]: filetype */

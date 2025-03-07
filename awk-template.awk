@@ -97,11 +97,37 @@ BEGIN {
 
 # main here
 {
-    gsub("C285533200", "C271337800", $0)
+
+
+    # printf "update MUR_CODE_ITEM set name = '%s'", $3
+    # printf " where DIVISION = 70005 and seq = %d", $1
+    # printf " -- %s\n", $2
+
+
+    # printf "insert into MUR_CODE_ITEM (division, seq, sort_seq, name)"
+    # printf " values (70005, %s,%s,'%s');\n", $1, $2, $3
+
+
+    # printf "%d\t%s\n", NR + 21, $0
+
+    # printf "UPDATE [DBO].[MUR_CODE_ITEM] SET REMARKS_OTHER_DECIMAL = %s WHERE DIVISION = 70109 AND SEQ = %s\n", $2, $1
+    # printf "UPDATE [DBO].[MUR_CODE_ITEM] SET LINK1_DIVISION = 70005, LINK1_SEQ = %s, DISPLAY_FLAG = NULL, VALID_FLAG = 1 WHERE DIVISION = 70109 AND SEQ = %s\n", $2, $2
+
+    # if ($0 ~ /SEQ = 33/) printf "%s -- ", $0
+
+    # if ($0 ~ /SEQ = 22/) printf "%s --外貨（英語）\n", $0
+    # if ($0 ~ /SEQ = 23/) printf "%s --前金請求（英語）\n", $0
+    # if ($0 ~ /SEQ = 24/) printf "%s --外貨（英語）　／　請求先別\n", $0
+    # if ($0 ~ /SEQ = 25/) printf "%s --請求先・広告主別　／　広告主名表示あり\n", $0
+    # if ($0 ~ /SEQ = 26/) printf "%s --請求先別\n", $0
+    # if ($0 ~ /SEQ = 27/) printf "%s --システム\n", $0
+    # if ($0 ~ /SEQ = 28/) printf "%s --請求先・広告主別　／　広告主名表示なし\n", $0
+    # if ($0 ~ /SEQ = 29/) printf "%s --朝日広告社\n", $0
+    # if ($0 ~ /SEQ = 30/) printf "%s --外貨（日本語）\n", $0
+    # if ($0 ~ /SEQ = 31/) printf "%s --前金請求用\n", $0
+    # if ($0 ~ /SEQ = 32/) printf "%s --HMP用_広告主別\n", $0
+    # if ($0 ~ /SEQ = 33/) printf "%s --HMP用_システム\n", $0
+
+    gsub("REMARKS_OTHER_CHAR", "REMARKS_OTHER_DECIMAL", $0)
     print $0
 }
-
-
-END {
-    # printf ")"
-    }
