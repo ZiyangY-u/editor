@@ -179,8 +179,8 @@ void awk_sub(char* word) {
 
 void awk_sql_insert(char* word) {
     int n = atoi(word + 1);
-    printf("printf \"insert into $0 values (%%s");
-    for (int i = 1 ; i < n ; i++) printf(", %%s");
+    printf("printf \"insert into $0 values ('%%s'");
+    for (int i = 1 ; i < n ; i++) printf(", '%%s'");
     printf(");\\n\"");
     for (int i = 0 ; i < n ; i++) printf(", \\$%d", i);
 }
