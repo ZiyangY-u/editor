@@ -1591,10 +1591,10 @@ vn <silent> <tab>nd c<C-R>=OmniTranslit('NumTrans', ['d'], '<C-R>-')<CR><ESC>
 " evaluate expression and replace
 nn <silent> ,e :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=EvalOp<cr>g@
 nn <silent> ,,e :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=EvalFeedOp<cr>g@
-vn <silent> ,e <esc>gvc<c-r>=py3eval(getreg('"'))<CR><esc><c-l>
+vn <silent> ,e <esc>gvc<c-r>=py3eval(substitute(getreg('"'), '\n', ' ', 'g'))<CR><esc><c-l>
 fu! EvalOp(type)
     exec printf("norm! `]$v`[0d")
-    cal setbufline(bufnr(), line('.'), [py3eval(getreg('"'))])
+    cal setbufline(bufnr(), line('.'), [py3eval(substitute(getreg('"'), '\n', ' ', 'g'))])
 endf
 fu! EvalFeedOp(type) " feed variables
     exec printf("norm! `]$v`[0y")
