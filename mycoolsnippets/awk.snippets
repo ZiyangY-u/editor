@@ -151,3 +151,7 @@ for (i = 1; i <= NF; i++) {
 if (NF > max_cols) max_cols = NF
 END { for (i = 1; i <= max_cols; i++) print row[i] } # print result
 endsnippet
+
+snippet gp "grep print" w
+printf "%s:%d:%s\n", FILENAME, FNR, \$0
+endsnippet
