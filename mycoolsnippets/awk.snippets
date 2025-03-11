@@ -142,3 +142,12 @@ gsub("^[\\t]*", "", \$0)
 for (i = 0; i < leading; i++) printf " "
 print \$0
 endsnippet
+
+snippet trans "transpose" w
+for (i = 1; i <= NF; i++) {
+    if (NR == 1) row[i] = $i
+    else row[i] = row[i] OFS $i
+}
+if (NF > max_cols) max_cols = NF
+END { for (i = 1; i <= max_cols; i++) print row[i] } # print result
+endsnippet
