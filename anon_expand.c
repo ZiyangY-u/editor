@@ -22,9 +22,9 @@ void vim_expand(char *word) {
 }
 
 void xml_expand(char *word) {
-    if (match("s", word)) 
+    if (match("s", word))
         printf("SELECT ");
-    else if (match("d", word)) 
+    else if (match("d", word))
         printf("DISTINCT ");
     else if (match("f", word))
         printf("FROM ");
@@ -113,7 +113,7 @@ void _margin_padding(char *word) {
     if (w1 == 'b') printf("Bottom");
     printf(": '");
     word+=1;
-    while (isdigit(*++word)) 
+    while (isdigit(*++word))
         printf("%c", *word);
     printf("px'");
 
@@ -128,21 +128,25 @@ void git_expand(char *word) {
         printf("Backlog URL:");
 }
 
+void awk_decode_wildcard(char c) {
+    switch (c) {
+        case 'd': printf("%%d"); break;
+        case 's': printf("%%s"); break;
+        case 'f': printf("%%f"); break;
+        case 'n': printf("\\n"); break;
+        case 't': printf("\\t"); break;
+        case 'q': printf("'"); break;
+        case 'Q': printf("\\\""); break;
+        case 'c': printf(","); break;
+        default: break;
+    }
+}
+
 void awk_printf(char* word) {
     int slen = strlen(word);
     printf("printf \"");
     for (int i = 1 ; i < slen ; i++) {
-        switch (word[i]) {
-            case 'd': printf("%%d"); break;
-            case 's': printf("%%s"); break;
-            case 'f': printf("%%f"); break;
-            case 'n': printf("\\n"); break;
-            case 't': printf("\\t"); break;
-            case 'q': printf("'"); break;
-            case 'Q': printf("\""); break;
-            case 'c': printf(","); break;
-            default: break;
-        }
+        awk_decode_wildcard(word[i]);
     }
     if (word[slen-1] != 'x')
         printf("\", ");
@@ -154,17 +158,7 @@ void awk_sprintf(char* word) {
     int slen = strlen(word);
     printf("s = sprintf(\"");
     for (int i = 2 ; i < slen ; i++) {
-        switch (word[i]) {
-            case 'd': printf("%%d"); break;
-            case 's': printf("%%s"); break;
-            case 'f': printf("%%f"); break;
-            case 'n': printf("\\n"); break;
-            case 't': printf("\\t"); break;
-            case 'q': printf("'"); break;
-            case 'Q': printf("\""); break;
-            case 'c': printf(","); break;
-            default: break;
-        }
+        awk_decode_wildcard(word[i]);
     }
     printf("\", $0)");
 }
@@ -172,14 +166,9 @@ void awk_sprintf(char* word) {
 void awk_sub(char* word) {
     int slen = strlen(word);
     char last_char = word[slen - 1];
-    switch (last_char) {
-        case 't': printf("gsub(\"\\t\", \"$0\")"); break;
-        case 'c': printf("gsub(\",\", \"$0\")"); break;
-        case 's': printf("gsub(\" \", \"$0\")"); break;
-        case 'q': printf("gsub(\"'\", \"$0\")"); break;
-        case 'Q': printf("gsub(\"\\\"\", \"$0\")"); break;
-    }
-    printf("; print \\$0");
+    printf("gsub(\"");
+    awk_decode_wildcard(last_char);
+    printf("\", \"$0\"); printf \"%%s\\n\", \\$0");
 }
 
 void awk_sql_insert(char* word) {
@@ -191,13 +180,11 @@ void awk_sql_insert(char* word) {
 }
 
 bool is_all_digit(char* word) {
-    while (*word != '\0') {
-        if (!isdigit(*word))
+    while (*word != '\0')
+        if (!isdigit(*word++))
             return false;
-        word++;
-    }
     return true;
-} 
+}
 
 void awk_expand(char *word) {
     if (strlen(word) == 0)
