@@ -14,6 +14,13 @@
 #define matchn(l, r, n) (strncmp(l, r, n) == 0)
 #define todigit(x) (x - '0')
 
+bool is_all_digit(char* word) {
+    while (*word != '\0')
+        if (!isdigit(*word++))
+            return false;
+    return true;
+}
+
 void vim_expand(char *word) {
     if (match("fu", word))
         printf("fu! %s()<cr>endf", word+2);
@@ -41,8 +48,17 @@ void sql_expand(char *word) {
     if (strlen(word) >= 2 && word[0] == 't' && isdigit(word[1])) {
         printf("TOP ");
         while (isdigit(*++word)) printf("%c", *word);
-    } else if (match("inn", word))
-        printf("IS NOT NULL");
+    } else if (matchn("ct", word, 2) && is_all_digit(word+2)) { // create table ...
+        printf("create table $0 (c1 text");
+        int n = atoi(word+2), i = 1;
+        for ( ; i < n ; i++) printf(", c%d text", i+1);
+        printf(");");
+    } else if (match("s", word) || (matchn("s", word, 1) && is_all_digit(word+1))) { // select [top n] * from
+        int tn = strlen(word) > 1 ? atoi(word+1) : 0;
+        printf("SELECT ");
+        if (tn > 0) printf("TOP %d ", tn);
+        printf("* FROM");
+    }
 }
 
 void _java_variabe(char c) {
@@ -179,12 +195,6 @@ void awk_sql_insert(char* word) {
     for (int i = 1 ; i <= n ; i++) printf(", \\$%d", i);
 }
 
-bool is_all_digit(char* word) {
-    while (*word != '\0')
-        if (!isdigit(*word++))
-            return false;
-    return true;
-}
 
 void awk_expand(char *word) {
     if (strlen(word) == 0)
