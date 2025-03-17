@@ -1,14 +1,102 @@
-snippet alt "description"
-ALTER TABLE HIST_D_HATSUREI ALTER COLUMN
+snippet Dt "drop table" w
+drop table $0;
+endsnippet
+snippet dt "drop table" w
+delete from $0;
 endsnippet
 
-snippet add "description"
-ALTER TABLE TUR_BILL_DATAFILE ADD `!v getreg('"')` VARCHAR() DEFAULT ''
+# SELECT
+snippet d "DISTINCT" w
+DISTINCT
+endsnippet
+snippet as "as" w
+AS `!v getreg('"')`
 endsnippet
 
-snippet drop "description"
-ALTER TABLE HIST_D_HATSUREI DROP COLUMN
+# JOIN
+snippet jo "JOIN" w
+JOIN $1 ON $2
 endsnippet
+snippet ljo "LEFT JOIN" w
+LEFT JOIN $1 ON $2
+endsnippet
+snippet ijo "INNER JOIN" w
+INNER JOIN $1 ON $2
+endsnippet
+
+
+# WHERE
+snippet w "WHERE" w
+WHERE $0
+endsnippet
+snippet a "AND" w
+AND $0
+endsnippet
+snippet o "OR" w
+OR $0
+endsnippet
+
+snippet like "LIKE" w
+LIKE '%$0%'
+endsnippet
+snippet in "in" w
+IN ($0)
+endsnippet
+snippet nn "NOT NULL" w
+IS NOT NULL
+endsnippet
+
+
+# ORDER
+snippet oda "ORDER BY ASC" w
+ORDER BY $0 ASC
+endsnippet
+snippet odd "ORDER BY DESC" w
+ORDER BY $0 DESC
+endsnippet
+
+# GROUP
+post_expand "from UltiSnips import vim_helper; vim_helper.command('echom 1')"
+snippet gb "GROUP BY" w
+GROUP BY
+endsnippet
+snippet cnt "description" w
+COUNT(1)
+endsnippet
+
+# FUNCTIONS
+snippet gd "getdate" w
+GETDATE()
+endsnippet
+snippet max "max" w
+MAX(${VISUAL}$0)
+endsnippet
+snippet ch "char" w
+char($0)
+endsnippet
+snippet fmt "date format" w
+FORMAT(${VISUAL}$0, 'yy/MM/dd hh:mm')
+endsnippet
+snippet rnd "round" w
+ROUND(${VISUAL}$0, 0, 0)
+endsnippet
+snippet isn "isnull" w
+ISNULL(${VISUAL}$0, '')
+endsnippet
+
+# UPDATE
+snippet upd "UPDATE" w
+UPDATE $1 SET $2 = $3 WHERE $0
+endsnippet
+
+# PROCEDURE
+snippet begin "begin end"
+BEGIN
+${VISUAL}
+END
+endsnippet
+
+# -----------------------------------------------------------------------------------------------------
 
 snippet recovery "description" w
 USE [$1]
@@ -94,23 +182,9 @@ SELECT * FROM CHARGE_CSV CSV WHERE CSV.CHARGE_NO IN ($1)
 SELECT * FROM TUR_CHARGE_TAX_BY_TAX_RATE TAX WHERE TAX.CHARGE_NO IN ($1)
 endsnippet
 
-snippet cnt "description" w
-COUNT(1)
-endsnippet
 
-snippet begin "begin end"
-BEGIN
-${VISUAL}
-END
-endsnippet
 
-snippet upd "UPDATE" w
-UPDATE $1 SET $2 = $3 WHERE $0
-endsnippet
 
-snippet like "description" w
-LIKE '%$0%'
-endsnippet
 
 snippet mci "MUR_CODE_ITEM" w
 MUR_CODE_ITEM
@@ -139,84 +213,10 @@ snippet mu "M_USER" w
 M_USER MU
 endsnippet
 
-snippet gd "getdate" w
-GETDATE()
-endsnippet
-
 snippet openquery "openquery" w
 openquery([XONE_MT_READONLY], 'select * from ${1}')
 endsnippet
 
-snippet jo "JOIN" w
-JOIN $1 ON $2
-endsnippet
-snippet ljo "LEFT JOIN" w
-LEFT JOIN $1 ON $2
-endsnippet
-snippet ijo "INNER JOIN" w
-INNER JOIN $1 ON $2
-endsnippet
-
-snippet od "ORDER BY ASC" w
-ORDER BY
-endsnippet
-snippet odd "ORDER BY DESC" w
-ORDER BY $0 DESC
-endsnippet
-
-post_expand "from UltiSnips import vim_helper; vim_helper.command('echom 1')"
-snippet gb "GROUP BY" w
-GROUP BY
-endsnippet
-
-snippet cmpxone "compare xone table and ag table" w
-select '`!v getreg('"')`' table_name, (select count(1) from `!v getreg('"')`) ag_cnt, (select count(1) from openquery([XONE_MT_READONLY], 'select * from extif_agcore.`!v getreg('"')`')) as xone_cnt
-endsnippet
-
-post_expand "snip.buffer[snip.snippet_end[0]+1:snip.snippet_end[0]+1] = ['']"
-snippet xonecontrol "xonecontrol" w
- -- DELETE OPENQUERY ([XONE_MT_WRITEONLY], 'select proc_message from extif_agcore.m_sas_x1_proc_control where proc_kind=0')   
- -- Insert OPENQUERY ([XONE_MT_WRITEONLY], 'select proc_kind ,proc_status ,proc_datetime ,proc_message from extif_agcore.m_sas_x1_proc_control ') select 0, 1, '2023/11/07 9:00:01', ''
-
-UPDATE OPENQUERY ([XONE_MT_WRITEONLY], 'select proc_status from extif_agcore.m_sas_x1_proc_control where proc_kind=1')
-SET proc_status = 0 -- ag
-UPDATE OPENQUERY ([XONE_MT_WRITEONLY], 'select proc_status from extif_agcore.m_sas_x1_proc_control where proc_kind=0')
-SET proc_status = 1 -- xone
-UPDATE OPENQUERY ([XONE_MT_WRITEONLY], 'select proc_datetime from extif_agcore.m_sas_x1_proc_control where proc_kind=1')
-SET proc_datetime = '2023/11/07 10:00:03' -- ag
-UPDATE OPENQUERY ([XONE_MT_WRITEONLY], 'select proc_datetime from extif_agcore.m_sas_x1_proc_control where proc_kind=0')
-SET proc_datetime = '2023/11/07 11:00:01' -- xone
-UPDATE OPENQUERY ([XONE_MT_WRITEONLY], 'select proc_message from extif_agcore.m_sas_x1_proc_control where proc_kind=1')
-SET proc_message = '' -- ag
-UPDATE OPENQUERY ([XONE_MT_WRITEONLY], 'select proc_message from extif_agcore.m_sas_x1_proc_control where proc_kind=0')
-SET proc_message = '' -- xone
-
-SELECT proc_kind, case proc_kind when 0 then 'Xone' when 1 then 'Ag' else '' end kind_name,
-proc_status, case proc_status when 0 then '実行中' when 1 then '正常終了' when 9 then '異常終了' else '' end status_name,
-proc_datetime, proc_message FROM OPENQUERY([XONE_MT_WRITEONLY], 'SELECT * from extif_agcore.M_SAS_X1_PROC_CONTROL where proc_kind in (0, 1)')
-endsnippet
-
-snippet ch "char" w
-char($0)
-endsnippet
-snippet 39 "char(39)" w
-char(39)
-endsnippet
-snippet w "WHERE" w
-WHERE $0
-endsnippet
-snippet max "max" w
-MAX(${VISUAL}$0)
-endsnippet
-snippet as "as" w
-AS `!v getreg('"')`
-endsnippet
-snippet fmt "date format" w
-FORMAT(${VISUAL}$0, 'yy/MM/dd hh:mm')
-endsnippet
-snippet ut "update TUR_BILL_DATAFILE" w
-UPDATE TUR_COST_DATA SET `!v getreg('"')` = $0 WHERE SALES_COST_DATA_NO IN (29210)
-endsnippet
 
 snippet v1 "VALID_FLAG = 1" w
 VALID_FLAG = 1
@@ -230,10 +230,6 @@ USER_ID
 endsnippet
 snippet oid "ORG_ID" w
 ORG_ID
-endsnippet
-
-snippet in "in" w
-IN ($0)
 endsnippet
 
 snippet uag "USE [AGDB]" w
@@ -257,55 +253,11 @@ endsnippet
 snippet ubiw "USE [SASBI_WUHAN]" w
 USE [SASBI_WUHAN]
 endsnippet
-snippet ubiy "USE [SASBI_YZY]" w
-USE [SASBI_DEV_YZY]
-endsnippet
 
 snippet ston "statistics on" w
 set statistics time on
 $0
 set statistics time off
-endsnippet
-
-snippet cidx "create index" w
-drop index if exists `!v nvim_get_var('yankHistory')[-2]`_`!v nvim_get_var('yankHistory')[-1]`_IDX on `!v nvim_get_var('yankHistory')[-2]`;
-create index `!v nvim_get_var('yankHistory')[-2]`_`!v nvim_get_var('yankHistory')[-1]`_IDX on `!v nvim_get_var('yankHistory')[-2]`(`!v nvim_get_var('yankHistory')[-1]`);
-endsnippet
-snippet idoc "index doc" w
-	`!v nvim_get_var('yankHistory')[-2]`	`!v nvim_get_var('yankHistory')[-2]`_`!v nvim_get_var('yankHistory')[-1]`_IDX	`!v nvim_get_var('yankHistory')[-1]`		NONCLUSTERED	create index `!v nvim_get_var('yankHistory')[-2]`_`!v nvim_get_var('yankHistory')[-1]`_IDX on `!v nvim_get_var('yankHistory')[-2]`(`!v nvim_get_var('yankHistory')[-1]`);	drop index `!v nvim_get_var('yankHistory')[-2]`_`!v nvim_get_var('yankHistory')[-1]`_IDX on `!v nvim_get_var('yankHistory')[-2]`;	2024/6/20 余追加　確認中
-endsnippet
-
-snippet cv "convert" w
-case `!v getreg('"')` when null then 'NULL' else convert(varchar(100), `!v getreg('"')`) end
-endsnippet
-snippet isn "isnull" w
-ISNULL(${VISUAL}, '')
-endsnippet
-snippet rnd "round" w
-ROUND(${VISUAL}, 0, 0)
-endsnippet
-
-snippet na "null as" w
-(ISNULL(`!v getreg('"')`, '') <> '' OR `!v getreg('"')` <> 0)
-endsnippet
-
-snippet synonym "synonym" w
-DROP SYNONYM [dbo].[`!v getreg('"')`]
-CREATE SYNONYM [dbo].[`!v getreg('"')`] FOR [SASAGDBLINKSERVER].[AGDB].[dbo].[`!v getreg('"')`]
-endsnippet
-
-snippet rbk "" w
--- 片側無効依頼`!v getreg('"')`
-UPDATE A SET A.`!v getreg('"')` = BK.`!v getreg('"')`
-FROM MUR_COMPANY MC
-JOIN WKDB.DBO.MUR_COMPANY_WK_20240805_1 WK ON MC.COM_ID = WK.COM_ID
-JOIN WKDB.DBO.MUR_COMPANY_BAK_20240805_1 BK ON WK.COM_ID = BK.COM_ID
-WHERE U_FLAG3 = 1
-AND WK.`!v getreg('"')` <> BK.`!v getreg('"')`
-endsnippet
-
-snippet nn "" w
-IS NOT NULL
 endsnippet
 
 snippet cno "CHARGE_NO" w
@@ -315,13 +267,6 @@ snippet oR "ORIGINAL_KBN" w
 ORIGINAL_KBN = 'R'
 endsnippet
 
-snippet dt "drop table" w
-drop table $0;
-endsnippet
-snippet ct "create table" w
-create table $1 ($0);
-endsnippet
-
-snippet lihua "" w
+snippet lh "lihua" w
 麻烦查一下本番数据
 endsnippet

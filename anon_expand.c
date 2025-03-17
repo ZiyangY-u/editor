@@ -45,10 +45,11 @@ void c_expand(char* word) {
 }
 
 void sql_expand(char *word) {
-    if (strlen(word) >= 2 && word[0] == 't' && isdigit(word[1])) {
-        printf("TOP ");
-        while (isdigit(*++word)) printf("%c", *word);
-    } else if (matchn("ct", word, 2) && is_all_digit(word+2)) { // create table ...
+    if (strlen(word) >= 2 && word[0] == 't' && is_all_digit(word+1))  // t3 -> TOP 3
+        printf("TOP %d", atoi(word+1));
+    else if (strlen(word) >= 2 && word[0] == 'l' && is_all_digit(word+1)) // l3 -> LIMIT 3
+        printf("LIMIT %d", atoi(word+1));
+    else if (matchn("ct", word, 2) && is_all_digit(word+2)) { // create table ...
         printf("create table $0 (c1 text");
         int n = atoi(word+2), i = 1;
         for ( ; i < n ; i++) printf(", c%d text", i+1);
@@ -57,7 +58,7 @@ void sql_expand(char *word) {
         int tn = strlen(word) > 1 ? atoi(word+1) : 0;
         printf("SELECT ");
         if (tn > 0) printf("TOP %d ", tn);
-        printf("* FROM");
+        printf("* FROM ");
     }
 }
 
