@@ -538,8 +538,8 @@ ca af !awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
 ca ar AwkRange
 ca raf r !awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
 ca an cal AwkToTemp()<cr>
-ca ae tabe \| e +98;norm\ zt <c-r>=g:awk_file<cr>
-ca ase bo vsplit \| e +98;norm\ zt <c-r>=g:awk_file<cr>
+ca ae tabe \| e +/main/;norm\ ztjj <c-r>=g:awk_file<cr>
+ca ase bo vsplit \| e +/main/;norm\ ztjj <c-r>=g:awk_file<cr>
 fu! AwkToTemp() " direct awk result to a new temporary file
     let target_file = expand('%:p')
     if exists('b:is_dy_buf') && b:is_dy_buf == 1 | let target_file = b:dy_file | endif

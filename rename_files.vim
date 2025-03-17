@@ -7,7 +7,7 @@ fu! RenameFiles(path)
     endfor
     sil exe ':1|lcd ' . a:path
     bo vsplit
-    exe printf('e +98;norm\ zt %s', g:awk_file)
+    exe printf('e +/main/;norm\ ztjj %s', g:awk_file)
 
 endf
 com! -nargs=0 RenamePwd :cal RenameFiles(trim(system('pwd')))
