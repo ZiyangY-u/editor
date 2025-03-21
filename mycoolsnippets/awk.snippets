@@ -15,11 +15,6 @@ for (i = 1; i <= NF; i++) {
     $0
 }
 endsnippet
-snippet fornf "for i in field" w
-for (i = 1; i < NF; i++) {
-    $0
-}
-endsnippet
 
 snippet if "if" w
 if ($0) {
@@ -27,15 +22,6 @@ if ($0) {
 endsnippet
 snippet ep "else print" w
 else print \$0
-endsnippet
-snippet l "like" w
-~ /$0/
-endsnippet
-snippet nl "not like" w
-!~ /$0/
-endsnippet
-snippet 0l "$0 like" w
-\$0 ~ /$0/
 endsnippet
 snippet 0nl "$0 not like" w
 \$0 !~ /$0/
@@ -72,11 +58,6 @@ gsub("\r", "", \$0)
 print \$0
 endsnippet
 
-snippet rmh "remove heading ||" w
-gsub("^\\\\|\\\\| ", "", \$0)
-print \$0
-endsnippet
-
 snippet join "merge rows" w
 printf "%s", (NR == 1 ? "" : "$0") trim(\$0) # join rows
 endsnippet
@@ -87,13 +68,13 @@ endsnippet
 snippet a "[a-z]" w
 [a-z]
 endsnippet
-snippet aa "[a-zA-Z]" w
+snippet aA "[a-zA-Z]" w
 [a-zA-Z]
 endsnippet
 snippet ad "[a-z0-9]" w
 [a-z0-9]
 endsnippet
-snippet aad "[a-zA-Z0-9]" w
+snippet aAd "[a-zA-Z0-9]" w
 [a-zA-Z0-9]
 endsnippet
 
@@ -105,8 +86,7 @@ if (\$0 ~ /$0/) print \$0 # leave match
 endsnippet
 
 snippet cmd "external command" w
-cmd = "$0"
-cmd | getline rst
+"$0" | getline rst
 endsnippet
 snippet cmdn "multiline output" w
 while (("$0" | getline l) > 0) {
@@ -152,9 +132,6 @@ if (NF > max_cols) max_cols = NF
 END { for (i = 1; i <= max_cols; i++) print row[i] } # print result
 endsnippet
 
-snippet gp "grep print" w
-printf "%s:%d:%s\n", FILENAME, FNR, \$0
-endsnippet
 snippet gl "getline" w
 getline;
 endsnippet

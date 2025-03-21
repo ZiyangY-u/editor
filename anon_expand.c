@@ -196,6 +196,16 @@ void awk_sql_insert(char* word) {
     for (int i = 1 ; i <= n ; i++) printf(", \\$%d", i);
 }
 
+void awk_grep_print(char* word) {
+    int len = 0;
+    if (strlen(word) > 2) // has length suffix
+        len = atoi(word+2);
+    printf("printf \"%%s:%%d:%%s\\n\", FILENAME, FNR, ");
+    if (len == 0)
+        printf("\\$0");
+    else printf("substr(\\$0, 1, %d)", len);
+}
+
 
 void awk_expand(char *word) {
     if (strlen(word) == 0)
@@ -212,10 +222,17 @@ void awk_expand(char *word) {
         awk_sub(word);
     else if (strlen(word) >= 2 && w0 == 'i' && isdigit(w1)) // insert clause for embed sqlite
         awk_sql_insert(word);
-    else if (is_all_digit(word)) {
+    else if (is_all_digit(word)) // 123 -> $1, $2, $3
+    {
         printf("\\$%d", todigit(w0));
         while (*(++word) != '\0') printf(", \\$%d", todigit(*word));
-    }
+    } else if (matchn(word, "gp", 2)) 
+        awk_grep_print(word);
+    else if (isdigit(w0) && w1 == 'l') // 2l -> $2 ~ //
+        printf("\\$%d ~ /$0/", todigit(w0));
+    else if (isdigit(w0) && match(word+1, "nl")) // 2nl -> $2 ~! //
+        printf("\\$%d !~ /$0/", todigit(w0));
+    
 }
 
 /* argv[1]: word, argv[2]: filetype */
