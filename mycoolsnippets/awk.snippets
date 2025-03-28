@@ -1,6 +1,12 @@
 snippet i "$i" w
 \$i
 endsnippet
+snippet p "printf" w
+printf "$0"
+endsnippet
+snippet q "escape quote" w
+\\"$0\\"
+endsnippet
 
 snippet or "or" w
 ||
@@ -12,6 +18,13 @@ endsnippet
 
 snippet for "for" w
 for (i = 1; i <= NF; i++) {
+    $0
+}
+endsnippet
+snippet forx "forx" w
+start = $1
+end = $2
+for (i = start; i <= end; i++) {
     $0
 }
 endsnippet
@@ -90,7 +103,7 @@ if (\$0 ~ /$0/) print \$0 # leave match
 endsnippet
 
 snippet cmd "external command" w
-"$0" | getline rst
+"$0" | getline ${1:rst}
 endsnippet
 snippet cmdn "multiline output" w
 while (("$0" | getline l) > 0) {

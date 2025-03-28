@@ -2,4 +2,5 @@
 -- .separator "="
 -- .changes on
 -- .header on
+-- .nullvalue 'null'
 
