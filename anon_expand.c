@@ -218,7 +218,7 @@ void awk_expand(char *word) {
         awk_printf(word);
     else if (matchn(word, "sp", 2)) // sprintf
         awk_sprintf(word);
-    else if (matchn("sub", word, 3)) // quick sub
+    else if (matchn("sub", word, 3) && strlen(word) > 3) // quick sub
         awk_sub(word);
     else if (strlen(word) >= 2 && w0 == 'i' && isdigit(w1)) // insert clause for embed sqlite
         awk_sql_insert(word);

@@ -14,6 +14,7 @@ set hidden          " enable to change buffer without save changes
 set shada=<800,:700,'100,@1000,/700,h,n~/nvim/shada
 set updatetime=77
 set mmp=10000
+set undolevels=100
 
 " Indention
 set ai et sta ts=4  " autoindent expandtab smarttab tabstop
