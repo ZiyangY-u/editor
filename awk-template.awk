@@ -79,16 +79,16 @@ function xls_n2c(n) {
 
 # excel: get column number by column name
 function xls_c2n(name) {
-    convert="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    _convert="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     if (length(name) == 1)
-        return index(convert, substr(name, 0, 1))
+        return index(_convert, substr(name, 0, 1))
     else if (length(name) == 2)
-        return 26 + 26 * (index(convert, substr(name, 1, 1))-1) + \
-        index(convert, substr(name, 2, 1))
+        return 26 + 26 * (index(_convert, substr(name, 1, 1))-1) + \
+        index(_convert, substr(name, 2, 1))
     else if (length(name) == 3)
-        return 702 + 702 * (index(convert, substr(name, 1, 1))-1) + \
-        26 * (index(convert, substr(name, 2, 1)) - 1) + \
-        index(convert, substr(name, 3, 1))
+        return 702 + 702 * (index(_convert, substr(name, 1, 1))-1) + \
+        26 * (index(_convert, substr(name, 2, 1)) - 1) + \
+        index(_convert, substr(name, 3, 1))
 }
 
 # minimum split for new field separator
@@ -105,8 +105,9 @@ BEGIN {
     # FS = "[()]" # xml/html
     # FS = "[{}]" # Field Separator
     # FS = "-" # Field Separator
-    # FS = "\t" # Field Separator
+    FS = "\t" # Field Separator
     # FS = "," # Field Separator
+    # FS = "FROM" # Field Separator
 
     # OFS="\t"
     # RS = "\n" # Record Separator
@@ -116,18 +117,5 @@ BEGIN {
 
 # main here
 {
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
