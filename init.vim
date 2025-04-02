@@ -872,7 +872,9 @@ fu! SplitOp(sc, query) " run a split cmd first, then operate
     elseif (op == 'm') " ExMarks
         cal fzf#run({'source': GetAllExmarks(), 'sink': {mk->execute(a:sc.'b '.matchstr(mk, '+\d*\s\d*'))}, 'options':opts,})
     elseif (op ==# 'T') " Terminal
-        exe 'FloatermToggle'
+        echoh MoreMsg | echo '[N]ew [C]urrent' | echoh None
+        let _op = nr2char(getchar())
+        exe (_op ==# 'c') ? 'FloatermNew --cwd='.expand('%:h') : (_op ==# 'n' ? 'FloatermNew' : 'FloatermToggle')
     elseif (op ==# 'f') " temporary file
         let tempname = tempname()
         cal fzf#run({'source': [tempname], 'sink': {tf->execute(a:sc.'MEdit '.tf)}, 'options':opts,})
@@ -972,7 +974,6 @@ nn <a-u> ddp
 nn <expr> <a-i> (line('$') == line('.') \|\| line('.') == 1) ? 'ddP' : 'ddkP'
 "   file operations
 nn ,q @=((expand('%')=='')?':quit!':((&mod==0)?':quit':':echo"Not Saved"'))<CR><CR>
-tmap ,q jk:quit<cr>
 nn ,Q :quita!<CR>
 nn ,w @=(&ft == 'qfedit' ? ':cal ReflectAll()' : ':update')<CR><CR>
 "   surround operations ('s' for surround, 'S' for remove surround)
@@ -1315,6 +1316,9 @@ endf
 au User AsyncRunStop :cal AsyncRunPost()
 " vim-prettier
 let g:prettier#autoformat = 0
+" vim-floaterm
+tmap ,q jk:quit<cr>
+tmap <F3> jk:FloatermNext<cr>
 " }}}
 " => File type Specific -------------------- {{{
 aug filetypes
