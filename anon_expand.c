@@ -50,9 +50,9 @@ void sql_expand(char *word) {
     else if (strlen(word) >= 2 && word[0] == 'l' && is_all_digit(word+1)) // l3 -> LIMIT 3
         printf("LIMIT %d", atoi(word+1));
     else if (matchn("ct", word, 2) && is_all_digit(word+2)) { // create table ...
-        printf("create table $0 (c1 text");
-        int n = atoi(word+2), i = 1;
-        for ( ; i < n ; i++) printf(", c%d text", i+1);
+        printf("create table $0 (au integer ");
+        int n = atoi(word+2);
+        for (int i = 0 ; i < n ; i++) printf(", c%d text", i+1);
         printf(");");
     } else if (match("s", word) || (matchn("s", word, 1) && is_all_digit(word+1))) { // select [top n] * from
         int tn = strlen(word) > 1 ? atoi(word+1) : 0;
@@ -190,9 +190,9 @@ void awk_sub(char* word) {
 
 void awk_sql_insert(char* word) {
     int n = atoi(word + 1);
-    printf("printf \"insert into $0 values ('%%s'");
-    for (int i = 1 ; i < n ; i++) printf(", '%%s'");
-    printf(");\\n\"");
+    printf("printf \"insert into $0 values (%%d");
+    for (int i = 0 ; i < n ; i++) printf(", '%%s'");
+    printf(");\\n\", NR");
     for (int i = 1 ; i <= n ; i++) printf(", \\$%d", i);
 }
 
