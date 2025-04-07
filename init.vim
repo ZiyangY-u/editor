@@ -379,7 +379,7 @@ au CursorHold * if &ft!='xxd' | cal PairHint() | en
 set wmnu wim=list:longest,full fic wic
 " set nrformats+=octal " let CTRL-A/CTRL-X support octal number
 "   auto check time
-au WinEnter,CursorHold,FocusGained * if expand('%')!="[Command Line]"|checktime
+au WinEnter,CursorHold,FocusGained * if expand('%')!=""|checktime
 
 "   add dictionaries here. tip: add outside candidates through dictionary file
 set dict+=/usr/share/dict/en
