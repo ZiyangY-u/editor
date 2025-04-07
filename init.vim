@@ -1,5 +1,6 @@
 " clear all autocommands first
 autocmd!
+colorscheme vim
 " => Environment -------------------- {{{
 set enc=utf-8
 set fencs=ucs-bom,utf-8,sjis,latin-1,defalut
