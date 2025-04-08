@@ -284,11 +284,11 @@ def query_word(word:str, src:str, order_mode:int) -> list:
     #     like_pat += ' COLLATE NOCASE  '
     and_pat = ' AND ' + ' AND '.join('inc_' + c + '=1' for c in chars)
     order_clause = ' ORDER BY RECENT_CHOSEN_TIME DESC, CHOSEN, OCCUR_CNT DESC'
-    if mode == RECENT_RECRUIT_ORDER:
+    if order_mode == RECENT_RECRUIT_ORDER:
         order_clause = ' ORDER BY IMPORT_DATE DESC, LENGTH(WORD), OCCUR_CNT ASC'
-    if mode == WORD_LEN_ORDER:
+    if order_mode == WORD_LEN_ORDER:
         order_clause = ' ORDER BY LENGTH(WORD) ASC, CHOSEN DESC, RECENT_CHOSEN_TIME, OCCUR_CNT DESC'
-    if mode == MOST_CHOSEN_ORDER:
+    if order_mode == MOST_CHOSEN_ORDER:
         order_clause = ' ORDER BY CHOSEN DESC, LENGTH(WORD) ASC, RECENT_CHOSEN_TIME, OCCUR_CNT DESC'
     # chosen history
     sql = 'SELECT DISTINCT WORD, 0, CHOSEN FROM WORDS WHERE LENGTH(WORD) < 100 AND WORD LIKE ' + like_pat + and_pat + order_clause
