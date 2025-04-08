@@ -226,13 +226,16 @@ void awk_expand(char *word) {
     {
         printf("\\$%d", todigit(w0));
         while (*(++word) != '\0') printf(", \\$%d", todigit(*word));
-    } else if (matchn(word, "gp", 2)) 
+    }
+    else if (matchn(word, "gp", 2))
         awk_grep_print(word);
     else if (isdigit(w0) && w1 == 'l') // 2l -> $2 ~ //
         printf("\\$%d ~ /$0/", todigit(w0));
     else if (isdigit(w0) && match(word+1, "nl")) // 2nl -> $2 ~! //
         printf("\\$%d !~ /$0/", todigit(w0));
-    
+    else if (w0 == 't' && isdigit(w1) && strlen(word) == 2) // t3 -> trim($3)
+        printf("trim(\\$%d)", todigit(w1));
+
 }
 
 /* argv[1]: word, argv[2]: filetype */
