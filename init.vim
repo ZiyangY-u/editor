@@ -330,6 +330,16 @@ fu! Diffthese()
     cal win_gotoid(curr)
 endf
 com! -nargs=0 Dfthese :cal Diffthese()
+" FreezeLeft
+fu! FreezeLeft()
+    exe 'only | vertical split '.expand('%:p')
+    cal Diffthese()
+    exe "norm \<c-w>l"
+    setlocal nonu nornu scl=no fdc=0
+    exe "norm \<c-w>h"
+    setlocal scrollopt=ver,jump
+endf
+com! -nargs=0 FreezeLeft :cal FreezeLeft()
 
 " Pair Hint
 hi PairHint cterm=bold ctermfg=red ctermbg=black
