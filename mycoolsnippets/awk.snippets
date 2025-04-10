@@ -7,6 +7,9 @@ endsnippet
 snippet q "escape quote" w
 \\"$0\\"
 endsnippet
+snippet b "boarder" w
+\\\\<$0\\\\>
+endsnippet
 
 snippet or "or" w
 ||
@@ -103,7 +106,9 @@ if (\$0 ~ /$0/) print \$0 # leave match
 endsnippet
 
 snippet cmd "external command" w
-"$0" | getline ${1:rst}
+cmd = ("$0")
+cmd | getline ${1:rst}
+close(cmd)
 endsnippet
 snippet cmdn "multiline output" w
 while (("$0" | getline l) > 0) {
