@@ -130,19 +130,10 @@ BEGIN {
 # main here
 {
 
-    for (i = 1; i <= NF; i++) {
-        if (i != 1) { printf "," }
-        if (is_number($i)) {
-            # n = $i / 2
-            n = $i
-            cmd = ("/mnt/c/Users/ziyan/desktop/sas/git/env/SAS_INTE_PJ-367-format.py -5 " n)
-            cmd | getline out[i];
-            printf "\"%s\"", out[i]
-            close(cmd)
-        }
-        else printf "%s", $i
-    }
-    printf "\n"
+    if (NR == 1)
+        printf "%d * %d", NR, NR
+    else
+        printf " + %d * %d", NR, NR
 
 
 

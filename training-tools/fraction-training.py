@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 
+# 资料分析除乘互换
+
 import numpy as np
 import time
 
-mean = 10
+mean = 7
 std_dev = 10
 
 random_numbers = np.random.normal(loc=mean, scale=std_dev, size=1)
