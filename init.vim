@@ -1358,7 +1358,7 @@ aug END
 " => Functions -------------------- {{{
 com! -nargs=0 CTailBlank :%s/\s\+$//
 com! -nargs=0 CHeadBlank :%s/^\s\+//
-com! -nargs=0 CEmptyLine :g/^$/d
+com! -nargs=0 CEmptyLine :exe printf("%%!awk '\\!/^%s$/ {print}'", (&ff == 'dos' ? "\\r" : ""))
 com! -nargs=0 Ztool :e ~/desktop/tool.ztool
 com! -nargs=0 Zawk :e ~/desktop/my-awk.awk
 
