@@ -161,3 +161,11 @@ endsnippet
 snippet lr "left right" w
 left, right
 endsnippet
+
+snippet iterl "iterate line" w
+split($0, chars, "")
+for (i=1; i <= length($0); i++) {
+    printf("%s", chars[i])
+}
+printf "\n"
+endsnippet

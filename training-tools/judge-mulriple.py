@@ -12,3 +12,27 @@
 # 一个数能被7整除，当且仅当其末三位数，与剩下的数之差为7的倍数 (n > 999)
 
 # 一个数是11的倍数，当且仅当其奇数位之和与偶数位之和的差为11的倍数
+
+import random
+import time
+
+flag = random.randint(0, 1)
+if flag == 0:
+    random_num = random.randint(2, 99999)
+else:
+    random_num = random.randint(2, 999)
+
+print(random_num)
+t1 = time.time()
+
+factors = input().split()
+t2 = time.time()
+for f in factors:
+    print(f'{random_num} % {f} = {random_num % int(f)}')
+
+print('---------- all factors ----------')
+for i in range(2, random_num):
+    if random_num % i == 0:
+        print(f'{random_num} % {i} = {random_num % i}')
+
+print('{t:.2f} sec used'.format(t = (t2 - t1)))
