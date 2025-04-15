@@ -105,6 +105,15 @@ function msplit(content, fs, num) {
     }
 }
 
+# decimal to binary string
+function d2b(num) {
+    _hex = sprintf("%x", num)
+    cmd = sprintf("echo \"obase=2;%d\" | bc", num)
+    cmd | getline _bin
+    close(cmd)
+    return _bin
+}
+
 BEGIN {
     IGNORECASE = 1
 
@@ -112,7 +121,7 @@ BEGIN {
     # FS = "[{}]" # Field Separator
     # FS = "-" # Field Separator
     # FS = "\t" # Field Separator
-    FS = "," # Field Separator
+    # FS = "," # Field Separator
     # FS = "=" # Field Separator
     # FS = "Request-START" # Field Separator
 
@@ -129,11 +138,6 @@ BEGIN {
 
 # main here
 {
-
-    if (NR == 1)
-        printf "%d * %d", NR, NR
-    else
-        printf " + %d * %d", NR, NR
 
 
 

@@ -9,6 +9,7 @@
 #define w2 word[2]
 #define w3 word[3]
 #define w4 word[4]
+#define w5 word[5]
 
 #define match(l, r) (strcmp(l, r) == 0)
 #define matchn(l, r, n) (strncmp(l, r, n) == 0)
@@ -206,6 +207,19 @@ void awk_grep_print(char* word) {
     else printf("substr(\\$0, 1, %d)", len);
 }
 
+void awk_tmp_table(int n) {
+    printf("if (NR != 1) printf \"union\"<cr>");
+    printf("printf \" select ");
+    for (int i = 1 ; i <= n ; i++) {
+        if (i != 1) printf(", ");
+        printf("%%s as 'col%d'", i);
+    }
+    printf("\\n\"");
+    for (int i = 1 ; i <= n ; i++)
+        printf(", \\$%d", i);
+
+}
+
 
 void awk_expand(char *word) {
     if (strlen(word) == 0)
@@ -235,7 +249,8 @@ void awk_expand(char *word) {
         printf("\\$%d !~ /$0/", todigit(w0));
     else if (w0 == 't' && isdigit(w1) && strlen(word) == 2) // t3 -> trim($3)
         printf("trim(\\$%d)", todigit(w1));
-
+    else if (matchn(word, "tmpt", 4) && is_all_digit(word+4)) // template table
+        awk_tmp_table(atoi(word+4));
 }
 
 /* argv[1]: word, argv[2]: filetype */
