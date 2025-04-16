@@ -932,6 +932,9 @@ fu! Shortf(fname)
     retu fnamemodify(a:fname, ':p:t')
 endf
 fu! Longf(fpath)
+    if fnamemodify($MYVIMRC, ':p:h') ==# fnamemodify(a:fpath, ':p:h')
+        retu ' '.fnamemodify(a:fpath, ':t')
+    endif
     retu RelPath(a:fpath, getcwd())
 endf
 let g:asyncrun_red = {'':"", 'running':"  ", 'failure':"  "}
