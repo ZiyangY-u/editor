@@ -106,8 +106,8 @@ if (\$0 ~ /$0/) print \$0 # leave match
 endsnippet
 
 snippet cmd "external command" w
-cmd = ("$0")
-cmd | getline ${1:rst}
+cmd = sprintf("$0", )
+cmd | getline rst
 close(cmd)
 endsnippet
 snippet cmdn "multiline output" w

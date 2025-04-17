@@ -44,6 +44,7 @@ hi ModColor cterm=bold ctermfg=white ctermbg=68
 hi sleepWindow ctermbg=DarkGray
 hi texPage ctermbg=128
 hi awkShadow ctermbg=235 ctermfg=252
+hi awkFS ctermfg=196 ctermbg=DarkCyan
 
 let g:asyncCnt = 0
 fu! ActStl(isActive)
@@ -58,6 +59,10 @@ fu! ActStl(isActive)
     let stl.="%{(mode()=='n'||mode()=='c')?'  '.g:jumpModeNames[g:jumpMode].' ':''}%{(mode()=='t')?'  TERM ':''}"
     if g:awk_shadow | let stl.='%#awkShadow# 󰆏 ' | en
     let stl.="%<%#c1# %w%{filereadable(expand('%p')) ? Longf(expand('%:p')) : expand('%:p')}"
+    if &ft ==# 'awk'
+        let fs = trim(system(printf("rg '^\\s*\\bFS' %s | tail -n 1 | awk '{$1=$1};1'", expand('%:p'))))
+        let stl.=(" %#awkFS#" . fs)
+    endif
 
     let stl.="%=" " left/right separator
     " virtual column number and byte index number
@@ -932,7 +937,7 @@ fu! Shortf(fname)
     retu fnamemodify(a:fname, ':p:t')
 endf
 fu! Longf(fpath)
-    if fnamemodify($MYVIMRC, ':p:h') ==# fnamemodify(a:fpath, ':p:h')
+    if match(a:fpath, fnamemodify($MYVIMRC, ':p:h').'/.*') == 0
         retu ' '.fnamemodify(a:fpath, ':t')
     endif
     retu RelPath(a:fpath, getcwd())
