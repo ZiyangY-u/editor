@@ -44,7 +44,7 @@ hi ModColor cterm=bold ctermfg=white ctermbg=68
 hi sleepWindow ctermbg=DarkGray
 hi texPage ctermbg=128
 hi awkShadow ctermbg=235 ctermfg=252
-hi awkFS ctermfg=196 ctermbg=DarkCyan
+hi awkFS cterm=bold ctermfg=196 ctermbg=DarkCyan
 
 let g:asyncCnt = 0
 fu! ActStl(isActive)
