@@ -22,6 +22,15 @@ bool is_all_digit(char* word) {
     return true;
 }
 
+bool is_all_upper(char* word) {
+    while (*word != '\0') {
+        if (*word < 'A' || *word > 'Z')
+            return false;
+        word++;
+    }
+    return true;
+}
+
 void vim_expand(char *word) {
     if (match("fu", word))
         printf("fu! %s()<cr>endf", word+2);
@@ -251,6 +260,9 @@ void awk_expand(char *word) {
         printf("trim(\\$%d)", todigit(w1));
     else if (matchn(word, "tmpt", 4) && is_all_digit(word+4)) // template table
         awk_tmp_table(atoi(word+4));
+
+    else if (is_all_upper(word)) // excel c2n, this should be last
+        printf("xls_c2n(\"%s\")", word);
 }
 
 /* argv[1]: word, argv[2]: filetype */
