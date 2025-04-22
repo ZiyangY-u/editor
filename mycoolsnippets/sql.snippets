@@ -36,7 +36,7 @@ snippet o "OR" w
 OR $0
 endsnippet
 
-snippet like "LIKE" w
+snippet l "LIKE" w
 LIKE '%$0%'
 endsnippet
 snippet in "in" w
@@ -199,7 +199,7 @@ snippet smu "select M_USER" w
 SELECT * FROM M_USER WHERE USER_ID IN ($0)
 endsnippet
 snippet apitoken "楽々api token" w
-UPDATE [DBO].[MUR_CODE_ITEM] SET NAME = '${1}' WHERE DIVISION = 70035 AND SEQ = 3
+UPDATE [DBO].[MUR_CODE_ITEM] SET NAME = '`!v getreg('+')`' WHERE DIVISION = 70035 AND SEQ = 3
 endsnippet
 snippet us3 "S3テーブル" w
  -- update MUR_S3_FILEPATH set parent_folder = 'c:\\webserver' where file_kbn_id = 48

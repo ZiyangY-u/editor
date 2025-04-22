@@ -1338,6 +1338,8 @@ let g:prettier#autoformat = 0
 " vim-floaterm
 tmap ,q jk:quit<cr>
 tmap <F3> jk:FloatermNext<cr>
+" text-object
+call textobj#user#plugin('calling', { 'calling': { 'pattern': '\<\w*[\./@]\w*\>', 'select': ['v'], },})
 " }}}
 " => File type Specific -------------------- {{{
 aug filetypes
