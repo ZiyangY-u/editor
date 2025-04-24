@@ -1523,12 +1523,16 @@ nn <silent> ,,<tab> :set opfunc=CaseConvertOp<cr>g@
 vn <silent> ,,<tab> c<C-R>=OmniTranslit('CaseConvert', [], '<C-R>-')<CR><ESC>
 
 " -------------------- Web Search ----------------------
-fu! WebSearch(content, url, escapeMap)
+fu! WebSearch(content, url, escapeMap, postOnlyFlg)
     let resultTarget = ''
     for ch in split(a:content, '\zs')
         let resultTarget .= get(a:escapeMap, ch, ch)
     endfor
-    exe 'sil !msedge.exe '. a:url . resultTarget . ' &' | redraw!
+    if a:postOnlyFlg == 0
+        exe 'sil !msedge.exe '. a:url . resultTarget . ' &' | redraw!
+    else
+        echo 'open only by PostWebSearch'
+    endif
     let g:LastWebSearchURL = substitute(a:url . resultTarget, ' ', '%20', 'g')
     do User PostWebSearch
 endf
@@ -1536,12 +1540,12 @@ endf
 let g:WikiTag = ''
 fu! Wiki(word, ...)
     let esMap = {'ā':'a','ē':'e','ī':'i','ū':'u','ō':'o','ᾱ':'α','ῡ':'υ','ῑ':'ι','ȳ':'y'}
-    cal WebSearch(get(a:, 1, a:word) . g:WikiTag, 'https://en.wiktionary.org/wiki/', esMap)
+    cal WebSearch(get(a:, 1, a:word) . g:WikiTag, 'https://en.wiktionary.org/wiki/', esMap, 0)
 endf
 fu! Google(content, ...)
     let esMap = {' ':'\ '}
     let q = len(a:000) == 0 ? a:content : join(a:000, ' ')
-    cal WebSearch(q, 'https://www.google.com/search\?q=', esMap)
+    cal WebSearch(q, 'https://www.google.com/search\?q=', esMap, 0)
 endf
 
 for site in ['Wiki', 'Google'] "  if no arg is given, then search current word
