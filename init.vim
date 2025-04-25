@@ -1169,6 +1169,20 @@ cal plug#end()
 " commentary
 au VimEnter * if exists('*commentary')|unmap gcc|en
 nn gc :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr><Plug>Commentary
+nn gC :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr>:set opfunc=ReverseCommentOp<cr>g@
+vn gC :cal ReverseCommentOp(visualmode())<cr>
+fu! ReverseCommentOp(type) " comment uncommented line and uncomment commented line
+    let [smark, emark] = ["[", "]"]
+    if a:type ==# 'V' || a:type ==# 'v'
+        let [smark, emark] = ["<", ">"]
+    endif
+    let [startLn, endLn] = [nvim_buf_get_mark(0, smark)[0], nvim_buf_get_mark(0, emark)[0]]
+    cal execute(':'.startLn) " move to start line
+    while startLn <= endLn
+        exec 'norm ' . (startLn == endLn ? 'gcl' : 'gclj')
+        let startLn += 1 " comment each line
+    endwhile
+endfu
 " emmet
 let g:user_emmet_install_global = 0
 let g:user_emmet_leader_key = '<c-y>'
