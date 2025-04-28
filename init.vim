@@ -1430,6 +1430,7 @@ fu! QuickRun()
     elseif &ft == 'c' | :silent !cc %
     elseif expand('%:p') == trim(system('realpath '.g:db_script)) | cal RunDb()
     en
+    do User UserQuickRun
 endf
 nn <silent> <f5> :cal QuickRun()<cr>
 fu! ClearNoName() abort

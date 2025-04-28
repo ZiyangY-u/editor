@@ -221,7 +221,7 @@ void awk_tmp_table(int n) {
     printf("printf \" select ");
     for (int i = 1 ; i <= n ; i++) {
         if (i != 1) printf(", ");
-        printf("%%s as 'col%d'", i);
+        printf("'%%s' as 'col%d'", i);
     }
     printf("\\n\"");
     for (int i = 1 ; i <= n ; i++)
