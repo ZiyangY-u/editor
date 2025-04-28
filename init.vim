@@ -1500,7 +1500,11 @@ fu! SurroundOp(type)
     if a:type ==# 'v'
         exe printf("norm! `>a%s\<esc>`<i%s", end, start)
     elseif a:type ==# 'char' || a:type ==# 'line'
-        exe printf("norm! `[v`]\"sc%s%s\<esc>\"sP", start, end)
+        if start == "\<CR>" " surrounded by carriage return
+            exe printf("norm! `[v`]\"sc%s%s\<esc>k\"sP", start, end)
+        else
+            exe printf("norm! `[v`]\"sc%s%s\<esc>\"sP", start, end)
+        en
     en
     exe 'norm! `<'
 endf
