@@ -49,34 +49,47 @@ for k in bigs:
 
 def include_test():
     test_big = random.choice(bigs) # 质量特性
-    print(f'质量特性`{test_big}`包含子特性：')
+    print(f'质量特性`{test_big}`|包含|子特性：')
     small = random.choice(list(model[test_big]))
     osmalls = []
     for k in (k for k in bigs if k != test_big):
         osmalls.extend(model[k])
-    items = random.sample(osmalls, 3) # 选项
+    try:
+        items = random.sample(osmalls, 3) # 选项
+    except ValueError:
+        items = random.sample(osmalls, 2) # 选项
     items.append(small)
-    rst = random.shuffle(items)
-    for i in items:
-        print(i)
+    random.shuffle(items)
+    for idx, item in enumerate(items, start=1):
+        print(idx, item)
     _ = input()
     print('\n' + small)
+    for item in (item for item in items if item != small):
+        print(item + '->' + find_big_by_small(item))
 
 def not_include_test():
     test_big = random.choice(bigs) # 质量特性
-    print(f'质量特性`{test_big}`不包含子特性：')
-    smalls = random.sample(list(model[test_big]), 3)
+    print(f'质量特性`{test_big}`|不包含|子特性：')
+    try:
+        smalls = random.sample(list(model[test_big]), 3)
+    except ValueError:
+        smalls = random.sample(list(model[test_big]), 2)
     osmalls = []
     for k in (k for k in bigs if k != test_big):
         osmalls.extend(model[k])
     item = random.choice(osmalls) # 选项
     smalls.append(item)
-    rst = random.shuffle(smalls)
-    for i in smalls:
-        print(i)
+    random.shuffle(smalls)
+    for i, small in enumerate(smalls, start=1):
+        print(i, small)
     _ = input()
-    print('\n' + item)
+    print('\n' + item + '->' + find_big_by_small(item))
 
+def find_big_by_small(small):
+    for k in bigs:
+        if small in model[k]:
+            return k
+    return ''
 
 type = random.randint(0, 1)
 
