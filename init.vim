@@ -145,6 +145,14 @@ fu! SignMarks()
 endf
 com! -nargs=* DMarks :sil exe len(<q-args>)==0?'delm a-z':':delm '.expand(<f-args>)|cal SignMarks()
 au WinEnter,BufReadPost <buffer> cal SignMarks()
+hi Conceal ctermbg=none ctermfg=46
+fu! HideText(pattern, border)
+    let pat = a:border ? '/\<'.a:pattern.'\>/' : '/'.a:pattern.'/'
+    exe printf('syntax match pat_%s %s conceal cchar= %s', sha256(a:pattern), pat, (&ft==''?'':' containedin=ALL'))
+    setl conceallevel=1
+endf
+com! -bang -range -nargs=0 HideText :cal HideText(Selected(), <bang>0)
+com! -range -nargs=0 DHideText :exe printf('syntax clear pat_%s', sha256(Selected()))
 
 " Colorful (ExtMark, AttachColor)
 let g:extmk = nvim_create_namespace('MyExtMarks')
