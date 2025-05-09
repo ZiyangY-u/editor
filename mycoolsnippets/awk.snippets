@@ -116,6 +116,12 @@ while (("$0" | getline l) > 0) {
 }
 close("") # close cmd
 endsnippet
+snippet tln "total line number" w
+# get total line number of argument file
+cmd = sprintf("wc -l < %s", ARGV[1])
+cmd | getline total_line
+close(cmd)
+endsnippet
 
 snippet cp "Cartesian Product" w
 # Cartesian Product

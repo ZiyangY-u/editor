@@ -114,30 +114,40 @@ function d2b(num) {
     return _bin
 }
 
+function rep(s, n) {
+    _r = ""
+    while (n-- > 0) _r = _r s;
+    return _r;
+}
+
+function progress_bar(_total_line, bar_len, extra_info) {
+    if (NR % 1000 == 0) {
+        done = int((NR / _total_line) * bar_len)
+        undone = bar_len - 1 - done
+        printf "Progress: %.3f% [%s>%s] %s \r", (NR * 100 / _total_line), rep("=", done), rep(" ", undone), extra_info
+    }
+}
+
 BEGIN {
-    IGNORECASE = 1
+    # IGNORECASE = 1
 
     # FS = "[()]" # xml/html
-    # FS = "[{}]" # Field Separator
-    # FS = "-" # Field Separator
-    # FS = "\t" # Field Separator
-    # FS = "," # Field Separator
-    # FS = "=" # Field Separator
-    # FS = "Request-START" # Field Separator
+    # FS = "[\\[\\]]"
+    # FS = "-"
+    # FS = "\t"
+    # FS = ","
+    # FS = ":"
+    # FS = "\\/\\/"
 
-    OFS=","
+    OFS="\t"
     # RS = "\n" # Record Separator
 
     "date +%Y%m%d" | getline current_date
-
-    start = 114
-    offset = xls_c2n("AH") - xls_c2n("B")
-    p_flag = 0
-
 }
 
 # main here
 {
+    
 
 
 
