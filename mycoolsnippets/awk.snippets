@@ -175,3 +175,28 @@ for (i=1; i <= length($0); i++) {
 }
 printf "\n"
 endsnippet
+
+snippet retrieve_log "" w
+# $1 columne indicate thread number
+if ($1 ~ /?/) { # thread key for ignoring irrelevant lines
+    if (\$0 ~ /Securing GET/ || \$0 ~ /Securing POST/) { # thread start hint
+        idx[$1] = 1
+        content[$1][idx[$1]] = ""
+    }
+    # construct log content
+    tmp = "\n" trim(\$0)
+    content[$1][idx[$1]] = tmp
+    idx[$1] = idx[$1] + 1
+    # end construct log content
+    if (\$0 ~ /After request/) { # thread end hint
+        log_content = ""
+        for (i = 1; i <= idx[$1]; i++) {
+            log_content = log_content content[$1][i]
+        }
+        if (log_content ~ /?/) { print log_content  > "$2" } # redirect result to file
+        # delete thread key
+        delete idx[$1]
+        delete content[$1]
+    }
+}
+endsnippet
