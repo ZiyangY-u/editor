@@ -190,13 +190,35 @@ if ($1 ~ /?/) { # thread key for ignoring irrelevant lines
     # end construct log content
     if (\$0 ~ /After request/) { # thread end hint
         log_content = ""
+        hit_flag = 0
         for (i = 1; i <= idx[$1]; i++) {
+            if (content[$1][i] ~ /?/) hit_flag = 1
             log_content = log_content content[$1][i]
         }
-        if (log_content ~ /?/) { print log_content  > "$2" } # redirect result to file
+        if (hit_flag == 1) {
+            # print head and tail only
+            print content[$1][1] > "some_tmp_file.log"
+            print content[$1][idx[$1]-1] > "some_tmp_file.log"
+            # print whole log
+            # print log_content  > "some_tmp_file.log"
+        } # redirect result to file
         # delete thread key
         delete idx[$1]
         delete content[$1]
     }
 }
+endsnippet
+snippet log_sum "log summary" w
+# $1 columne indicate thread key
+printf "%s %s ", \$1, \$2 # date and time
+if (\$0 ~ /Securing/) threads[$1] = $1
+for (k in threads) printf "▌"
+for (k in threads) {
+    if ($1 == k && \$0 ~ /Securing/) printf " *S-%s", threads[k]
+    else if ($1 == k && \$0 ~ /After request/) printf " *E-%s", threads[k]
+    else printf " *R-%s", threads[k]
+}
+if (\$0 ~ /After request/) delete threads[$1]
+printf "\n"
+
 endsnippet
