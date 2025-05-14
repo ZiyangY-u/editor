@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // 1st param: file path
 // 2nd param: offset
@@ -23,8 +24,11 @@ int main(int argc, char *argv[])
 
     while ((read = getline(&line, &len, fp)) != -1) {
         /* printf("%s", line); */
-        if (start <= ln && ln <= end)
-            printf("%4lu |%s", ln , line);
+        if (start <= ln && ln <= end) {
+            size_t llen = strcspn(line, "\r\n"); // Find the index of \r or \n
+            line[llen] = '\0';                   // Replace it with null terminator
+            printf("%4lu |%s\n", ln , line);
+        }
         if (ln > end)
             exit(0);
         ln++;
