@@ -128,6 +128,15 @@ function progress_bar(_total_line, bar_len, extra_info) {
     }
 }
 
+# compare time xx:xx:xx.xxx
+function calc_elapse(t1, t2) {
+    split(t1, _t1_arr, ":")
+    _t1 = _t1_arr[1] * 3600 + _t1_arr[2] * 60 + _t1_arr[3]
+    split(t2, _t2_arr, ":")
+    _t2 = _t2_arr[1] * 3600 + _t2_arr[2] * 60 + _t2_arr[3]
+    return _t2 - _t1
+}
+
 BEGIN {
     # IGNORECASE = 1
 
@@ -147,7 +156,6 @@ BEGIN {
 
 # main here
 {
-    
 
 
 

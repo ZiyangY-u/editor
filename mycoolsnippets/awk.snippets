@@ -201,6 +201,7 @@ if ($1 ~ /?/) { # thread key for ignoring irrelevant lines
             print content[$1][idx[$1]-1] > "some_tmp_file.log"
             # print whole log
             # print log_content  > "some_tmp_file.log"
+            print "elapsed: " calc_elapse(msplit(content[$1][1], " ", 2), msplit(content[$1][idx[$1]-1], " ", 2)) > "some_tmp_file.log"
         } # redirect result to file
         # delete thread key
         delete idx[$1]
