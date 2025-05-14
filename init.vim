@@ -644,13 +644,23 @@ fu! DyExpandDown()
     let b:dy_endln = end
     cal ExpandAndRecoverWinPos(cmd)
 endf
-fu! DyNext()
-    let b:dy_cursor = (b:dy_cursor == len(b:dy_search_rst) - 1 ? len(b:dy_search_rst) - 1 : b:dy_cursor+1)
-    return b:dy_cursor
+fu! DyNext() " return next line number
+    let current_ln = split(getline('.'), '|')[0]+0
+    for b:dy_cursor in range(0, len(b:dy_search_rst)-1)
+        if b:dy_search_rst[b:dy_cursor] > current_ln
+            let current_ln = b:dy_search_rst[b:dy_cursor] | break
+        endif
+    endfor
+    return current_ln
 endf
-fu! DyPrev()
-    let b:dy_cursor = (b:dy_cursor == 0 ? 0 : b:dy_cursor-1)
-    return b:dy_cursor
+fu! DyPrev() " return previouse line number
+    let current_ln = split(getline('.'), '|')[0]+0
+    for b:dy_cursor in reverse(range(0, len(b:dy_search_rst)-1))
+        if b:dy_search_rst[b:dy_cursor] < current_ln
+            let current_ln = b:dy_search_rst[b:dy_cursor] | break
+        endif
+    endfor
+    return current_ln
 endf
 fu! DySearch(target)
     if exists('b:dy_target') | exe printf('syntax clear pat_%s', sha256(b:dy_target)) | endif
@@ -661,8 +671,8 @@ fu! DySearch(target)
     let ln = str2nr(raw[:match(raw, '|')-1])
     while b:dy_cursor < len(b:dy_search_rst) && ln > b:dy_search_rst[b:dy_cursor] | let b:dy_cursor+=1 | endwhile
     cal DyRelocate(b:dy_search_rst[b:dy_cursor])
-    nn <silent><buffer> n :cal DyRelocate(b:dy_search_rst[DyNext()])<cr>
-    nn <silent><buffer> N :cal DyRelocate(b:dy_search_rst[DyPrev()])<cr>
+    nn <silent><buffer> n :cal DyRelocate(DyNext())<cr>
+    nn <silent><buffer> N :cal DyRelocate(DyPrev())<cr>
 endf
 com! -nargs=1 DySearch :cal DySearch(<f-args>)
 fu! ExpandAndRecoverWinPos(cmd)
