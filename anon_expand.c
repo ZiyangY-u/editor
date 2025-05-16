@@ -52,6 +52,8 @@ void xml_expand(char *word) {
 void c_expand(char* word) {
     if (match("cu", word))
         printf("const uint32_t ");
+    else if (w0 == 'a' && isdigit(w1))
+        printf("argv[%c]", w1);
 }
 
 void sql_expand(char *word) {

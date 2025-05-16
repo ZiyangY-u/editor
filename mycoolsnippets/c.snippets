@@ -92,3 +92,12 @@ endsnippet
 snippet scmp "strcmp" w
 strcmp($0) == 0
 endsnippet
+
+snippet inits "init struct" w
+memset(&$1, 0, sizeof $1); // init struct variable $1
+endsnippet
+
+snippet main "main" w
+int main(int argc, char* argv[]) {
+}
+endsnippet
