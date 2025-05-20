@@ -420,7 +420,7 @@ let g:completeKinds = {1:' Text',2:' Method',3:'󰊕 Function',4:' Cons
 fu! LspItemsToCompleteItems(fromLsp)
     let rst = []
     for item in sort(a:fromLsp.result.items, {i1, i2 -> len(i1.label) - len(i2.label)})[:10]
-        cal add(rst, {'word':trim(item.label), 'menu':g:completeKinds[item.kind]})
+        cal add(rst, {'word' : substitute(trim(item.label), '^•', '', ''), 'menu' : g:completeKinds[item.kind]})
     endfor
     retu rst
 endf
