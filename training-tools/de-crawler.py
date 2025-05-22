@@ -8,6 +8,7 @@ import json
 import time
 import os
 import shutil
+import random
 from pyquery import PyQuery as pq
 from hashlib import sha256
 
@@ -17,7 +18,7 @@ PROXY = 'http://127.0.0.1:58591'
 HOME_URL = 'https://www.welt.de'
 
 THREADS = 20
-KEY_NOUN = 'ohne'
+KEY_NOUN = 'kopf'
 KEY_VERB = 'verkaufen'
 KEY_FIX = 'an'
 
@@ -27,7 +28,7 @@ SEP_VERB_MODE = 3
 
 MATCH_MODE = 1
 
-TARGET_CNT = 7
+TARGET_CNT = 5
 
 to_search = {}
 hit_cnt = 0
@@ -151,7 +152,7 @@ def parse_article(content, url):
         fname = './articles/article-' + sha256(url.encode('utf8')).hexdigest() + '.txt'
         with open(fname, 'w+') as f:
             f.write(url + '\n\n')
-            f.write('帮我逐段翻译一下这篇德语文章，然后再生成一篇摘要' + '\n')
+            f.write(f'帮我为这篇德语文章生成一篇摘要，并翻译第{"，".join(str(p) for p in hit_paragraph_nos)}段' + '\n')
             for i, p in enumerate(paragraph_contents, start=1):
                 f.write(f'***p{i}:\n' if i in hit_paragraph_nos else f'p{i}:\n')
                 f.write(p + '\n')
@@ -228,7 +229,7 @@ def start_crawl():
                 to_search[deal_url(url)] = 0
 
     while hit_cnt < TARGET_CNT:
-        urls = [k for k, v in to_search.items() if v == 0][:THREADS]
+        urls = random.sample([k for k, v in to_search.items() if v == 0], THREADS)
         results = asyncio.run(launch(get_content, urls))
         for rst in results:
             parse_article(rst.content, str(rst.url))
