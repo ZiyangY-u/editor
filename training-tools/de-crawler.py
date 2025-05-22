@@ -142,11 +142,11 @@ def parse_article(content, url):
         if hit(paragraph):
             hit_paragraph_nos.add(i)
             print(f'hit in paragraph {i}:--------------------')
-            print(p.text())
-            hit_cnt += 1
+            # print(p.text())
             hit_flag = True
 
     if hit_flag:
+        hit_cnt += 1
         print('hit in:', url, end='\n\n')
         fname = './articles/article-' + sha256(url.encode('utf8')).hexdigest() + '.txt'
         with open(fname, 'w+') as f:
