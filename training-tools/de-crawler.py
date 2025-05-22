@@ -18,7 +18,7 @@ PROXY = 'http://127.0.0.1:58591'
 HOME_URL = 'https://www.welt.de'
 
 THREADS = 20
-KEY_NOUN = 'salat'
+KEY_NOUN = 'verbissen'
 KEY_VERB = 'verkaufen'
 KEY_FIX = 'an'
 
@@ -28,7 +28,7 @@ SEP_VERB_MODE = 3
 
 MATCH_MODE = 1
 
-TARGET_CNT = 5
+TARGET_CNT = 6
 
 to_search = {}
 hit_cnt = 0
@@ -142,7 +142,7 @@ def parse_article(content, url):
         paragraph_contents.append(paragraph)
         if hit(paragraph):
             hit_paragraph_nos.add(i)
-            print(f'hit in paragraph {i}:--------------------')
+            print(f'hit in paragraph {i}:' + (' ' * 30))
             # print(p.text())
             hit_flag = True
 
@@ -152,7 +152,8 @@ def parse_article(content, url):
         fname = './articles/article-' + sha256(url.encode('utf8')).hexdigest() + '.txt'
         with open(fname, 'w+') as f:
             f.write(url + '\n\n')
-            f.write(f'帮我为这篇德语文章生成一篇中文摘要，并翻译第{"，".join(str(p) for p in hit_paragraph_nos)}段' + '\n')
+            hit_para = "，".join(str(p) for p in hit_paragraph_nos)
+            f.write(f'帮我为这篇德语文章生成一篇中文摘要，并翻译第{hit_para}段，然后打印原文{hit_para}段' + '\n')
             for i, p in enumerate(paragraph_contents, start=1):
                 f.write(f'***p{i}:\n' if i in hit_paragraph_nos else f'p{i}:\n')
                 f.write(p + '\n')
