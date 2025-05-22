@@ -16,13 +16,14 @@ HOME_URL = 'https://www.welt.de'
 
 THREADS = 20
 KEY_NOUN = 'kühl'
-KEY_VERB = 'gewinnen'
+KEY_VERB = 'verkaufen'
 KEY_FIX = 'an'
 
-NOUN_MODE = 1
-VERB_MODE = 2
+NOUN_MODE     = 1
+VERB_MODE     = 2
 SEP_VERB_MODE = 3
-MATCH_MODE = NOUN_MODE
+
+MATCH_MODE = 2
 
 TARGET_CNT = 7
 
@@ -186,6 +187,10 @@ def print_search_mode():
     if MATCH_MODE == SEP_VERB_MODE:
         print('search in separate verb mode')
     
+def urls_info(flg):
+    # flg = 1 searched
+    # flg = 0 remain
+    return len(([k for k, v in to_search.items() if v == flg]))
 
 def start_crawl():
     print_search_mode()
@@ -212,9 +217,9 @@ def start_crawl():
         for url in urls: # mark as searched
             to_search[url] = 1
         tm2 = time.perf_counter()
-        print(len([k for k, v in to_search.items() if v == 1]), f'article searched {tm2-tm1:0.2f} sec\r', end='')
+        print(f'{urls_info(1)} article searched, {urls_info(0)} remain {tm2-tm1:0.2f} sec\r', end='')
 
-    print(len([k for k, v in to_search.items() if v == 1]), 'article searched', end='\n')
+    print(f'{urls_info(1)} article searched', end='\n')
     tm2 = time.perf_counter()
     print(f'{tm2-tm1:0.2f} sec used')
 
