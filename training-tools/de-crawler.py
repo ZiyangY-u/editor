@@ -6,6 +6,8 @@ import httpx
 import re
 import json
 import time
+import os
+import shutil
 from pyquery import PyQuery as pq
 from hashlib import sha256
 
@@ -15,7 +17,7 @@ PROXY = 'http://127.0.0.1:58591'
 HOME_URL = 'https://www.welt.de'
 
 THREADS = 20
-KEY_NOUN = 'kühl'
+KEY_NOUN = 'ohne'
 KEY_VERB = 'verkaufen'
 KEY_FIX = 'an'
 
@@ -23,7 +25,7 @@ NOUN_MODE     = 1
 VERB_MODE     = 2
 SEP_VERB_MODE = 3
 
-MATCH_MODE = 2
+MATCH_MODE = 1
 
 TARGET_CNT = 7
 
@@ -181,18 +183,34 @@ def deal_url(url):
 
 def print_search_mode():
     if MATCH_MODE == NOUN_MODE:
-        print('search in noun mode')
+        print(f'search in noun mode, target: {KEY_NOUN}')
     if MATCH_MODE == VERB_MODE:
-        print('search in verb mode')
+        print(f'search in verb mode, target: {KEY_VERB}')
     if MATCH_MODE == SEP_VERB_MODE:
-        print('search in separate verb mode')
+        print(f'search in separate verb mode target: {KEY_FIX}{KEY_VERB}')
     
 def urls_info(flg):
     # flg = 1 searched
     # flg = 0 remain
     return len(([k for k, v in to_search.items() if v == flg]))
 
+def delete_tmp_articles():
+    folder_path = './articles'
+    for filename in os.listdir(folder_path):
+        if not filename.startswith('article-'):
+            continue
+        file_path = os.path.join(folder_path, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)  # 删除文件或符号链接
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)  # 删除子文件夹（可选）
+        except Exception as e:
+            print(f"删除 {file_path} 失败: {e}")
+
+
 def start_crawl():
+    delete_tmp_articles()
     print_search_mode()
 
     tm1 = time.perf_counter()
