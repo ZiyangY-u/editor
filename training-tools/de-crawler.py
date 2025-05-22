@@ -18,7 +18,7 @@ PROXY = 'http://127.0.0.1:58591'
 HOME_URL = 'https://www.welt.de'
 
 THREADS = 20
-KEY_NOUN = 'kopf'
+KEY_NOUN = 'salat'
 KEY_VERB = 'verkaufen'
 KEY_FIX = 'an'
 
@@ -152,7 +152,7 @@ def parse_article(content, url):
         fname = './articles/article-' + sha256(url.encode('utf8')).hexdigest() + '.txt'
         with open(fname, 'w+') as f:
             f.write(url + '\n\n')
-            f.write(f'帮我为这篇德语文章生成一篇摘要，并翻译第{"，".join(str(p) for p in hit_paragraph_nos)}段' + '\n')
+            f.write(f'帮我为这篇德语文章生成一篇中文摘要，并翻译第{"，".join(str(p) for p in hit_paragraph_nos)}段' + '\n')
             for i, p in enumerate(paragraph_contents, start=1):
                 f.write(f'***p{i}:\n' if i in hit_paragraph_nos else f'p{i}:\n')
                 f.write(p + '\n')
