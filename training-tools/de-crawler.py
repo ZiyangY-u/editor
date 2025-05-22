@@ -15,16 +15,16 @@ PROXY = 'http://127.0.0.1:58591'
 HOME_URL = 'https://www.welt.de'
 
 THREADS = 20
-KEY_NOUN = 'beamte'
-KEY_VERB = 'ziehen'
+KEY_NOUN = 'kühl'
+KEY_VERB = 'gewinnen'
 KEY_FIX = 'an'
 
 NOUN_MODE = 1
 VERB_MODE = 2
 SEP_VERB_MODE = 3
-MATCH_MODE = SEP_VERB_MODE
+MATCH_MODE = NOUN_MODE
 
-TARGET_CNT = 5
+TARGET_CNT = 7
 
 to_search = {}
 hit_cnt = 0
@@ -148,7 +148,7 @@ def parse_article(content, url):
         fname = './articles/article-' + sha256(url.encode('utf8')).hexdigest() + '.txt'
         with open(fname, 'w+') as f:
             f.write(url + '\n\n')
-            f.write('帮我逐段翻译一下这篇德语文章' + '\n')
+            f.write('帮我逐段翻译一下这篇德语文章，然后再生成一篇摘要' + '\n')
             for i, p in enumerate(paragraph_contents, start=1):
                 f.write(f'***p{i}:\n' if i in hit_paragraph_nos else f'p{i}:\n')
                 f.write(p + '\n')
