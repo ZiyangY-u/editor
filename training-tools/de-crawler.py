@@ -18,21 +18,15 @@ PROXY = 'http://127.0.0.1:58591'
 HOME_URL = 'https://www.welt.de'
 
 THREADS = 20
-KEY_NOUN = 'verbissen'
-KEY_VERB = 'verkaufen'
-KEY_FIX = 'an'
 
 NOUN_MODE     = 1
 VERB_MODE     = 2
 SEP_VERB_MODE = 3
 
-MATCH_MODE = 1
 
-TARGET_CNT = 6
+TARGET_CNT = 5
 
 to_search = {}
-hit_cnt = 0
-conjuncated = {}
 
 def get_conjuncated(verb):
     resp = requests.get('https://api.verbix.com/conjugator/iv1/6153a464-b4f0-11ed-9ece-ee3761609078/1/13/113/' + verb, proxies=PROXIES)
@@ -82,6 +76,26 @@ def get_conjuncated(verb):
     targets.discard('würdet')
     targets.discard('würden')
     targets.discard('-')
+
+    targets.discard('bin')
+    targets.discard('bist')
+    targets.discard('ist')
+    targets.discard('sei')
+    targets.discard('seid')
+    targets.discard('seien')
+    targets.discard('seiest')
+    targets.discard('seiet')
+    targets.discard('sein')
+    targets.discard('sind')
+    targets.discard('war')
+    targets.discard('waren')
+    targets.discard('warst')
+    targets.discard('wart')
+    targets.discard('wäre')
+    targets.discard('wären')
+    targets.discard('wärest')
+    targets.discard('wäret')
+
     print('verb targets:')
     for t in targets:
         print(t, end=' ')
@@ -89,74 +103,98 @@ def get_conjuncated(verb):
 
     return targets
 
-def hit_noun(paragraph) -> bool:
-    if re.search(KEY_NOUN.lower(), paragraph.lower()):
-        return True
-    return False
+class Target:
+    def __init__(self, word:str, fix:str, lb:bool, rb:bool, cs:bool, mode):
+        self.key_noun_verb = word # noun or verb
+        self.key_fix = fix
+        self.lborder = lb # left border
+        self.rborder = rb # right border
+        self.case_sensitive = cs
+        self.match_mode = mode
+        self.hit_cnt = 0
+        if mode in (VERB_MODE, SEP_VERB_MODE):
+            self.conjuncated = get_conjuncated(self.key_noun_verb)
 
-def hit_verb(paragraph) -> bool:
-    for kw in conjuncated:
-        pattern = r"\b" + kw.lower() + r"\b"
-        if re.search(pattern, paragraph.lower()):
-            return True
-    return False
+    def hit(self, paragraph):
+        if self.match_mode == NOUN_MODE:
+            pattern = self.key_noun_verb.lower() if not self.case_sensitive else self.key_noun_verb
+            if self.lborder:
+                pattern = r"\b" + pattern
+            if self.rborder:
+                pattern = pattern + r"\b"
+            if re.search(pattern, (paragraph.lower() if not self.case_sensitive else paragraph)):
+                return True
+            return False
+        if self.match_mode == VERB_MODE:
+            for kw in self.conjuncated:
+                pattern = r"\b" + kw.lower() + r"\b[^\.]*\b" + self.key_fix + r"\b"
+                if re.search(pattern, paragraph.lower()):
+                    return True
+            for kw in self.conjuncated:
+                pattern = r"\b" + self.key_fix + kw.lower() + r"\b"
+                if re.search(pattern, paragraph.lower()):
+                    return True
+            return False
+        if self.match_mode == SEP_VERB_MODE:
+            for kw in self.conjuncated:
+                pattern = r"\b" + kw.lower() + r"\b[^\.]*\b" + self.key_fix + r"\b"
+                if re.search(pattern, paragraph.lower()):
+                    return True
+            for kw in self.conjuncated:
+                pattern = r"\b" + self.key_fix + kw.lower() + r"\b"
+                if re.search(pattern, paragraph.lower()):
+                    return True
+            return False
 
-def hit_sep_verb(paragraph) -> bool:
-    for kw in conjuncated:
-        pattern = r"\b" + kw.lower() + r"\b[^\.]*\b" + KEY_FIX + r"\b"
-        if re.search(pattern, paragraph.lower()):
-            return True
-    for kw in conjuncated:
-        pattern = r"\b" + KEY_FIX + kw.lower() + r"\b"
-        if re.search(pattern, paragraph.lower()):
-            return True
-    return False
+    def generate_propt(self, hit_para):
+        kw = self.key_noun_verb
+        if self.match_mode == VERB_MODE:
+            kw = self.key_noun_verb
+        if self.match_mode == SEP_VERB_MODE:
+            kw = self.key_fix + self.key_noun_verb
+        prompt = f'帮我为这篇德语文章生成一篇中文摘要，并翻译第{hit_para}段，然后打印原文{hit_para}段，'
+        prompt += f'用加粗斜体标记出用到了‘{kw}’的地方\n'
+        return prompt
 
-def hit(paragraph):
-    if MATCH_MODE == NOUN_MODE and hit_noun(paragraph):
-        return True
-    if MATCH_MODE == VERB_MODE and hit_verb(paragraph):
-        return True
-    if MATCH_MODE == SEP_VERB_MODE and hit_sep_verb(paragraph):
-        return True
-    return False
-
+targets = [
+        # Target(word='enden', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
+        Target(word='gehören', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+        Target(word='holen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
+        Target(word='Lebensmittel', fix='', lb=False, rb=False, cs=True, mode=NOUN_MODE),
+        Target(word='Vorsicht', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+        ]
 
 def parse_article(content, url):
     global hit_cnt
-    hit_flag = False
     if 'video' in url or '/plus' in url: return 
-    
-    try:
-        doc = pq(content)
-    except:
-        print(content)
-        print(url)
-        return
+
+    doc = pq(content)
     page = doc('.c-article-page__container')
     paragraphs = page('p')
-    paragraph_contents = []
-    hit_paragraph_nos = set()
-    for i, p in enumerate(paragraphs.items(), start=1):
-        paragraph = p.text()
-        paragraph_contents.append(paragraph)
-        if hit(paragraph):
-            hit_paragraph_nos.add(i)
-            print(f'hit in paragraph {i}:' + (' ' * 30))
-            # print(p.text())
-            hit_flag = True
+    for target in targets:
+        hit_flag = False
+        if target.hit_cnt >= TARGET_CNT:
+            continue
+        paragraph_contents = []
+        hit_paragraph_nos = set()
+        for i, p in enumerate(paragraphs.items(), start=1):
+            paragraph = p.text()
+            paragraph_contents.append(paragraph)
+            if target.hit(paragraph):
+                hit_flag = True
+                hit_paragraph_nos.add(i)
 
-    if hit_flag:
-        hit_cnt += 1
-        print('hit in:', url, end='\n\n')
-        fname = './articles/article-' + sha256(url.encode('utf8')).hexdigest() + '.txt'
-        with open(fname, 'w+') as f:
-            f.write(url + '\n\n')
-            hit_para = "，".join(str(p) for p in hit_paragraph_nos)
-            f.write(f'帮我为这篇德语文章生成一篇中文摘要，并翻译第{hit_para}段，然后打印原文{hit_para}段' + '\n')
-            for i, p in enumerate(paragraph_contents, start=1):
-                f.write(f'***p{i}:\n' if i in hit_paragraph_nos else f'p{i}:\n')
-                f.write(p + '\n')
+        if hit_flag:
+            target.hit_cnt += 1
+            # print(f'{hit_cnt} hit in:{url}', end='\n')
+            fname = f'./articles/article-{target.key_fix + target.key_noun_verb}-' + sha256(url.encode('utf8')).hexdigest() + '.txt'
+            with open(fname, 'w+') as f:
+                # f.write(url + '\n\n')
+                hit_para = "，".join(str(p) for p in hit_paragraph_nos)
+                f.write(target.generate_propt(hit_para))
+                for i, p in enumerate(paragraph_contents, start=1):
+                    f.write(f'p{i}:\n')
+                    f.write(p + '\n')
 
     # recruit other links
     anchors = doc('a')
@@ -183,13 +221,6 @@ def deal_url(url):
         pass
     return search_url
 
-def print_search_mode():
-    if MATCH_MODE == NOUN_MODE:
-        print(f'search in noun mode, target: {KEY_NOUN}')
-    if MATCH_MODE == VERB_MODE:
-        print(f'search in verb mode, target: {KEY_VERB}')
-    if MATCH_MODE == SEP_VERB_MODE:
-        print(f'search in separate verb mode target: {KEY_FIX}{KEY_VERB}')
     
 def urls_info(flg):
     # flg = 1 searched
@@ -210,10 +241,21 @@ def delete_tmp_articles():
         except Exception as e:
             print(f"删除 {file_path} 失败: {e}")
 
+def progress_bar():
+    s = ''
+    for t in targets:
+        rest_cnt = TARGET_CNT - t.hit_cnt
+        s += ('○' * t.hit_cnt + '-' * rest_cnt)
+    return f"[{s}]"
+
+def is_all_done():
+    for t in targets:
+        if t.hit_cnt < TARGET_CNT:
+            return False
+    return True
 
 def start_crawl():
     delete_tmp_articles()
-    print_search_mode()
 
     tm1 = time.perf_counter()
     response = requests.get(HOME_URL, proxies=PROXIES)
@@ -229,7 +271,7 @@ def start_crawl():
             if url not in to_search:
                 to_search[deal_url(url)] = 0
 
-    while hit_cnt < TARGET_CNT:
+    while not is_all_done():
         urls = random.sample([k for k, v in to_search.items() if v == 0], THREADS)
         results = asyncio.run(launch(get_content, urls))
         for rst in results:
@@ -237,13 +279,11 @@ def start_crawl():
         for url in urls: # mark as searched
             to_search[url] = 1
         tm2 = time.perf_counter()
-        print(f'{urls_info(1)} article searched, {urls_info(0)} remain {tm2-tm1:0.2f} sec\r', end='')
+        print(f'{progress_bar()} {urls_info(1)} searched, {urls_info(0)} remain {tm2-tm1:0.2f} sec\r', end='')
 
-    print(f'{urls_info(1)} article searched', end='\n')
+    print(f'\n{urls_info(1)} article searched', end='\n')
     tm2 = time.perf_counter()
     print(f'{tm2-tm1:0.2f} sec used')
 
 if __name__ == '__main__':
-    if MATCH_MODE in (VERB_MODE, SEP_VERB_MODE):
-        conjuncated = get_conjuncated(KEY_VERB)
     start_crawl()
