@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3.8
 
 import requests
 import asyncio
@@ -96,10 +96,10 @@ def get_conjuncated(verb):
     targets.discard('wärest')
     targets.discard('wäret')
 
-    print('verb targets:')
-    for t in targets:
-        print(t, end=' ')
-    print()
+    # print('verb targets:')
+    # for t in targets:
+    #     print(t, end=' ')
+    # print()
 
     return targets
 
@@ -146,25 +146,26 @@ class Target:
                     return True
             return False
 
-    def generate_propt(self, hit_para):
+    def generate_propt(self, hit_paras:list):
         kw = self.key_noun_verb
+        idx = 1
         if self.match_mode == VERB_MODE:
             kw = self.key_noun_verb
         if self.match_mode == SEP_VERB_MODE:
             kw = self.key_fix + self.key_noun_verb
-        prompt = f'帮我为这篇德语文章生成一篇中文摘要，并翻译第{hit_para}段，然后打印原文{hit_para}段，'
-        prompt += f'用加粗斜体标记出用到了‘{kw}’的地方\n'
+        prompt = f'对于下面这篇德语文章\n'
+        prompt += f'{idx}.为这篇德语文章生成一篇中文摘要\n'
+        idx += 1
+        for hp in hit_paras:
+            prompt += f'{idx}.翻译第{hp}段，并用粗体标出用到‘{kw}’的句子\n'
+            idx += 1
+            prompt += f'{idx}.打印原文第{hp}段，并用加粗斜体标记出用到了‘{kw}’的句子\n'
+            idx += 1
+
         return prompt
 
-targets = [
-        # Target(word='enden', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
-        Target(word='gehören', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-        Target(word='holen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
-        Target(word='Lebensmittel', fix='', lb=False, rb=False, cs=True, mode=NOUN_MODE),
-        Target(word='Vorsicht', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-        ]
 
-def parse_article(content, url):
+def parse_article(content, url, targets):
     global hit_cnt
     if 'video' in url or '/plus' in url: return 
 
@@ -188,10 +189,9 @@ def parse_article(content, url):
             target.hit_cnt += 1
             # print(f'{hit_cnt} hit in:{url}', end='\n')
             fname = f'./articles/article-{target.key_fix + target.key_noun_verb}-' + sha256(url.encode('utf8')).hexdigest() + '.txt'
-            with open(fname, 'w+') as f:
+            with open(fname, 'w+', encoding='utf8') as f:
                 # f.write(url + '\n\n')
-                hit_para = "，".join(str(p) for p in hit_paragraph_nos)
-                f.write(target.generate_propt(hit_para))
+                f.write(target.generate_propt([str(p) for p in sorted(hit_paragraph_nos)]))
                 for i, p in enumerate(paragraph_contents, start=1):
                     f.write(f'p{i}:\n')
                     f.write(p + '\n')
@@ -204,6 +204,7 @@ def parse_article(content, url):
             to_search[deal_url(ref)] = 0
 
 async def get_content(url):
+    # print('requesting:', url)
     async with httpx.AsyncClient(timeout=TIMEOUT, proxy=PROXY, follow_redirects=True) as client:
         return await client.get(url=url)
 
@@ -241,20 +242,22 @@ def delete_tmp_articles():
         except Exception as e:
             print(f"删除 {file_path} 失败: {e}")
 
-def progress_bar():
+def progress_bar(targets):
     s = ''
-    for t in targets:
+    for i, t in enumerate(targets, start=1):
         rest_cnt = TARGET_CNT - t.hit_cnt
+        if i != 1:
+            s += '|'
         s += ('○' * t.hit_cnt + '-' * rest_cnt)
     return f"[{s}]"
 
-def is_all_done():
+def is_all_done(targets):
     for t in targets:
         if t.hit_cnt < TARGET_CNT:
             return False
     return True
 
-def start_crawl():
+def start_crawl(targets):
     delete_tmp_articles()
 
     tm1 = time.perf_counter()
@@ -271,19 +274,31 @@ def start_crawl():
             if url not in to_search:
                 to_search[deal_url(url)] = 0
 
-    while not is_all_done():
-        urls = random.sample([k for k, v in to_search.items() if v == 0], THREADS)
+    while not is_all_done(targets):
+        urls = random.sample([k for k, v in to_search.items() if v == 0], THREADS if urls_info(0) > THREADS else 5)
         results = asyncio.run(launch(get_content, urls))
         for rst in results:
-            parse_article(rst.content, str(rst.url))
+            parse_article(rst.content, str(rst.url), targets)
         for url in urls: # mark as searched
             to_search[url] = 1
         tm2 = time.perf_counter()
-        print(f'{progress_bar()} {urls_info(1)} searched, {urls_info(0)} remain {tm2-tm1:0.2f} sec\r', end='')
+        print(f'{progress_bar(targets)} {urls_info(1)} searched, {urls_info(0)} remain {tm2-tm1:0.2f} sec\r', end='')
 
     print(f'\n{urls_info(1)} article searched', end='\n')
     tm2 = time.perf_counter()
     print(f'{tm2-tm1:0.2f} sec used')
 
 if __name__ == '__main__':
-    start_crawl()
+    targets = [
+            Target(word='Bahn', fix='', lb=False, rb=False, cs=True, mode=NOUN_MODE),
+            Target(word='falsch', fix='', lb=False, rb=False, cs=True, mode=NOUN_MODE),
+            Target(word='Fisch', fix='', lb=False, rb=False, cs=True, mode=NOUN_MODE),
+            Target(word='Formular', fix='', lb=False, rb=False, cs=True, mode=NOUN_MODE),
+            Target(word='Gewicht', fix='', lb=False, rb=False, cs=True, mode=NOUN_MODE),
+            Target(word='Reis', fix='', lb=False, rb=False, cs=True, mode=NOUN_MODE),
+            Target(word='Uhr', fix='', lb=False, rb=False, cs=True, mode=NOUN_MODE),
+            Target(word='verdienen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            ]
+
+    if len(targets) != 0:
+        start_crawl(targets)
