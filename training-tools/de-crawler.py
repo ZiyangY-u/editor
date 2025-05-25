@@ -1,6 +1,8 @@
 #!/usr/bin/python3.8
 
 import requests
+from datetime import datetime
+import zipfile
 import asyncio
 import httpx
 import re
@@ -28,6 +30,7 @@ SEP_VERB_MODE = 3
 TARGET_CNT = 7
 
 to_search = {}
+folder_path = './articles'
 
 def get_conjuncated(verb):
     # resp = requests.get('https://api.verbix.com/conjugator/iv1/6153a464-b4f0-11ed-9ece-ee3761609078/1/13/113/' + verb, proxies=PROXIES)
@@ -113,7 +116,6 @@ class Target:
         self.rborder = rb # right border
         self.case_sensitive = cs
         self.match_mode = mode
-        self.hit_cnt = 0
         self.hit_urls = {}
         self.target_cnt = target_cnt
         if mode in (VERB_MODE, SEP_VERB_MODE):
@@ -180,7 +182,7 @@ def parse_article(content, url, targets):
     for target in targets:
         paragraphs = page('p')
         hit_flag = False
-        if target.hit_cnt >= target.target_cnt or url in target.hit_urls:
+        if len(target.hit_urls) >= target.target_cnt or url in target.hit_urls:
             continue
         paragraph_contents = []
         hit_paragraph_nos = set()
@@ -193,9 +195,7 @@ def parse_article(content, url, targets):
 
         if hit_flag and url not in target.hit_urls:
             print(f'hit {target.key_noun_verb} in {url} -> {sha256(url.encode("utf8")).hexdigest()}')
-            target.hit_cnt += 1
             target.hit_urls[url] = 1
-            # print(f'{target.hit_cnt} hit in:{url}', end='\n')
             fname = f'./articles/article-{target.key_fix + target.key_noun_verb}-' + sha256(url.encode('utf8')).hexdigest() + '.txt'
             with open(fname, 'w+', encoding='utf8') as f:
                 # f.write(url + '\n\n')
@@ -240,7 +240,7 @@ def urls_info(flg):
     return len(([k for k, v in to_search.items() if v == flg]))
 
 def delete_tmp_articles():
-    folder_path = './articles'
+    global folder_path
     for filename in os.listdir(folder_path):
         if not filename.startswith('article-'):
             continue
@@ -253,18 +253,28 @@ def delete_tmp_articles():
         except Exception as e:
             print(f"删除 {file_path} 失败: {e}")
 
+def zip_up_rst():
+    global folder_path
+    formatted_time = datetime.now().strftime("%Y%m%d-%H%M%S")
+    with zipfile.ZipFile(folder_path + f'/archive{formatted_time}.zip', 'w') as zipf:
+        for filename in os.listdir(folder_path):
+            if not filename.startswith('article-'):
+                continue
+            file_path = os.path.join(folder_path, filename)
+            zipf.write(file_path)
+
 def progress_bar(targets):
     s = ''
     for i, t in enumerate(targets, start=1):
-        rest_cnt = t.target_cnt - t.hit_cnt
+        rest_cnt = t.target_cnt - len(t.hit_urls)
         if i != 1:
             s += '|'
-        s += ('○' * t.hit_cnt + '-' * rest_cnt)
+        s += ('○' * len(t.hit_urls) + '-' * rest_cnt)
     return f"[{s}]"
 
 def is_all_done(targets):
     for t in targets:
-        if t.hit_cnt < t.target_cnt:
+        if len(t.hit_urls) < t.target_cnt:
             return False
     return True
 
@@ -313,19 +323,17 @@ def start_crawl(targets):
 
 if __name__ == '__main__':
     targets = [
-            Target(word='Formular', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Reis', fix='', lb=True, rb=True, cs=True, mode=NOUN_MODE),
-            Target(word='Anrede', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Banane', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Bett', fix='', lb=False, rb=True, cs=False, mode=NOUN_MODE),
-            # Target(word='Gemüse', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='lernen', fix='kennen', lb=False, rb=False, cs=False, mode=SEP_VERB_MODE),
-            # Target(word='Küche', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='legen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
-            # Target(word='lesen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
-            # Target(word='Verwandte', fix='', lb=False, rb=False, cs=True, mode=NOUN_MODE),
-            # Target(word='Zug', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='holen', fix='ab', lb=False, rb=False, cs=False, mode=SEP_VERB_MODE),
+            Target(word='bitter', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Eingang', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Meer', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Termin', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='übernachten', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
+            Target(word='wissen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
+            Target(word='wollen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
             ]
 
     if len(targets) != 0:
         start_crawl(targets)
+    zip_up_rst()
+
