@@ -266,10 +266,11 @@ def zip_up_rst():
 def progress_bar(targets):
     s = ''
     for i, t in enumerate(targets, start=1):
-        rest_cnt = t.target_cnt - len(t.hit_urls)
+        # rest_cnt = t.target_cnt - len(t.hit_urls)
         if i != 1:
             s += '|'
-        s += ('○' * len(t.hit_urls) + '-' * rest_cnt)
+        # s += ('○' * len(t.hit_urls) + '-' * rest_cnt)
+        s += ('○' if len(t.hit_urls) == t.target_cnt else str(len(t.hit_urls)))
     return f"[{s}]"
 
 def is_all_done(targets):
