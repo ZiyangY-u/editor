@@ -20,17 +20,21 @@ PROXY = 'http://127.0.0.1:58591'
 HOME_URL = 'https://www.welt.de'
 
 THREADS = 10
-MAX_THREADS = 70
+MAX_THREADS = 80
 
 NOUN_MODE     = 1
 VERB_MODE     = 2
 SEP_VERB_MODE = 3
+PHRASE_MODE   = 4
+OTHER_MODE    = 9
 
 
 TARGET_CNT = 7
 
 to_search = {}
 folder_path = './articles'
+received_bytes = 0
+tm1 = time.perf_counter()
 
 def get_conjuncated(verb):
     # resp = requests.get('https://api.verbix.com/conjugator/iv1/6153a464-b4f0-11ed-9ece-ee3761609078/1/13/113/' + verb, proxies=PROXIES)
@@ -43,10 +47,10 @@ def get_conjuncated(verb):
     irregular = doc('span.irregular')
     targets = {verb}
     for c in conjuncated.items():
-        for w in c.text().split(' '):
+        for w in str(c.text()).split(' '):
             targets.add(w.strip())
     for i in irregular.items():
-        for w in i.text().split(' '):
+        for w in str(i.text()).split(' '):
             targets.add(w.strip())
     targets.discard('habe')
     targets.discard('hast')
@@ -120,6 +124,9 @@ class Target:
         self.target_cnt = target_cnt
         if mode in (VERB_MODE, SEP_VERB_MODE):
             self.conjuncated = get_conjuncated(self.key_noun_verb)
+            if len(self.conjuncated) == 0:
+                print(f'can not conjuncate:{self.key_noun_verb}')
+                exit(1)
 
     def hit(self, paragraph):
         if self.match_mode == NOUN_MODE:
@@ -133,7 +140,7 @@ class Target:
             return False
         if self.match_mode == VERB_MODE:
             for kw in self.conjuncated:
-                pattern = r"\b" + kw.lower() + r"\b[^\.]*\b" + self.key_fix + r"\b"
+                pattern = r"\b" + kw.lower() + r"\b[^\.:,]*\b" + self.key_fix + r"\b"
                 if re.search(pattern, paragraph.lower()):
                     return True
             for kw in self.conjuncated:
@@ -143,7 +150,7 @@ class Target:
             return False
         if self.match_mode == SEP_VERB_MODE:
             for kw in self.conjuncated:
-                pattern = r"\b" + kw.lower() + r"\b[^\.]*\b" + self.key_fix + r"\b"
+                pattern = r"\b" + kw.lower() + r"\b[^\.:,]*\b" + self.key_fix + r"\b"
                 if re.search(pattern, paragraph.lower()):
                     return True
             for kw in self.conjuncated:
@@ -151,14 +158,25 @@ class Target:
                 if re.search(pattern, paragraph.lower()):
                     return True
             return False
+        if self.match_mode == PHRASE_MODE:
+            pattern = r"\b" + self.key_fix + r"\b[^\.]*\b" + self.key_noun_verb + r"\b"
+            if re.search(pattern, paragraph.lower()):
+                return True
+            return False
 
-    def generate_propt(self, hit_paras:list):
+    def get_kw(self):
         kw = self.key_noun_verb
-        idx = 1
         if self.match_mode == VERB_MODE:
             kw = self.key_noun_verb
         if self.match_mode == SEP_VERB_MODE:
             kw = self.key_fix + self.key_noun_verb
+        if self.match_mode == PHRASE_MODE:
+            kw = self.key_fix + '...' + self.key_noun_verb
+        return kw
+
+    def generate_propt(self, hit_paras:list):
+        kw = self.get_kw()
+        idx = 1
         prompt = f'对于下面这篇德语文章\n'
         prompt += f'{idx}.为这篇德语文章生成一篇简短的中文摘要\n'
         idx += 1
@@ -175,7 +193,6 @@ def parse_article(content, url, targets):
     global to_search
     if 'video' in url or '/plus' in url: return 
     if deal_url(url) in to_search and to_search[deal_url(url)] == 1: return
-    if url == 'https://www.welt.de/services/article157550705/Datenschutzerklaerung-WELT-DIGITAL.html': return
 
     doc = pq(content)
     page = doc('.c-article-page__container')
@@ -194,23 +211,28 @@ def parse_article(content, url, targets):
                 hit_paragraph_nos.add(i)
 
         if hit_flag and url not in target.hit_urls:
-            print(f'hit {target.key_noun_verb} in {url} -> {sha256(url.encode("utf8")).hexdigest()}')
+            print(f'hit {target.get_kw()} in {url}')
             target.hit_urls[url] = 1
-            fname = f'./articles/article-{target.key_fix + target.key_noun_verb}-' + sha256(url.encode('utf8')).hexdigest() + '.txt'
+            fname = f'./articles/article-{target.get_kw()}-' + sha256(url.encode('utf8')).hexdigest() + '.txt'
             with open(fname, 'w+', encoding='utf8') as f:
                 # f.write(url + '\n\n')
                 f.write(target.generate_propt([str(p) for p in sorted(hit_paragraph_nos)]))
                 for i, p in enumerate(paragraph_contents, start=1):
                     f.write(f'p{i}:\n')
                     f.write(p + '\n')
+            if target.target_cnt == len(target.hit_urls):
+                print(f'{target.get_kw()} complete!')
 
     to_search[deal_url(url)] = 1
     # recruit other links
     anchors = doc('a')
     for a in anchors:
+        if 'href' not in a.attrib:
+            continue
         ref = a.attrib['href']
         if ref[0] == '/' and 'article' in ref and ref not in to_search:
             to_search[deal_url(ref)] = 0
+    progress_bar(targets)
 
 async def get_content(url):
     # print('requesting:', url)
@@ -219,8 +241,13 @@ async def get_content(url):
         return await client.get(url=url)
 
 async def launch(async_fun, params):
+    global received_bytes
+    req_tm1 = time.perf_counter()
     resps = await asyncio.gather(*map(async_fun, params))
-    # contents = [resp.content for resp in resps]
+    req_tm2 = time.perf_counter()
+    byte_len = sum(len(resp.content) for resp in resps)
+    print(f'\nreceived {len(params)} articles ({readable_byte_len(byte_len)}) in {req_tm2-req_tm1:0.2f} sec')
+    received_bytes += byte_len
     return resps
 
 def deal_url(url):
@@ -263,15 +290,26 @@ def zip_up_rst():
             file_path = os.path.join(folder_path, filename)
             zipf.write(file_path)
 
+def readable_byte_len(bl):
+    if bl > 1024 * 1024 * 1024:
+        return f'{float(bl)/(1024 * 1024 * 1024):0.2f} Gb'
+    if bl > 1024 * 1024:
+        return f'{float(bl)/(1024 * 1024):0.2f} Mb'
+    if bl > 1024:
+        return f'{float(bl)/(1024):0.2f} Kb'
+    return f'{float(bl):0.2f} byte'
+
+
 def progress_bar(targets):
+    global tm1
+    tm2 = time.perf_counter()
     s = ''
     for i, t in enumerate(targets, start=1):
-        # rest_cnt = t.target_cnt - len(t.hit_urls)
         if i != 1:
             s += '|'
-        # s += ('○' * len(t.hit_urls) + '-' * rest_cnt)
         s += ('○' if len(t.hit_urls) == t.target_cnt else str(len(t.hit_urls)))
-    return f"[{s}]"
+    bl = readable_byte_len(received_bytes)
+    print(f'[{s}] {urls_info(1)} searched, {urls_info(0)} remain {tm2-tm1:0.2f} sec {bl} received\r', end='')
 
 def is_all_done(targets):
     for t in targets:
@@ -291,7 +329,6 @@ def start_crawl(targets):
     global to_search
     delete_tmp_articles()
 
-    tm1 = time.perf_counter()
     # response = requests.get(HOME_URL, proxies=PROXIES)
     response = requests.get(HOME_URL)
     print(response.status_code)
@@ -315,26 +352,31 @@ def start_crawl(targets):
             to_search[deal_url(str(rst.url))] = 1
         for url in urls: # mark as searched
             to_search[deal_url(url)] = 1
-        tm2 = time.perf_counter()
-        print(f'{progress_bar(targets)} {urls_info(1)} searched, {urls_info(0)} remain {tm2-tm1:0.2f} sec\r', end='')
+        progress_bar(targets)
 
     print(f'\n{urls_info(1)} article searched', end='\n')
     tm2 = time.perf_counter()
     print(f'{tm2-tm1:0.2f} sec used')
+    bl = readable_byte_len(received_bytes)
+    print(f'{bl} data received')
 
 if __name__ == '__main__':
     targets = [
-            Target(word='holen', fix='ab', lb=False, rb=False, cs=False, mode=SEP_VERB_MODE),
-            Target(word='bitter', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Eingang', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Meer', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Termin', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='übernachten', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
-            Target(word='wissen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
-            Target(word='wollen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
+            Target(word='zeigen', fix='an', lb=False, rb=False, cs=False, mode=SEP_VERB_MODE, target_cnt=10),
+            Target(word='anzuzeigen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='angezeigt', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='zeigen', fix='auf', lb=False, rb=False, cs=False, mode=SEP_VERB_MODE, target_cnt=10),
+            # Target(word='zeigen', fix='vor', lb=False, rb=False, cs=False, mode=SEP_VERB_MODE, target_cnt=10),
+            # Target(word='zeigen', fix='her', lb=False, rb=False, cs=False, mode=SEP_VERB_MODE, target_cnt=10),
+            # Target(word='zeigen', fix='herum', lb=False, rb=False, cs=False, mode=SEP_VERB_MODE, target_cnt=10),
+            # Target(word='bezeigen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE, target_cnt=10),
+            # Target(word='erzeigen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE, target_cnt=10),
+            # Target(word='verzeigen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE, target_cnt=10),
+
             ]
 
     if len(targets) != 0:
         start_crawl(targets)
     zip_up_rst()
+    delete_tmp_articles()
 
