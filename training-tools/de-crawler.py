@@ -409,7 +409,11 @@ if __name__ == '__main__':
             ]
 
     if len(targets) != 0:
-        start_crawl(targets)
+        try:
+            start_crawl(targets)
+        except KeyboardInterrupt:
+            print('\nUser interrupt')
+            pass
     zip_up_rst()
     delete_tmp_articles()
 
