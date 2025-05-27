@@ -30,7 +30,7 @@ PHRASE_MODE   = 4
 OTHER_MODE    = 9
 
 
-TARGET_CNT = 5
+TARGET_CNT = 6
 
 to_search = {}
 folder_path = './articles'
@@ -49,7 +49,7 @@ def get_declension(noun):
     dkls = dkls.replace('\n', '')
     rst = set()
     for dkl in (dkl for dkl in dkls.split(' ')):
-        if dkl in ['', 'der', 'des', 'dem', 'den', 'die', 'das']:
+        if dkl in ['', 'der', 'des', 'dem', 'den', 'die', 'das', '-']:
             continue
         if '/' in dkl:
             for d in (d for d in dkl.split('/')):
@@ -406,14 +406,44 @@ def start_crawl(targets):
 
 if __name__ == '__main__':
     targets = [
+            Target(word='Achtung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='kreuzen', fix='an', lb=False, rb=False, cs=False, mode=SEP_VERB_MODE),
+            Target(word='Anmeldung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Ansage', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Appetit', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='beginnen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
+            Target(word='brauchen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
+            Target(word='Briefmarke', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE, target_cnt=3),
+            Target(word='Dame', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='laden', fix='ein', lb=False, rb=False, cs=False, mode=SEP_VERB_MODE),
+            Target(word='Gleis', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Glück', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Halbpension', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE, target_cnt=2),
+            Target(word='Pension', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Hochzeit', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Klasse', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Laden', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Land', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='leider', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='morgen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='scheinen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
+            Target(word='sollen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
+            Target(word='Sonne', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Telefon', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='verstehen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
+            Target(word='Wasser', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='wichtig', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
             ]
 
     if len(targets) != 0:
-        try:
-            start_crawl(targets)
-        except KeyboardInterrupt:
-            print('\nUser interrupt')
-            pass
+        start_crawl(targets)
+
+        # try:
+        #     start_crawl(targets)
+        # except KeyboardInterrupt:
+        #     print('\nUser interrupt')
+        #     pass
+
     zip_up_rst()
     delete_tmp_articles()
 
