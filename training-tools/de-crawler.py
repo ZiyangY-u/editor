@@ -38,6 +38,12 @@ received_bytes = 0
 net_request_time_usage = 0
 tm1 = time.perf_counter()
 
+black_list = {
+        '252e57edaecec83003631c80e44de65baa14f041d2ed7387782a7a404da9c858',
+        'b23a07cac215495cc43af0a77ec764f3f1ef558e15add298deb36843258e38d4',
+        }
+
+
 def get_declension(noun):
     dkls = ''
     resp = requests.get(f'https://www.verbformen.com/declension/nouns/{noun}.htm')
@@ -234,8 +240,12 @@ class Target:
 
 def parse_article(content, url, targets):
     global to_search
-    if 'video' in url or '/plus' in url: return 
+    if 'video' in url or '/plus' in url: return
     if deal_url(url) in to_search and to_search[deal_url(url)] == 1: return
+    sha = sha256(url.encode('utf8')).hexdigest()
+    if sha in black_list:
+        print(f'skip black list {url} -> {sha}')
+        return
 
     doc = pq(content)
     page = doc('.c-article-page__container')
@@ -256,7 +266,7 @@ def parse_article(content, url, targets):
         if hit_flag and url not in target.hit_urls:
             print(f'hit {target.get_kw()} in {url}')
             target.hit_urls[url] = 1
-            fname = f'./articles/article-{target.get_kw()}-' + sha256(url.encode('utf8')).hexdigest() + '.txt'
+            fname = f'./articles/article-{target.get_kw()}-' + sha + '.txt'
             with open(fname, 'w+', encoding='utf8') as f:
                 # f.write(url + '\n\n')
                 f.write(target.generate_prompt([str(p) for p in sorted(hit_paragraph_nos)]))
@@ -289,7 +299,7 @@ async def launch(async_fun, params):
     resps = await asyncio.gather(*map(async_fun, params))
     req_tm2 = time.perf_counter()
     byte_len = sum(len(resp.content) for resp in resps)
-    print(f'\nreceived {len(params)} articles ({readable_byte_len(byte_len)}) in {req_tm2-req_tm1:0.2f} sec')
+    # print(f'\nreceived {len(params)} articles ({readable_byte_len(byte_len)}) in {req_tm2-req_tm1:0.2f} sec')
     net_request_time_usage += (req_tm2-req_tm1)
     received_bytes += byte_len
     return resps
@@ -303,7 +313,6 @@ def deal_url(url):
         pass
     return search_url
 
-    
 def urls_info(flg):
     # flg = 1 searched
     # flg = 0 remain
@@ -406,33 +415,6 @@ def start_crawl(targets):
 
 if __name__ == '__main__':
     targets = [
-            Target(word='Achtung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='kreuzen', fix='an', lb=False, rb=False, cs=False, mode=SEP_VERB_MODE),
-            Target(word='Anmeldung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Ansage', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Appetit', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='beginnen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
-            Target(word='brauchen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
-            Target(word='Briefmarke', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE, target_cnt=3),
-            Target(word='Dame', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='laden', fix='ein', lb=False, rb=False, cs=False, mode=SEP_VERB_MODE),
-            Target(word='Gleis', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Glück', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Halbpension', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE, target_cnt=2),
-            Target(word='Pension', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Hochzeit', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Klasse', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Laden', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Land', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='leider', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='morgen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='scheinen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
-            Target(word='sollen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
-            Target(word='Sonne', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Telefon', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='verstehen', fix='', lb=False, rb=False, cs=False, mode=VERB_MODE),
-            Target(word='Wasser', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='wichtig', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
             ]
 
     if len(targets) != 0:

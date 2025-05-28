@@ -267,6 +267,31 @@ void awk_expand(char *word) {
         printf("xls_c2n(\"%s\")", word);
 }
 
+void python_crawler_target(char* word) {
+    bool bl = false, br = false;
+    if (strlen(word) > 2 && w2 == 'l') bl = true;
+    if (strlen(word) > 2 && w1 == 'r') br = true;
+    if (strlen(word) >= 4 && w2 == 'l' && w3 == 'r') {
+        bl = true;
+        br = true;
+    }
+    printf("Target(word='$0', fix='', lb=%s, rb=%s, cs=False, mode=", (bl ? "True" : "False"), (br ? "True" : "False"));
+    if (w1 == 'n')
+        printf("NOUN_MODE),\n");
+    if (w1 == 's')
+        printf("SEP_VERB_MODE),\n");
+    if (w1 == 'v')
+        printf("VERB_MODE),\n");
+    if (w1 == 'p')
+        printf("PHRASE_MODE),\n");
+
+}
+
+void python_expand(char* word) {
+    if (matchn(word, "tn", 2) || matchn(word, "ts", 2) || matchn(word, "tv", 2) || matchn(word, "tp", 2))
+        python_crawler_target(word);
+}
+
 /* argv[1]: word, argv[2]: filetype */
 int main(int argc, char *argv[])
 {
@@ -290,6 +315,8 @@ int main(int argc, char *argv[])
         git_expand(argv[1]);
     if (match("awk", argv[2]))
         awk_expand(argv[1]);
+    if (match("python", argv[2]))
+        python_expand(argv[1]);
 
     return 0;
 }
