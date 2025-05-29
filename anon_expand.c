@@ -275,7 +275,10 @@ void python_crawler_target(char* word) {
         bl = true;
         br = true;
     }
-    printf("Target(word='$0', fix='', lb=%s, rb=%s, cs=False, mode=", (bl ? "True" : "False"), (br ? "True" : "False"));
+    printf("Target(word='$0', fix='', lb=%s, rb=%s, cs=%s, mode=",
+            (bl ? "True" : "False"),
+            (br ? "True" : "False"),
+            (w1=='v' || w1=='s' ? "True" : "False"));
     if (w1 == 'n')
         printf("NOUN_MODE),\n");
     if (w1 == 's')

@@ -856,7 +856,7 @@ xn JK <esc>
 
 " Searching
 "   see "h /character-classes for more pattern shortcut
-nn <f6> :let @+ = join(getline(1, '$'), "\n") " copy content<CR>
+nn <f6> :let @+ = join(getline(2, '$'), "\n") " copy content<CR>
 set ic scs hls is nows   " ignorecase smartcase hlsearch incsearch nowrapscan
 vn * y/<C-R>"<cr>
 vn # y?<C-R>"<cr>
