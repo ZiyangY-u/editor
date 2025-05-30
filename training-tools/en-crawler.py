@@ -20,7 +20,7 @@ from datetime import datetime
 TIMEOUT = httpx.Timeout(360.0, connect=360.0)
 HOME_URL = 'https://www.bbc.com/'
 THREADS = 5
-TARGET_CNT = 3
+TARGET_CNT = 2
 
 article_ids = {}
 cached_article_ids = set()
@@ -252,7 +252,7 @@ def start_crawl(targets):
 
     while not is_all_done(targets):
         aids1 = random.sample([k for k, v in article_ids.items() if v == 0], THREADS)
-        aids2 = random.sample([k for k in cached_article_ids], THREADS)
+        aids2 = random.sample([k for k in cached_article_ids], THREADS) if len(cached_article_ids) > THREADS else []
         aids = [aid for aid in (aids1 + aids2) if unsearched(aid)]
 
         done_aids = asyncio.run(launch(get_content_and_parse, aids))

@@ -439,7 +439,7 @@ def start_crawl(targets):
 
     while not is_all_done(targets):
         aids1 = random.sample([k for k, v in article_ids.items() if v == 0], THREADS)
-        aids2 = random.sample([k for k in cached_article_ids], THREADS)
+        aids2 = random.sample([k for k in cached_article_ids], THREADS) if len(cached_article_ids) > THREADS else []
         aids = [aid for aid in (aids1 + aids2) if unsearched(aid)]
 
         done_aids = asyncio.run(launch(get_content_and_parse, aids))
