@@ -11,8 +11,10 @@ import os
 import shutil
 import random
 import itertools
+import aiofiles
+from os import access, R_OK
+from os.path import isfile
 from pyquery import PyQuery as pq
-from hashlib import sha256
 from datetime import datetime
 
 TIMEOUT = httpx.Timeout(360.0, connect=360.0)
@@ -20,7 +22,7 @@ PROXIES={ 'http': 'http://127.0.0.1:58591', 'https': 'http://127.0.0.1:58591', }
 PROXY = 'http://127.0.0.1:58591'
 HOME_URL = 'https://www.welt.de'
 
-THREADS = 50
+THREADS = 15
 MAX_THREADS = 100
 
 NOUN_MODE     = 1
@@ -30,12 +32,17 @@ PHRASE_MODE   = 4
 OTHER_MODE    = 9
 
 
-TARGET_CNT = 3
+TARGET_CNT = 5
 
-to_search = {}
+article_ids = {}
+cached_article_ids = set()
+targets = []
+
 folder_path = './articles'
+cache_folder = './cache'
+
 received_bytes = 0
-net_request_time_usage = 0
+cache_hit_cnt = 0
 tm1 = time.perf_counter()
 
 black_list = {
@@ -43,6 +50,11 @@ black_list = {
         'b23a07cac215495cc43af0a77ec764f3f1ef558e15add298deb36843258e38d4',
         }
 
+def gaid(url):
+    rst = re.findall(r"article\d+", url)
+    if len(rst) > 0:
+        return rst[0]
+    return None
 
 def get_declension(noun):
     dkls = ''
@@ -246,11 +258,9 @@ class Target:
         return prompt
 
 
-def parse_article(content, url, targets):
-    global to_search
-    if 'video' in url or '/plus' in url or 'article' not in url: return
-    if deal_url(url) in to_search and to_search[deal_url(url)] == 1: return
-    sha = sha256(url.encode('utf8')).hexdigest()
+def parse_article(content, aid):
+    global targets
+    url = f'{HOME_URL}/{aid}'
 
     doc = pq(content)
     page = doc('.c-article-page__container')
@@ -268,9 +278,9 @@ def parse_article(content, url, targets):
                 hit_flag = True
                 hit_paragraph_nos.add(i)
 
-        if hit_flag and url not in target.hit_urls and sha not in black_list:
-            print(f'hit {target.get_kw()} in {url}')
-            fname = f'./articles/article-{target.get_kw()}-' + sha + '.txt'
+        if hit_flag and url not in target.hit_urls:
+            print(f'hit {target.get_kw()} in {aid}' + (' ' * 100))
+            fname = f'./articles/article-{target.get_kw()}-' + aid + '.txt'
             with open(fname, 'w+', encoding='utf8') as f:
                 # f.write(url + '\n\n')
                 f.write(url + '\n')
@@ -283,48 +293,52 @@ def parse_article(content, url, targets):
                 print(f'{target.get_kw()} complete!')
                 target.completed = True
 
-    to_search[deal_url(url)] = 1
+    article_ids[aid] = 1
     # recruit other links
     anchors = doc('a')
     for a in anchors:
         if 'href' not in a.attrib:
             continue
         ref = a.attrib['href']
-        if ref[0] == '/' and 'article' in ref and ref not in to_search:
-            to_search[deal_url(ref)] = 0 # recruit url
+        _aid = gaid(ref)
+        if ref[0] == '/' and _aid and _aid not in article_ids:
+            article_ids[_aid] = 0 # recruit url
     progress_bar(targets)
 
-async def get_content(url):
-    # print('requesting:', url)
-    # async with httpx.AsyncClient(timeout=TIMEOUT, proxy=PROXY, follow_redirects=True) as client:
-    async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=True) as client:
-        return await client.get(url=url)
+def file_accessable(path):
+    if isfile(path) and access(path, R_OK):
+        return True
+    return False
+
+
+async def get_content_and_parse(aid):
+    global received_bytes, cache_hit_cnt
+    content = ''
+    path = f'{cache_folder}/{aid}.html'
+    if file_accessable(path):
+        cache_hit_cnt += 1
+        async with aiofiles.open(path, mode='r', encoding='utf8') as f:
+            async for l in f:
+                content += l
+    else:
+        url = f'{HOME_URL}/{aid}'
+        async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=True) as client:
+            resp = await client.get(url=url)
+            content = resp.content
+            received_bytes += len(content)
+            with open(path, 'w+', encoding='utf8') as fw:
+                fw.write(content.decode('utf8'))
+    parse_article(content, aid)
+    return aid
+
 
 async def launch(async_fun, params):
-    global received_bytes, net_request_time_usage
-    req_tm1 = time.perf_counter()
-    resps = await asyncio.gather(*map(async_fun, params))
-    req_tm2 = time.perf_counter()
-    byte_len = sum(len(resp.content) for resp in resps)
-    # print(f'\nreceived {len(params)} articles ({readable_byte_len(byte_len)}) in {req_tm2-req_tm1:0.2f} sec')
-    net_request_time_usage += (req_tm2-req_tm1)
-    received_bytes += byte_len
-    return resps
+    aids = await asyncio.gather(*map(async_fun, params))
+    return aids
 
-def deal_url(url):
-    search_url = url if url[:4] == 'http' else HOME_URL + url
-    try:
-        idx = search_url.index('#:')
-        search_url = search_url[:idx]
-    except:
-        pass
-    return search_url
-
-def urls_info(flg):
-    # flg = 1 searched
-    # flg = 0 remain
-    global to_search
-    return len(([k for k, v in to_search.items() if v == flg]))
+def urls_info(flg): # 1 searched; 0 remain
+    global article_ids
+    return len(([k for k, v in article_ids.items() if v == flg]))
 
 def delete_tmp_articles():
     global folder_path
@@ -342,13 +356,14 @@ def delete_tmp_articles():
 
 def zip_up_rst():
     global folder_path
-    formatted_time = datetime.now().strftime("%Y%m%d-%H%M%S")
-    with zipfile.ZipFile(folder_path + f'/archive{formatted_time}.zip', 'w') as zipf:
+    target_zip = f'/archive{datetime.now().strftime("%Y%m%d-%H%M%S")}.zip'
+    with zipfile.ZipFile(folder_path + target_zip, 'w') as zipf:
         for filename in os.listdir(folder_path):
             if not filename.startswith('article-'):
                 continue
             file_path = os.path.join(folder_path, filename)
             zipf.write(file_path)
+    shutil.copyfile(f'{folder_path}/{target_zip}', f'{folder_path}/archive.zip')
 
 def readable_byte_len(bl):
     if bl > 1024 * 1024 * 1024:
@@ -386,7 +401,7 @@ def get_next_batch_count():
         THREADS = next_threads
 
 def recruit_from_url(url):
-    global to_search
+    global article_ids
     response = requests.get(url)
     print(f'{url} : {response.status_code}')
     doc = pq(response.content)
@@ -397,11 +412,19 @@ def recruit_from_url(url):
         title = article('div.c-teaser__container.is-full-height-flex > div.c-teaser__body > h4 > a')
         if not preminum_flag and title.attr('href') is not None:
             url = title.attr('href')
-            if url not in to_search:
-                to_search[deal_url(url)] = 0 # recruit url
+            aid = gaid(url)
+            if aid not in article_ids:
+                article_ids[aid] = 0 # recruit url
+
+def unsearched(aid):
+    if aid not in article_ids:
+        return True
+    if article_ids[aid] == 0:
+        return True
+    return False
 
 def start_crawl(targets):
-    global to_search
+    global article_ids
     delete_tmp_articles()
 
     recruit_from_url(HOME_URL)
@@ -419,57 +442,52 @@ def start_crawl(targets):
     # recruit_from_url(HOME_URL + '/sonderthemen/')
 
     while not is_all_done(targets):
-        get_next_batch_count()
-        urls = random.sample([k for k, v in to_search.items() if v == 0], THREADS)
-        results = asyncio.run(launch(get_content, urls))
-        for rst in results:
-            if rst.status_code != '200': continue
-            parse_article(rst.content, str(rst.url), targets)
-            to_search[deal_url(str(rst.url))] = 1 # mark redirected url searched
-        # for url in urls: # mark as searched
-        #     to_search[deal_url(url)] = 1 # mark param url searched
+        # get_next_batch_count()
+        aids1 = random.sample([k for k, v in article_ids.items() if v == 0], THREADS)
+        aids2 = random.sample([k for k in cached_article_ids], THREADS)
+        aids = [aid for aid in (aids1 + aids2) if unsearched(aid)]
+
+        done_aids = asyncio.run(launch(get_content_and_parse, aids))
+        for aid in done_aids:
+            article_ids[aid] = 1
+            if aid in cached_article_ids: cached_article_ids.remove(aid)
         progress_bar(targets)
 
     print(f'\n{urls_info(1)} article searched', end='\n')
     tm2 = time.perf_counter()
-    print(f'totally {tm2-tm1:0.2f} sec (net request: {net_request_time_usage:.2f} sec {float(net_request_time_usage)*100/(tm2-tm1):.2f}%) used')
+    print(f'totally {tm2-tm1:0.2f} sec used')
     bl = readable_byte_len(received_bytes)
     print(f'{bl} data received')
+    print(f'{cache_hit_cnt} cache hit ({float(cache_hit_cnt * 100)/urls_info(1):.2f}%)')
 
 if __name__ == '__main__':
     targets = [
-            # Target(word='Ausland', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Kunde', fix='', lb=True, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='kurz', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Obst', fix='', lb=True, rb=True, cs=False, mode=NOUN_MODE),
-            Target(word='See', fix='', lb=True, rb=True, cs=False, mode=NOUN_MODE),
-            # Target(word='Tee', fix='', lb=True, rb=True, cs=False, mode=NOUN_MODE),
-            # Target(word='tschüss', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Unterschrift', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Wind', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='kurz', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='liegen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Feuer', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE, target_cnt=3),
+            Target(word='ländisch', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='zeigen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='feiern', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Kuli', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Obst', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE, target_cnt=3),
             ]
 
-    # get init urls from last history
-    with open('urls.json', 'r') as fp:
+    # get init article ids from last history
+    with open('welt-aids.json', 'r', encoding='utf8') as fp:
         content = json.load(fp)
-        for k, _ in content.items():
-            to_search[k] = 0
-    print(f'load urls from history: {len(to_search)}')
+        for aid, _ in content.items():
+            article_ids[aid] = 0
+            path = f'{cache_folder}/{aid}.html'
+            if file_accessable(path):
+                cached_article_ids.add(aid)
+    print(f'load urls from history: {len(article_ids)}')
 
     if len(targets) != 0:
         start_crawl(targets)
 
-        # try:
-        #     start_crawl(targets)
-        # except KeyboardInterrupt:
-        #     print('\nUser interrupt')
-        #     pass
-
     zip_up_rst()
     delete_tmp_articles()
-    # dump recruited urls to json for next init
-    pat = r"article\d+"
-    with open('urls.json', 'w') as fp:
-        json.dump({k : v for k, v in to_search.items() if re.search(pat, k)}, fp)
 
-
+    # save article_ids
+    with open('welt-aids.json', 'w', encoding='utf8') as fp:
+        json.dump(article_ids, fp)
