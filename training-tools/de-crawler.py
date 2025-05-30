@@ -50,10 +50,15 @@ black_list = {
         'b23a07cac215495cc43af0a77ec764f3f1ef558e15add298deb36843258e38d4',
         }
 
-def gaid(url):
+def gaid(url): # get article id
     rst = re.findall(r"article\d+", url)
     if len(rst) > 0:
-        return rst[0]
+        _aid = rst[0]
+        try:
+            idx = _aid.index('#:')
+            _aid = _aid[:idx]
+        except:
+            pass
     return None
 
 def get_declension(noun):
@@ -280,9 +285,8 @@ def parse_article(content, aid):
 
         if hit_flag and url not in target.hit_urls:
             print(f'hit {target.get_kw()} in {aid}' + (' ' * 100))
-            fname = f'./articles/article-{target.get_kw()}-' + aid + '.txt'
+            fname = f'./{folder_path}/article-{target.get_kw()}-' + aid + '.txt'
             with open(fname, 'w+', encoding='utf8') as f:
-                # f.write(url + '\n\n')
                 f.write(url + '\n')
                 f.write(target.generate_prompt([str(p) for p in sorted(hit_paragraph_nos)]))
                 for i, p in enumerate(paragraph_contents, start=1):
@@ -293,7 +297,7 @@ def parse_article(content, aid):
                 print(f'{target.get_kw()} complete!')
                 target.completed = True
 
-    article_ids[aid] = 1
+    article_ids[aid] = 1 # marked as searched
     # recruit other links
     anchors = doc('a')
     for a in anchors:
@@ -392,14 +396,6 @@ def is_all_done(targets):
             return False
     return True
 
-def get_next_batch_count():
-    global THREADS
-    next_threads = THREADS + 5 if THREADS + 5 < MAX_THREADS else MAX_THREADS
-    if next_threads > urls_info(0):
-        THREADS = 1
-    else :
-        THREADS = next_threads
-
 def recruit_from_url(url):
     global article_ids
     response = requests.get(url)
@@ -442,7 +438,6 @@ def start_crawl(targets):
     # recruit_from_url(HOME_URL + '/sonderthemen/')
 
     while not is_all_done(targets):
-        # get_next_batch_count()
         aids1 = random.sample([k for k, v in article_ids.items() if v == 0], THREADS)
         aids2 = random.sample([k for k in cached_article_ids], THREADS)
         aids = [aid for aid in (aids1 + aids2) if unsearched(aid)]
@@ -461,6 +456,7 @@ def start_crawl(targets):
     print(f'{cache_hit_cnt} cache hit ({float(cache_hit_cnt * 100)/urls_info(1):.2f}%)')
 
 if __name__ == '__main__':
+    aid_json_file = 'welt-aids.json'
     targets = [
             # Target(word='kurz', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
             Target(word='liegen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
@@ -473,7 +469,7 @@ if __name__ == '__main__':
             ]
 
     # get init article ids from last history
-    with open('welt-aids.json', 'r', encoding='utf8') as fp:
+    with open(aid_json_file, 'r', encoding='utf8') as fp:
         content = json.load(fp)
         for aid, _ in content.items():
             article_ids[aid] = 0
@@ -489,5 +485,5 @@ if __name__ == '__main__':
     delete_tmp_articles()
 
     # save article_ids
-    with open('welt-aids.json', 'w', encoding='utf8') as fp:
+    with open(aid_json_file, 'w', encoding='utf8') as fp:
         json.dump(article_ids, fp)
