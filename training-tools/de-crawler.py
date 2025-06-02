@@ -62,8 +62,11 @@ def gaid(url): # get article id
     return None
 
 def get_declension(noun):
+    global received_bytes
+    time.sleep(random.randint(1, 5))
     dkls = ''
     resp = requests.get(f'https://www.verbformen.com/declension/nouns/{noun}.htm')
+    received_bytes += len(resp.content)
     doc = pq(resp.content.decode('utf8'))
     declension_tbl = doc('.vDkl>.vTbl')
     for tbl in declension_tbl.items():
@@ -83,6 +86,7 @@ def get_declension(noun):
     return rst
 
 def get_conjuncated(verb, prefix):
+    # time.sleep(random.randint(1, 5))
     # resp = requests.get('https://api.verbix.com/conjugator/iv1/6153a464-b4f0-11ed-9ece-ee3761609078/1/13/113/' + verb, proxies=PROXIES)
     resp = requests.get('https://api.verbix.com/conjugator/iv1/6153a464-b4f0-11ed-9ece-ee3761609078/1/13/113/' + verb)
     content = json.loads(resp.content.decode('utf8'))
@@ -294,19 +298,12 @@ def parse_article(content, aid):
                     f.write(p + '\n')
             target.hit_urls.add(url)
             if target.target_cnt == len(target.hit_urls):
-                print(f'{target.get_kw()} complete!')
+                print(f'{target.get_kw()} complete! at {datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}')
                 target.completed = True
 
     article_ids[aid] = 1 # marked as searched
     # recruit other links
-    anchors = doc('a')
-    for a in anchors:
-        if 'href' not in a.attrib:
-            continue
-        ref = a.attrib['href']
-        _aid = gaid(ref)
-        if ref[0] == '/' and _aid and _aid not in article_ids:
-            article_ids[_aid] = 0 # recruit url
+    recruit_from_content(content)
     progress_bar(targets)
 
 def file_accessable(path):
@@ -314,6 +311,14 @@ def file_accessable(path):
         return True
     return False
 
+async def recruit_url(aid):
+    global received_bytes
+    url = f'{HOME_URL}/{aid}'
+    async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=True) as client:
+        resp = await client.get(url=url)
+        received_bytes += len(resp.content)
+        recruit_from_content(resp.content)
+        article_ids[aid] = 1 # mark as searched
 
 async def get_content_and_parse(aid):
     global received_bytes, cache_hit_cnt
@@ -324,6 +329,11 @@ async def get_content_and_parse(aid):
         async with aiofiles.open(path, mode='r', encoding='utf8') as f:
             async for l in f:
                 content += l
+        # if random.randint(0, 1) >= 0:
+        #     async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=True) as client:
+        #         resp = await client.get(url=f'{HOME_URL}/{aid}')
+        #         recruit_from_content(resp.content)
+        #         content = resp.content
     else:
         url = f'{HOME_URL}/{aid}'
         async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=True) as client:
@@ -388,7 +398,9 @@ def progress_bar(targets):
             s += '|'
         s += ('〇' if t.completed else str(len(t.hit_urls)))
     bl = readable_byte_len(received_bytes)
-    print(f'[{s}] {urls_info(1)} searched, {urls_info(0)} remain {tm2-tm1:0.2f} sec {bl} received\r', end='')
+    progress = f'[{s}] {urls_info(1)} searched, {urls_info(0)} remain {tm2-tm1:0.2f} sec {bl} received'
+    progress += f' {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}'
+    print(f'{progress}\r', end='')
 
 def is_all_done(targets):
     for t in targets:
@@ -397,20 +409,22 @@ def is_all_done(targets):
     return True
 
 def recruit_from_url(url):
-    global article_ids
+    global article_ids, received_bytes
     response = requests.get(url)
-    print(f'{url} : {response.status_code}')
-    doc = pq(response.content)
-    articles = doc('#main').find('article').items()
-    for article in articles:
-        overline = article('div.c-teaser__container.is-full-height-flex > div.c-teaser__overline > div')
-        preminum_flag = overline.children('.is-premium')
-        title = article('div.c-teaser__container.is-full-height-flex > div.c-teaser__body > h4 > a')
-        if not preminum_flag and title.attr('href') is not None:
-            url = title.attr('href')
-            aid = gaid(url)
-            if aid not in article_ids:
-                article_ids[aid] = 0 # recruit url
+    # print(f'{url} : {response.status_code}')
+    received_bytes += len(response.content)
+    recruit_from_content(response.content)
+
+def recruit_from_content(content):
+    doc = pq(content)
+    anchors = doc('a')
+    for a in anchors:
+        if 'href' not in a.attrib:
+            continue
+        ref = a.attrib['href']
+        _aid = gaid(ref)
+        if (ref[0] == '/' or ref.startswith(HOME_URL)) and _aid and _aid not in article_ids:
+            article_ids[_aid] = 0 # recruit url
 
 def unsearched(aid):
     if aid not in article_ids:
@@ -419,25 +433,41 @@ def unsearched(aid):
         return True
     return False
 
+def recruit_from_home():
+    recruit_from_url(HOME_URL)
+    recruit_from_url(HOME_URL + '/wirtschaft/')
+    recruit_from_url(HOME_URL + '/iconist/')
+    recruit_from_url(HOME_URL + '/sport/')
+    recruit_from_url(HOME_URL + '/vermischtes/')
+    recruit_from_url(HOME_URL + '/politik/')
+    recruit_from_url(HOME_URL + '/debatte/')
+    recruit_from_url(HOME_URL + '/kultur/')
+    recruit_from_url(HOME_URL + '/gesundheit/')
+    recruit_from_url(HOME_URL + '/geschichte/')
+    recruit_from_url(HOME_URL + '/reise/')
+    recruit_from_url(HOME_URL + '/regionales/')
+    recruit_from_url(HOME_URL + '/sonderthemen/')
+
+def only_recruit(target_recruit_cnt):
+    init_size = len(article_ids)
+    recruit_from_home()
+    recruited = len(article_ids) - init_size
+    while recruited <= target_recruit_cnt and urls_info(0) > THREADS:
+        snapshot = recruited
+        aids = random.sample([k for k, v in article_ids.items() if v == 0], THREADS)
+        asyncio.run(launch(recruit_url, aids))
+        after_size = len(article_ids)
+        recruited = (after_size - init_size)
+        if snapshot != recruited:
+            print(f'{target_recruit_cnt - recruited} remain')
+        progress_bar([])
+
 def start_crawl(targets):
     global article_ids
     delete_tmp_articles()
+    recruit_from_home()
 
-    recruit_from_url(HOME_URL)
-    # recruit_from_url(HOME_URL + '/wirtschaft/')
-    # recruit_from_url(HOME_URL + '/iconist/')
-    # recruit_from_url(HOME_URL + '/sport/')
-    # recruit_from_url(HOME_URL + '/vermischtes/')
-    # recruit_from_url(HOME_URL + '/politik/')
-    # recruit_from_url(HOME_URL + '/debatte/')
-    # recruit_from_url(HOME_URL + '/kultur/')
-    # recruit_from_url(HOME_URL + '/gesundheit/')
-    # recruit_from_url(HOME_URL + '/geschichte/')
-    # recruit_from_url(HOME_URL + '/reise/')
-    # recruit_from_url(HOME_URL + '/regionales/')
-    # recruit_from_url(HOME_URL + '/sonderthemen/')
-
-    while not is_all_done(targets):
+    while not is_all_done(targets) and urls_info(0) > THREADS:
         aids1 = random.sample([k for k, v in article_ids.items() if v == 0], THREADS)
         aids2 = random.sample([k for k in cached_article_ids], THREADS) if len(cached_article_ids) > THREADS else []
         aids = [aid for aid in (aids1 + aids2) if unsearched(aid)]
@@ -454,18 +484,70 @@ def start_crawl(targets):
     bl = readable_byte_len(received_bytes)
     print(f'{bl} data received')
     print(f'{cache_hit_cnt} cache hit ({float(cache_hit_cnt * 100)/urls_info(1):.2f}%)')
+    # print incomplete target(s)
+    for t in targets:
+        if not t.completed:
+            print(t.get_kw(), 'not completed', end='\n')
 
 if __name__ == '__main__':
     aid_json_file = 'welt-aids.json'
     targets = [
-            # Target(word='kurz', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='liegen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Feuer', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE, target_cnt=3),
-            Target(word='ländisch', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='zeigen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='feiern', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Kuli', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Obst', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE, target_cnt=3),
+
+            # Target(word='Wertschöpfungskette', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='angegriffen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='angepöbelt', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='tuscheln', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            # Target(word='kichern', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            # Target(word='Bloßstellung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='aufbereitet', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='entwenden', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            # Target(word='versehen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            # Target(word='durchforsten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            # Target(word='Abhilfe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='theologisch', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Akronym', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='entfernungungsradius', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Baugewerbe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Akzentuierung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Ausgleichszahlung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Bronchitis', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='gesamtfiskalich', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='delegieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            # Target(word='Pappe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Schaltkreis', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='verschlüsselt', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='fälschungssicher', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Rheuma', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='synthetisieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            # Target(word='Gefäß', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+
+            Target(word='abgegeben', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='also', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Arbeitsplatz', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE, target_cnt=3),
+            Target(word='Aufgabe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE, target_cnt=3),
+            Target(word='bekannt', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='bisschen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='daneben', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='empfehlen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='Film', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='fliegen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='geboren', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Geburtsjahr', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE, target_cnt=2),
+            Target(word='Geld', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Größe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Kasse', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='krank', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Papiere', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Party', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Reise', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='reparieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='Schlüssel', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='senenswürdigkeit', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE, target_cnt=3),
+            Target(word='sofort', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='studieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='wandern', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+
+
             ]
 
     # get init article ids from last history
@@ -480,7 +562,8 @@ if __name__ == '__main__':
 
     if len(targets) != 0:
         start_crawl(targets)
-
+    # only_recruit(20)
+    
     zip_up_rst()
     delete_tmp_articles()
 
