@@ -20,7 +20,6 @@ from datetime import datetime
 TIMEOUT = httpx.Timeout(360.0, connect=360.0)
 PROXIES={ 'http': 'http://127.0.0.1:58591', 'https': 'http://127.0.0.1:58591', }
 PROXY = 'http://127.0.0.1:58591'
-HOME_URL = 'https://www.welt.de'
 
 THREADS = 15
 MAX_THREADS = 100
@@ -36,6 +35,17 @@ TARGET_CNT = 5
 
 article_ids = {}
 cached_article_ids = set()
+# die Welt
+WELT_HOME_URL = 'https://www.welt.de'
+WELT_AID_TYPE = 10
+# der Spiegel
+SPIEGEL_HOME_URL = 'https://www.spiegel.de/'
+plus_spiegel_aids = {}
+SPIEGEL_AID_TYPE = 20
+spiegel_aid_re = r'a-[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}'
+spiegel_plus_hint = 'SPIEGEL+ wird über Ihren iTunes-Account abgewickelt und mit Kaufbestätigung bezahlt.'
+
+
 targets = []
 
 folder_path = './articles'
@@ -50,20 +60,46 @@ black_list = {
         'b23a07cac215495cc43af0a77ec764f3f1ef558e15add298deb36843258e38d4',
         }
 
+def _gaid(rst):
+    _aid = rst[0]
+    try:
+        idx = _aid.index('#:')
+        _aid = _aid[:idx]
+        return _aid
+    except:
+        pass
+    return None
+
 def gaid(url): # get article id
     rst = re.findall(r"article\d+", url)
     if len(rst) > 0:
-        _aid = rst[0]
-        try:
-            idx = _aid.index('#:')
-            _aid = _aid[:idx]
-        except:
-            pass
+        return _gaid(rst)
+    rst = re.findall(spiegel_aid_re, url)
+    if len(rst) > 0:
+        return _gaid(rst)
     return None
+
+def get_declension2(noun):
+    rst = set()
+    resp = requests.get(f'https://en.wiktionary.org/wiki/{noun}')
+    doc = pq(resp.content.decode('utf8'))
+    tbl = doc('.inflection-table-de')
+    tds = tbl('td')
+    for td in tds.items():
+        txt = str(td.text())
+        if txt in { 'das', 'dem', 'den', 'der', 'des', 'die', 'ein', 'eine', 'einem', 'einen', 'einer', 'eines' }:
+            continue
+        if ',' in txt:
+            for d in (d for d in txt.split(',')):
+                rst.add(d.strip().replace('0', '').replace('1', '').replace('2', '').replace('3', '').replace('4', '').replace('5', '').replace('6', '').replace('7', '').replace('8', '').replace('9', ''))
+        else:
+            rst.add(txt.strip().replace('0', '').replace('1', '').replace('2', '').replace('3', '').replace('4', '').replace('5', '').replace('6', '').replace('7', '').replace('8', '').replace('9', ''))
+    print(f'noun target: {", ".join(dkl for dkl in rst)}')
+    return rst
 
 def get_declension(noun):
     global received_bytes
-    time.sleep(random.randint(1, 5))
+    # time.sleep(random.randint(1, 5))
     dkls = ''
     resp = requests.get(f'https://www.verbformen.com/declension/nouns/{noun}.htm')
     received_bytes += len(resp.content)
@@ -180,10 +216,10 @@ class Target:
                 exit(1)
         if mode == NOUN_MODE and self.key_noun_verb[0].isupper():
             self.true_noun = True
-            self.declensions = get_declension(self.key_noun_verb)
+            self.declensions = get_declension2(self.key_noun_verb)
             if len(self.declensions) == 0:
                 print(f'can not declension:{self.key_noun_verb}')
-                exit(1)
+                self.true_noun = False
 
     def wrap_border(self, noun):
         pattern = noun.lower() if not self.case_sensitive else noun
@@ -266,11 +302,23 @@ class Target:
 
         return prompt
 
+def process_hit(target, aid, url, paragraph_contents, hit_paragraph_nos):
+    print(f'hit {target.get_kw()} in {aid}' + (' ' * 100))
+    fname = f'./{folder_path}/article-{target.get_kw()}-' + aid + '.txt'
+    with open(fname, 'w+', encoding='utf8') as f:
+        f.write(url + '\n')
+        f.write(target.generate_prompt([str(p) for p in sorted(hit_paragraph_nos)]))
+        for i, p in enumerate(paragraph_contents, start=1):
+            f.write(f'p{i}:\n')
+            f.write(p + '\n')
+    target.hit_urls.add(url)
+    if target.target_cnt == len(target.hit_urls):
+        print(f'{target.get_kw()} complete! at {datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}')
+        target.completed = True
 
-def parse_article(content, aid):
+def parse_welt_article(content, aid):
     global targets
-    url = f'{HOME_URL}/{aid}'
-
+    url = determine_url_by_aid(aid)
     doc = pq(content)
     page = doc('.c-article-page__container')
     for target in targets:
@@ -288,22 +336,46 @@ def parse_article(content, aid):
                 hit_paragraph_nos.add(i)
 
         if hit_flag and url not in target.hit_urls:
-            print(f'hit {target.get_kw()} in {aid}' + (' ' * 100))
-            fname = f'./{folder_path}/article-{target.get_kw()}-' + aid + '.txt'
-            with open(fname, 'w+', encoding='utf8') as f:
-                f.write(url + '\n')
-                f.write(target.generate_prompt([str(p) for p in sorted(hit_paragraph_nos)]))
-                for i, p in enumerate(paragraph_contents, start=1):
-                    f.write(f'p{i}:\n')
-                    f.write(p + '\n')
-            target.hit_urls.add(url)
-            if target.target_cnt == len(target.hit_urls):
-                print(f'{target.get_kw()} complete! at {datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}')
-                target.completed = True
+            process_hit(target, aid, url, paragraph_contents, hit_paragraph_nos)
+
+def parse_spiegel_article(content, aid):
+    global spiegel_plus_hint
+    if aid in plus_spiegel_aids:
+        return
+    url = determine_url_by_aid(aid)
+    doc = pq(content)
+    for target in targets:
+        if target.completed or url in target.hit_urls:
+            continue
+        paragraphs = doc('p')
+        title = doc('#Inhalt > article > header')
+        hit_flag = False
+        paragraph_contents = [str(title.text())]
+        hit_paragraph_nos = set()
+        for i, p in enumerate(paragraphs.items(), start=1):
+            paragraph = str(p.text())
+            if paragraph.startswith(spiegel_plus_hint):
+                plus_spiegel_aids[aid] = 1
+                print('skip spiegel plus article', aid)
+                return
+            paragraph_contents.append(paragraph)
+            if target.hit(paragraph):
+                hit_flag = True
+                hit_paragraph_nos.add(i)
+        if hit_flag and url not in target.hit_urls:
+            process_hit(target, aid, url, paragraph_contents, hit_paragraph_nos)
+
+def parse_article(content, aid):
+    global targets
+    recruit_from_content(content)
+    type = determine_type_by_aid(aid)
+    if type == WELT_AID_TYPE:
+        parse_welt_article(content, aid)
+    if type == SPIEGEL_AID_TYPE:
+        parse_spiegel_article(content, aid)
 
     article_ids[aid] = 1 # marked as searched
     # recruit other links
-    recruit_from_content(content)
     progress_bar(targets)
 
 def file_accessable(path):
@@ -313,7 +385,7 @@ def file_accessable(path):
 
 async def recruit_url(aid):
     global received_bytes
-    url = f'{HOME_URL}/{aid}'
+    url = f'{WELT_HOME_URL}/{aid}'
     async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=True) as client:
         resp = await client.get(url=url)
         received_bytes += len(resp.content)
@@ -329,13 +401,8 @@ async def get_content_and_parse(aid):
         async with aiofiles.open(path, mode='r', encoding='utf8') as f:
             async for l in f:
                 content += l
-        # if random.randint(0, 1) >= 0:
-        #     async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=True) as client:
-        #         resp = await client.get(url=f'{HOME_URL}/{aid}')
-        #         recruit_from_content(resp.content)
-        #         content = resp.content
     else:
-        url = f'{HOME_URL}/{aid}'
+        url = determine_url_by_aid(aid)
         async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=True) as client:
             resp = await client.get(url=url)
             content = resp.content
@@ -423,7 +490,7 @@ def recruit_from_content(content):
             continue
         ref = a.attrib['href']
         _aid = gaid(ref)
-        if (ref[0] == '/' or ref.startswith(HOME_URL)) and _aid and _aid not in article_ids:
+        if (ref[0] == '/' or ref.startswith(WELT_HOME_URL) or ref.startswith(SPIEGEL_HOME_URL)) and _aid and _aid not in article_ids:
             article_ids[_aid] = 0 # recruit url
 
 def unsearched(aid):
@@ -433,49 +500,62 @@ def unsearched(aid):
         return True
     return False
 
-def recruit_from_home():
-    recruit_from_url(HOME_URL)
-    recruit_from_url(HOME_URL + '/wirtschaft/')
-    recruit_from_url(HOME_URL + '/iconist/')
-    recruit_from_url(HOME_URL + '/sport/')
-    recruit_from_url(HOME_URL + '/vermischtes/')
-    recruit_from_url(HOME_URL + '/politik/')
-    recruit_from_url(HOME_URL + '/debatte/')
-    recruit_from_url(HOME_URL + '/kultur/')
-    recruit_from_url(HOME_URL + '/gesundheit/')
-    recruit_from_url(HOME_URL + '/geschichte/')
-    recruit_from_url(HOME_URL + '/reise/')
-    recruit_from_url(HOME_URL + '/regionales/')
-    recruit_from_url(HOME_URL + '/sonderthemen/')
+def determine_url_by_aid(aid):
+    if re.match(spiegel_aid_re, aid):
+        return SPIEGEL_HOME_URL + '/' + aid
+    else:
+        return WELT_HOME_URL + '/' + aid
 
-def only_recruit(target_recruit_cnt):
-    init_size = len(article_ids)
-    recruit_from_home()
-    recruited = len(article_ids) - init_size
-    while recruited <= target_recruit_cnt and urls_info(0) > THREADS:
-        snapshot = recruited
-        aids = random.sample([k for k, v in article_ids.items() if v == 0], THREADS)
-        asyncio.run(launch(recruit_url, aids))
-        after_size = len(article_ids)
-        recruited = (after_size - init_size)
-        if snapshot != recruited:
-            print(f'{target_recruit_cnt - recruited} remain')
-        progress_bar([])
+def determine_type_by_aid(aid):
+    if re.match(spiegel_aid_re, aid):
+        return SPIEGEL_AID_TYPE
+    else:
+        return WELT_AID_TYPE
+
+def recruit_from_home():
+    recruit_from_url(WELT_HOME_URL)
+    recruit_from_url(SPIEGEL_HOME_URL)
+    # recruit_from_url(WELT_HOME_URL + '/wirtschaft/')
+    # recruit_from_url(WELT_HOME_URL + '/iconist/')
+    # recruit_from_url(WELT_HOME_URL + '/sport/')
+    # recruit_from_url(WELT_HOME_URL + '/vermischtes/')
+    # recruit_from_url(WELT_HOME_URL + '/politik/')
+    # recruit_from_url(WELT_HOME_URL + '/debatte/')
+    # recruit_from_url(WELT_HOME_URL + '/kultur/')
+    # recruit_from_url(WELT_HOME_URL + '/gesundheit/')
+    # recruit_from_url(WELT_HOME_URL + '/geschichte/')
+    # recruit_from_url(WELT_HOME_URL + '/reise/')
+    # recruit_from_url(WELT_HOME_URL + '/regionales/')
+    # recruit_from_url(WELT_HOME_URL + '/sonderthemen/')
+
+# def only_recruit(target_recruit_cnt):
+#     init_size = len(article_ids)
+#     recruit_from_home()
+#     recruited = len(article_ids) - init_size
+#     while recruited <= target_recruit_cnt and urls_info(0) > THREADS:
+#         snapshot = recruited
+#         aids = random.sample([k for k, v in article_ids.items() if v == 0], THREADS)
+#         asyncio.run(launch(recruit_url, aids))
+#         after_size = len(article_ids)
+#         recruited = (after_size - init_size)
+#         if snapshot != recruited:
+#             print(f'{target_recruit_cnt - recruited} remain')
+#         progress_bar([])
 
 def start_crawl(targets):
-    global article_ids
     delete_tmp_articles()
     recruit_from_home()
 
     while not is_all_done(targets) and urls_info(0) > THREADS:
-        aids1 = random.sample([k for k, v in article_ids.items() if v == 0], THREADS)
+        _tmp = [k for k, v in article_ids.items() if v == 0 and k not in cached_article_ids and k not in plus_spiegel_aids]
+        aids1 = random.sample(_tmp, THREADS) if len(_tmp) > THREADS else []
         aids2 = random.sample([k for k in cached_article_ids], THREADS) if len(cached_article_ids) > THREADS else []
         aids = [aid for aid in (aids1 + aids2) if unsearched(aid)]
 
         done_aids = asyncio.run(launch(get_content_and_parse, aids))
         for aid in done_aids:
             article_ids[aid] = 1
-            if aid in cached_article_ids: cached_article_ids.remove(aid)
+
         progress_bar(targets)
 
     print(f'\n{urls_info(1)} article searched', end='\n')
@@ -490,7 +570,9 @@ def start_crawl(targets):
             print(t.get_kw(), 'not completed', end='\n')
 
 if __name__ == '__main__':
-    aid_json_file = 'welt-aids.json'
+    welt_aid_json_file = 'welt-aids.json'
+    plus_aid_json_file = 'plus-aids.json'
+
     targets = [
 
             # Target(word='Wertschöpfungskette', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
@@ -521,52 +603,33 @@ if __name__ == '__main__':
             # Target(word='synthetisieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
             # Target(word='Gefäß', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
 
-            Target(word='abgegeben', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='also', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Arbeitsplatz', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE, target_cnt=3),
-            Target(word='Aufgabe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE, target_cnt=3),
-            Target(word='bekannt', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='bisschen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='daneben', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='empfehlen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='Film', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='fliegen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='geboren', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Geburtsjahr', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE, target_cnt=2),
-            Target(word='Geld', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Größe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Kasse', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='krank', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Papiere', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Party', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Reise', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='reparieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='Schlüssel', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='senenswürdigkeit', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE, target_cnt=3),
-            Target(word='sofort', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='studieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='wandern', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
 
 
             ]
 
-    # get init article ids from last history
-    with open(aid_json_file, 'r', encoding='utf8') as fp:
-        content = json.load(fp)
-        for aid, _ in content.items():
-            article_ids[aid] = 0
-            path = f'{cache_folder}/{aid}.html'
-            if file_accessable(path):
-                cached_article_ids.add(aid)
-    print(f'load urls from history: {len(article_ids)}')
+    if file_accessable(welt_aid_json_file): # get init article ids from last history
+        with open(welt_aid_json_file, 'r', encoding='utf8') as fp:
+            content = json.load(fp)
+            for aid, _ in content.items():
+                article_ids[aid] = 0
+                path = f'{cache_folder}/{aid}.html'
+                if file_accessable(path):
+                    cached_article_ids.add(aid)
+        print(f'load urls from history: {len(article_ids)}')
+    if file_accessable(plus_aid_json_file): # get init article ids from last history
+        with open(plus_aid_json_file, 'r', encoding='utf8') as fp:
+            plus_spiegel_aids = json.load(fp)
+        print(f'load plus urls from history: {len(plus_spiegel_aids)}')
+
 
     if len(targets) != 0:
         start_crawl(targets)
-    # only_recruit(20)
-    
+
     zip_up_rst()
     delete_tmp_articles()
 
-    # save article_ids
-    with open(aid_json_file, 'w', encoding='utf8') as fp:
+    with open(welt_aid_json_file, 'w+', encoding='utf8') as fp: # save article_ids
         json.dump(article_ids, fp)
+    with open(plus_aid_json_file, 'w+', encoding='utf8') as fp: # save article_ids
+        json.dump(plus_spiegel_aids, fp)
+
