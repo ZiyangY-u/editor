@@ -21,14 +21,16 @@ TIMEOUT = httpx.Timeout(360.0, connect=360.0)
 PROXIES={ 'http': 'http://127.0.0.1:58591', 'https': 'http://127.0.0.1:58591', }
 PROXY = 'http://127.0.0.1:58591'
 
-THREADS = 15
-MAX_THREADS = 100
+THREADS = 20
+MAX_THREADS = 200
 
-NOUN_MODE     = 1
-VERB_MODE     = 2
-SEP_VERB_MODE = 3
-PHRASE_MODE   = 4
-OTHER_MODE    = 9
+NOUN_MODE          = 1
+VERB_MODE          = 2
+SEP_VERB_MODE      = 3
+PHRASE_MODE        = 4
+COMPOUND_NOUN_MODE = 5
+ADJECTIVE_MODE     = 6
+OTHER_MODE         = 9
 
 
 TARGET_CNT = 5
@@ -39,11 +41,15 @@ cached_article_ids = set()
 WELT_HOME_URL = 'https://www.welt.de'
 WELT_AID_TYPE = 10
 # der Spiegel
-SPIEGEL_HOME_URL = 'https://www.spiegel.de/'
+SPIEGEL_HOME_URL = 'https://www.spiegel.de'
 plus_spiegel_aids = {}
 SPIEGEL_AID_TYPE = 20
 spiegel_aid_re = r'a-[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}'
 spiegel_plus_hint = 'SPIEGEL+ wird über Ihren iTunes-Account abgewickelt und mit Kaufbestätigung bezahlt.'
+# dw
+DW_HOME_URL = 'https://www.dw.com/de'
+DW_AID_TYPE = 30
+dw_aid_re = r'a-\d{8}'
 
 
 targets = []
@@ -68,16 +74,35 @@ def _gaid(rst):
         return _aid
     except:
         pass
-    return None
+    return _aid
 
 def gaid(url): # get article id
     rst = re.findall(r"article\d+", url)
-    if len(rst) > 0:
-        return _gaid(rst)
+    if len(rst) > 0: return _gaid(rst)
     rst = re.findall(spiegel_aid_re, url)
-    if len(rst) > 0:
-        return _gaid(rst)
+    if len(rst) > 0: return _gaid(rst)
+    rst = re.findall(dw_aid_re, url)
+    if len(rst) > 0: return _gaid(rst)
+
     return None
+
+def get_adj_declension(noun):
+    rst = set()
+    resp = requests.get(f'https://de.wiktionary.org/wiki/Flexion:{noun}')
+    doc = pq(resp.content.decode('utf8'))
+    tbl = doc('.inflection-table')
+    tds = tbl('td')
+    tmp = ''
+    for td in tds.items():
+        txt = str(td.text())
+        tmp += (txt + ' ')
+
+    for d in re.split(' |\n|,', tmp):
+        if d.strip() in { '','(keine)','(keinen)','(keiner)','keine','keinen','keiner','das','dem','den','der','des','die','ein','eine','einem','einen','einer','eines','—', 'am','er','es','ist','sie','sind',  }:
+            continue
+        rst.add(d.strip())
+    # print(f'adjective target: {", ".join(dkl for dkl in rst)}')
+    return rst
 
 def get_declension2(noun):
     rst = set()
@@ -94,31 +119,7 @@ def get_declension2(noun):
                 rst.add(d.strip().replace('0', '').replace('1', '').replace('2', '').replace('3', '').replace('4', '').replace('5', '').replace('6', '').replace('7', '').replace('8', '').replace('9', ''))
         else:
             rst.add(txt.strip().replace('0', '').replace('1', '').replace('2', '').replace('3', '').replace('4', '').replace('5', '').replace('6', '').replace('7', '').replace('8', '').replace('9', ''))
-    print(f'noun target: {", ".join(dkl for dkl in rst)}')
-    return rst
-
-def get_declension(noun):
-    global received_bytes
-    # time.sleep(random.randint(1, 5))
-    dkls = ''
-    resp = requests.get(f'https://www.verbformen.com/declension/nouns/{noun}.htm')
-    received_bytes += len(resp.content)
-    doc = pq(resp.content.decode('utf8'))
-    declension_tbl = doc('.vDkl>.vTbl')
-    for tbl in declension_tbl.items():
-        dkls += ' '
-        dkls += str(tbl('td').text())
-    dkls = dkls.replace('\n', '')
-    rst = set()
-    for dkl in (dkl for dkl in dkls.split(' ')):
-        if dkl in ['', 'der', 'des', 'dem', 'den', 'die', 'das', '-']:
-            continue
-        if '/' in dkl:
-            for d in (d for d in dkl.split('/')):
-                rst.add(d.replace('⁰', '').replace('¹', '').replace('²', '').replace('³', '').replace('⁴', '').replace('⁵', '').replace('⁶', '').replace('⁷', '').replace('⁸', '').replace('⁹', ''))
-        else:
-            rst.add(dkl.replace('⁰', '').replace('¹', '').replace('²', '').replace('³', '').replace('⁴', '').replace('⁵', '').replace('⁶', '').replace('⁷', '').replace('⁸', '').replace('⁹', ''))
-    print(f'noun target: {", ".join(dkl for dkl in rst)}')
+    # print(f'noun target: {", ".join(dkl for dkl in rst)}')
     return rst
 
 def get_conjuncated(verb, prefix):
@@ -191,9 +192,7 @@ def get_conjuncated(verb, prefix):
     verbs.discard('wären')
     verbs.discard('wärest')
     verbs.discard('wäret')
-
-    print(f'verb target: {", ".join(t for t in verbs)}')
-
+    # print(f'verb target: {", ".join(t for t in verbs)}')
     return verbs
 
 class Target:
@@ -214,12 +213,34 @@ class Target:
             if len(self.conjuncated) == 0:
                 print(f'can not conjuncate:{self.key_noun_verb}')
                 exit(1)
+            print(f'verb target: {", ".join(t for t in self.conjuncated)}')
         if mode == NOUN_MODE and self.key_noun_verb[0].isupper():
             self.true_noun = True
             self.declensions = get_declension2(self.key_noun_verb)
             if len(self.declensions) == 0:
                 print(f'can not declension:{self.key_noun_verb}')
                 self.true_noun = False
+            else:
+                print(f'noun target: {", ".join(dkl for dkl in self.declensions)}')
+        if mode == COMPOUND_NOUN_MODE and self.key_noun_verb[0].isupper():
+            self.true_noun = True
+            declensions = get_declension2(self.key_noun_verb)
+            if len(declensions) == 0:
+                print(f'can not declension:{self.key_noun_verb}')
+                self.true_noun = False
+                self.key_noun_verb = self.prefix + self.key_noun_verb
+            else: # compound noun and prefix
+                c_dkl = {self.prefix + dkl.lower() for dkl in declensions}
+                self.declensions = c_dkl
+                print(f'noun target: {", ".join(dkl for dkl in self.declensions)}')
+        if mode == ADJECTIVE_MODE:
+            declensions = get_adj_declension(self.key_noun_verb)
+            if len(declensions) == 0:
+                print(f'can not declension:{self.key_noun_verb}')
+            else:
+                self.declensions = declensions
+                print(f'adjective target: {", ".join(dkl for dkl in self.declensions)}')
+
 
     def wrap_border(self, noun):
         pattern = noun.lower() if not self.case_sensitive else noun
@@ -282,6 +303,8 @@ class Target:
             kw = self.key_fix + self.key_noun_verb
         if self.match_mode == PHRASE_MODE:
             kw = self.key_fix + '...' + self.key_noun_verb
+        if self.match_mode == COMPOUND_NOUN_MODE:
+            kw = self.prefix + self.key_noun_verb
         return kw
 
     def generate_prompt(self, hit_paras:list):
@@ -356,8 +379,29 @@ def parse_spiegel_article(content, aid):
             paragraph = str(p.text())
             if paragraph.startswith(spiegel_plus_hint):
                 plus_spiegel_aids[aid] = 1
-                print('skip spiegel plus article', aid)
+                print('\nskip spiegel plus article', aid)
                 return
+            paragraph_contents.append(paragraph)
+            if target.hit(paragraph):
+                hit_flag = True
+                hit_paragraph_nos.add(i)
+        if hit_flag and url not in target.hit_urls:
+            process_hit(target, aid, url, paragraph_contents, hit_paragraph_nos)
+
+def parse_dw_article(content, aid):
+    url = determine_url_by_aid(aid)
+    doc = pq(content)
+    for target in targets:
+        if target.completed or url in target.hit_urls:
+            continue
+        content = doc('article')
+        title = content('header > h1')
+        paragraphs = doc('p')
+        hit_flag = False
+        paragraph_contents = [str(title.text())]
+        hit_paragraph_nos = set()
+        for i, p in enumerate(paragraphs.items(), start=1):
+            paragraph = str(p.text())
             paragraph_contents.append(paragraph)
             if target.hit(paragraph):
                 hit_flag = True
@@ -373,6 +417,8 @@ def parse_article(content, aid):
         parse_welt_article(content, aid)
     if type == SPIEGEL_AID_TYPE:
         parse_spiegel_article(content, aid)
+    if type == DW_AID_TYPE:
+        parse_dw_article(content, aid)
 
     article_ids[aid] = 1 # marked as searched
     # recruit other links
@@ -396,6 +442,7 @@ async def get_content_and_parse(aid):
     global received_bytes, cache_hit_cnt
     content = ''
     path = f'{cache_folder}/{aid}.html'
+    progress_bar(targets)
     if file_accessable(path):
         cache_hit_cnt += 1
         async with aiofiles.open(path, mode='r', encoding='utf8') as f:
@@ -463,10 +510,10 @@ def progress_bar(targets):
     for i, t in enumerate(targets, start=1):
         if i != 1:
             s += '|'
-        s += ('〇' if t.completed else str(len(t.hit_urls)))
+        s += ('〇' if t.completed else str(t.target_cnt - len(t.hit_urls)))
     bl = readable_byte_len(received_bytes)
     progress = f'[{s}] {urls_info(1)} searched, {urls_info(0)} remain {tm2-tm1:0.2f} sec {bl} received'
-    progress += f' {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}'
+    # progress += f' {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}'
     print(f'{progress}\r', end='')
 
 def is_all_done(targets):
@@ -477,10 +524,22 @@ def is_all_done(targets):
 
 def recruit_from_url(url):
     global article_ids, received_bytes
+    before = len(article_ids)
     response = requests.get(url)
     # print(f'{url} : {response.status_code}')
     received_bytes += len(response.content)
     recruit_from_content(response.content)
+    recruited = len(article_ids) - before
+    print(f'recruit {recruited} from {url}')
+
+def startwith_home(url):
+    if url.startswith(WELT_HOME_URL):
+        return True
+    if url.startswith(SPIEGEL_HOME_URL):
+        return True
+    if url.startswith(DW_HOME_URL):
+        return True
+    return False
 
 def recruit_from_content(content):
     doc = pq(content)
@@ -490,7 +549,7 @@ def recruit_from_content(content):
             continue
         ref = a.attrib['href']
         _aid = gaid(ref)
-        if (ref[0] == '/' or ref.startswith(WELT_HOME_URL) or ref.startswith(SPIEGEL_HOME_URL)) and _aid and _aid not in article_ids:
+        if (ref[0] == '/' or startwith_home(ref)) and _aid and _aid not in article_ids:
             article_ids[_aid] = 0 # recruit url
 
 def unsearched(aid):
@@ -503,18 +562,23 @@ def unsearched(aid):
 def determine_url_by_aid(aid):
     if re.match(spiegel_aid_re, aid):
         return SPIEGEL_HOME_URL + '/' + aid
+    if re.match(dw_aid_re, aid):
+        return DW_HOME_URL + '/' + aid
     else:
         return WELT_HOME_URL + '/' + aid
 
 def determine_type_by_aid(aid):
     if re.match(spiegel_aid_re, aid):
         return SPIEGEL_AID_TYPE
+    if re.match(dw_aid_re, aid):
+        return DW_AID_TYPE
     else:
         return WELT_AID_TYPE
 
 def recruit_from_home():
     recruit_from_url(WELT_HOME_URL)
     recruit_from_url(SPIEGEL_HOME_URL)
+    recruit_from_url(DW_HOME_URL)
     # recruit_from_url(WELT_HOME_URL + '/wirtschaft/')
     # recruit_from_url(WELT_HOME_URL + '/iconist/')
     # recruit_from_url(WELT_HOME_URL + '/sport/')
@@ -544,17 +608,19 @@ def recruit_from_home():
 
 def start_crawl(targets):
     delete_tmp_articles()
-    recruit_from_home()
 
-    while not is_all_done(targets) and urls_info(0) > THREADS:
+    while not is_all_done(targets) and urls_info(0) > THREADS and not file_accessable('./stop.txt'):
         _tmp = [k for k, v in article_ids.items() if v == 0 and k not in cached_article_ids and k not in plus_spiegel_aids]
         aids1 = random.sample(_tmp, THREADS) if len(_tmp) > THREADS else []
-        aids2 = random.sample([k for k in cached_article_ids], THREADS) if len(cached_article_ids) > THREADS else []
+        aids2 = random.sample([k for k in cached_article_ids], MAX_THREADS) if len(cached_article_ids) > MAX_THREADS else []
         aids = [aid for aid in (aids1 + aids2) if unsearched(aid)]
 
+        atm1 = time.perf_counter()
         done_aids = asyncio.run(launch(get_content_and_parse, aids))
         for aid in done_aids:
             article_ids[aid] = 1
+        atm2 = time.perf_counter()
+        print(f'\nascyn run used {atm2-atm1:.2f} sec')
 
         progress_bar(targets)
 
@@ -568,6 +634,8 @@ def start_crawl(targets):
     for t in targets:
         if not t.completed:
             print(t.get_kw(), 'not completed', end='\n')
+    zip_up_rst()
+    delete_tmp_articles()
 
 if __name__ == '__main__':
     welt_aid_json_file = 'welt-aids.json'
@@ -575,35 +643,43 @@ if __name__ == '__main__':
 
     targets = [
 
-            # Target(word='Wertschöpfungskette', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='angegriffen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='angepöbelt', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(prefix='Wertschöpfung', word='Kette', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            # Target(word='angegriffen', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            # Target(word='angepöbelt', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
             # Target(word='tuscheln', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
             # Target(word='kichern', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='Bloßstellung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='aufbereitet', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(prefix='Bloß', word='Stellung', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            # Target(word='aufbereitet', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
             # Target(word='entwenden', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
             # Target(word='versehen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
             # Target(word='durchforsten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
             # Target(word='Abhilfe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='theologisch', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='theologisch', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
             # Target(word='Akronym', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='entfernungungsradius', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Baugewerbe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(prefix='Entfernungs', word='Radius', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            # Target(prefix='Bau', word='Gewerbe', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
             # Target(word='Akzentuierung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Ausgleichszahlung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(prefix='Ausgleichs', word='Zahlung', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
             # Target(word='Bronchitis', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='gesamtfiskalich', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(prefix='gesamt', word='fiskalisch', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
             # Target(word='delegieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
             # Target(word='Pappe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Schaltkreis', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='verschlüsselt', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='fälschungssicher', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(prefix='Schalt', word='Kreis', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            # Target(word='verschlüsselt', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            # Target(prefix='Fälschungs', word='sicher', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
             # Target(word='Rheuma', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
             # Target(word='synthetisieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
             # Target(word='Gefäß', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
 
-
+            Target(word='Brot', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Doktor', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Haar', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='mehr', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='nie', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Ticket', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='weiter', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Wort', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='zahlen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
 
             ]
 
@@ -621,12 +697,8 @@ if __name__ == '__main__':
             plus_spiegel_aids = json.load(fp)
         print(f'load plus urls from history: {len(plus_spiegel_aids)}')
 
-
-    if len(targets) != 0:
-        start_crawl(targets)
-
-    zip_up_rst()
-    delete_tmp_articles()
+    recruit_from_home()
+    if len(targets) != 0: start_crawl(targets)
 
     with open(welt_aid_json_file, 'w+', encoding='utf8') as fp: # save article_ids
         json.dump(article_ids, fp)
