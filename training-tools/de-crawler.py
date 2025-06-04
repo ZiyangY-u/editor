@@ -22,7 +22,7 @@ PROXIES={ 'http': 'http://127.0.0.1:58591', 'https': 'http://127.0.0.1:58591', }
 PROXY = 'http://127.0.0.1:58591'
 
 THREADS = 20
-MAX_THREADS = 200
+MAX_THREADS = 100
 
 NOUN_MODE          = 1
 VERB_MODE          = 2
@@ -33,7 +33,7 @@ ADJECTIVE_MODE     = 6
 OTHER_MODE         = 9
 
 
-TARGET_CNT = 5
+TARGET_CNT = 5 # default target cnt
 
 article_ids = {}
 cached_article_ids = set()
@@ -336,7 +336,7 @@ def process_hit(target, aid, url, paragraph_contents, hit_paragraph_nos):
             f.write(p + '\n')
     target.hit_urls.add(url)
     if target.target_cnt == len(target.hit_urls):
-        print(f'{target.get_kw()} complete! at {datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}')
+        print(f'{target.get_kw()} complete! at {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}')
         target.completed = True
 
 def parse_welt_article(content, aid):
@@ -592,26 +592,12 @@ def recruit_from_home():
     # recruit_from_url(WELT_HOME_URL + '/regionales/')
     # recruit_from_url(WELT_HOME_URL + '/sonderthemen/')
 
-# def only_recruit(target_recruit_cnt):
-#     init_size = len(article_ids)
-#     recruit_from_home()
-#     recruited = len(article_ids) - init_size
-#     while recruited <= target_recruit_cnt and urls_info(0) > THREADS:
-#         snapshot = recruited
-#         aids = random.sample([k for k, v in article_ids.items() if v == 0], THREADS)
-#         asyncio.run(launch(recruit_url, aids))
-#         after_size = len(article_ids)
-#         recruited = (after_size - init_size)
-#         if snapshot != recruited:
-#             print(f'{target_recruit_cnt - recruited} remain')
-#         progress_bar([])
-
 def start_crawl(targets):
     delete_tmp_articles()
 
     while not is_all_done(targets) and urls_info(0) > THREADS and not file_accessable('./stop.txt'):
-        _tmp = [k for k, v in article_ids.items() if v == 0 and k not in cached_article_ids and k not in plus_spiegel_aids]
-        aids1 = random.sample(_tmp, THREADS) if len(_tmp) > THREADS else []
+        uncached = [k for k, v in article_ids.items() if v == 0 and k not in cached_article_ids and k not in plus_spiegel_aids]
+        aids1 = random.sample(uncached, THREADS) if len(uncached) > THREADS else []
         aids2 = random.sample([k for k in cached_article_ids], MAX_THREADS) if len(cached_article_ids) > MAX_THREADS else []
         aids = [aid for aid in (aids1 + aids2) if unsearched(aid)]
 
@@ -671,15 +657,17 @@ if __name__ == '__main__':
             # Target(word='synthetisieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
             # Target(word='Gefäß', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
 
-            Target(word='Brot', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Doktor', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Haar', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='mehr', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='nie', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Ticket', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='weiter', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Wort', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='zahlen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='ausgestiegen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(prefix='Bahn', word='Steig', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE, target_cnt=3),
+            Target(word='Steig', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='draußen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='geradeaus', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='helfen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='können', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='Ordnung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Praktikum', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='seit', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='tot', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
 
             ]
 
