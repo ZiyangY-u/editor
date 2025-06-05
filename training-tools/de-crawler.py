@@ -66,6 +66,19 @@ black_list = {
         'b23a07cac215495cc43af0a77ec764f3f1ef558e15add298deb36843258e38d4',
         }
 
+def file_accessable(path):
+    if isfile(path) and access(path, R_OK):
+        return True
+    return False
+
+def determine_url_by_aid(aid):
+    if re.match(spiegel_aid_re, aid):
+        return SPIEGEL_HOME_URL + '/' + aid
+    if re.match(dw_aid_re, aid):
+        return DW_HOME_URL + '/' + aid
+    else:
+        return WELT_HOME_URL + '/' + aid
+
 def _gaid(rst):
     _aid = rst[0]
     try:
@@ -256,18 +269,28 @@ class Target:
         return re.search(pat, content, re.IGNORECASE)
 
     def hit(self, paragraph):
-        if self.match_mode == NOUN_MODE:
+        if self.match_mode == NOUN_MODE or self.match_mode == COMPOUND_NOUN_MODE:
             if self.true_noun:
                 for dkl in self.declensions:
                     pattern = self.wrap_border(dkl)
                     if self.search(pattern, paragraph):
                         return True
-                    return False
+                return False
             else:
                 pattern = self.wrap_border(self.key_noun_verb)
                 if self.search(pattern, paragraph):
                     return True
                 return False
+        if self.match_mode == ADJECTIVE_MODE:
+            for dkl in self.declensions:
+                pattern = self.wrap_border(dkl)
+                if self.search(pattern, paragraph):
+                    return True
+            pattern = self.wrap_border(self.key_noun_verb)
+            if self.search(pattern, paragraph):
+                return True
+            return False
+
         if self.match_mode == VERB_MODE:
             for kw in self.conjuncated:
                 pattern = r"\b" + kw.lower() + r"\b[^\.:,]*\b" + self.key_fix + r"\b"
@@ -339,75 +362,62 @@ def process_hit(target, aid, url, paragraph_contents, hit_paragraph_nos):
         print(f'{target.get_kw()} complete! at {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}')
         target.completed = True
 
-def parse_welt_article(content, aid):
+def parse_txt_article(aid):
     global targets
+    progress_bar(targets)
     url = determine_url_by_aid(aid)
-    doc = pq(content)
-    page = doc('.c-article-page__container')
+    fp = f'{cache_folder}/{aid}.txt'
+    a_content = []
+    with open(fp, 'r', encoding='utf8') as f:
+        a_content = [line.strip() for line in f]
     for target in targets:
         if target.completed or url in target.hit_urls:
             continue
-        paragraphs = page('p')
         hit_flag = False
-        paragraph_contents = []
         hit_paragraph_nos = set()
-        for i, p in enumerate(paragraphs.items(), start=1):
-            paragraph = p.text()
-            paragraph_contents.append(paragraph)
-            if target.hit(paragraph):
-                hit_flag = True
-                hit_paragraph_nos.add(i)
-
-        if hit_flag and url not in target.hit_urls:
-            process_hit(target, aid, url, paragraph_contents, hit_paragraph_nos)
-
-def parse_spiegel_article(content, aid):
-    global spiegel_plus_hint
-    if aid in plus_spiegel_aids:
-        return
-    url = determine_url_by_aid(aid)
-    doc = pq(content)
-    for target in targets:
-        if target.completed or url in target.hit_urls:
-            continue
-        paragraphs = doc('p')
-        title = doc('#Inhalt > article > header')
-        hit_flag = False
-        paragraph_contents = [str(title.text())]
-        hit_paragraph_nos = set()
-        for i, p in enumerate(paragraphs.items(), start=1):
-            paragraph = str(p.text())
-            if paragraph.startswith(spiegel_plus_hint):
+        for i, p in enumerate(a_content, start=1):
+            if p.startswith(spiegel_plus_hint):
                 plus_spiegel_aids[aid] = 1
                 print('\nskip spiegel plus article', aid)
                 return
-            paragraph_contents.append(paragraph)
-            if target.hit(paragraph):
+            if target.hit(p):
                 hit_flag = True
                 hit_paragraph_nos.add(i)
         if hit_flag and url not in target.hit_urls:
-            process_hit(target, aid, url, paragraph_contents, hit_paragraph_nos)
+            process_hit(target, aid, url, a_content, hit_paragraph_nos)
+    progress_bar(targets)
+
+def write_paragraphs(aid, fp, paragraphs:list):
+    with open(fp, 'w+', encoding='utf8') as f:
+        for _, p in enumerate(paragraphs, start=1):
+            f.write(p + '\n')
+    if file_accessable(f'{cache_folder}/{aid}.html'):
+        os.unlink(f'{cache_folder}/{aid}.html')
+    parse_txt_article(aid)
+
+def parse_welt_article(content, aid):
+    doc = pq(content)
+    page = doc('.c-article-page__container')
+    paragraphs = page('p')
+    paras = [str(p.text()) for p in paragraphs.items()]
+    write_paragraphs(aid, f'{cache_folder}/{aid}.txt', paras)
+
+def parse_spiegel_article(content, aid):
+    global spiegel_plus_hint
+    if aid in plus_spiegel_aids: return
+    doc = pq(content)
+    paragraphs = doc('p')
+    title = [str(doc('#Inhalt > article > header').text())]
+    title.extend([str(p.text()) for p in paragraphs.items()])
+    write_paragraphs(aid, f'{cache_folder}/{aid}.txt', title)
 
 def parse_dw_article(content, aid):
-    url = determine_url_by_aid(aid)
     doc = pq(content)
-    for target in targets:
-        if target.completed or url in target.hit_urls:
-            continue
-        content = doc('article')
-        title = content('header > h1')
-        paragraphs = doc('p')
-        hit_flag = False
-        paragraph_contents = [str(title.text())]
-        hit_paragraph_nos = set()
-        for i, p in enumerate(paragraphs.items(), start=1):
-            paragraph = str(p.text())
-            paragraph_contents.append(paragraph)
-            if target.hit(paragraph):
-                hit_flag = True
-                hit_paragraph_nos.add(i)
-        if hit_flag and url not in target.hit_urls:
-            process_hit(target, aid, url, paragraph_contents, hit_paragraph_nos)
+    content = doc('article')
+    paragraphs = doc('p')
+    title = [str(content('header > h1').text())]
+    title.extend([str(p.text()) for p in paragraphs.items()])
+    write_paragraphs(aid, f'{cache_folder}/{aid}.txt', title)
 
 def parse_article(content, aid):
     global targets
@@ -424,11 +434,6 @@ def parse_article(content, aid):
     # recruit other links
     progress_bar(targets)
 
-def file_accessable(path):
-    if isfile(path) and access(path, R_OK):
-        return True
-    return False
-
 async def recruit_url(aid):
     global received_bytes
     url = f'{WELT_HOME_URL}/{aid}'
@@ -441,13 +446,17 @@ async def recruit_url(aid):
 async def get_content_and_parse(aid):
     global received_bytes, cache_hit_cnt
     content = ''
+    path1 = f'{cache_folder}/{aid}.txt'
     path = f'{cache_folder}/{aid}.html'
     progress_bar(targets)
-    if file_accessable(path):
+    if file_accessable(path1):
+        parse_txt_article(aid)
+    elif file_accessable(path):
         cache_hit_cnt += 1
         async with aiofiles.open(path, mode='r', encoding='utf8') as f:
             async for l in f:
                 content += l
+        parse_article(content, aid)
     else:
         url = determine_url_by_aid(aid)
         async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=True) as client:
@@ -456,7 +465,7 @@ async def get_content_and_parse(aid):
             received_bytes += len(content)
             with open(path, 'w+', encoding='utf8') as fw:
                 fw.write(content.decode('utf8'))
-    parse_article(content, aid)
+        parse_article(content, aid)
     return aid
 
 
@@ -559,14 +568,6 @@ def unsearched(aid):
         return True
     return False
 
-def determine_url_by_aid(aid):
-    if re.match(spiegel_aid_re, aid):
-        return SPIEGEL_HOME_URL + '/' + aid
-    if re.match(dw_aid_re, aid):
-        return DW_HOME_URL + '/' + aid
-    else:
-        return WELT_HOME_URL + '/' + aid
-
 def determine_type_by_aid(aid):
     if re.match(spiegel_aid_re, aid):
         return SPIEGEL_AID_TYPE
@@ -629,45 +630,49 @@ if __name__ == '__main__':
 
     targets = [
 
-            # Target(prefix='Wertschöpfung', word='Kette', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='angegriffen', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='angepöbelt', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='tuscheln', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='kichern', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(prefix='Bloß', word='Stellung', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='aufbereitet', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='entwenden', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='versehen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='durchforsten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='Abhilfe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='theologisch', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='Akronym', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(prefix='Entfernungs', word='Radius', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(prefix='Bau', word='Gewerbe', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='Akzentuierung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(prefix='Ausgleichs', word='Zahlung', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='Bronchitis', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(prefix='gesamt', word='fiskalisch', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='delegieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='Pappe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(prefix='Schalt', word='Kreis', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='verschlüsselt', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(prefix='Fälschungs', word='sicher', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='Rheuma', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='synthetisieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='Gefäß', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(prefix='Wertschöpfung', word='Kette', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            Target(word='angegriffen', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            Target(word='angepöbelt', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            Target(word='tuscheln', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='kichern', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(prefix='Bloß', word='Stellung', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            Target(word='aufbereitet', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            Target(word='entwenden', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='versehen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='durchforsten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='Abhilfe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='theologisch', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            Target(word='Akronym', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(prefix='Entfernungs', word='Radius', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            Target(prefix='Bau', word='Gewerbe', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            Target(word='Akzentuierung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(prefix='Ausgleichs', word='Zahlung', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            Target(word='Bronchitis', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(prefix='gesamt', word='fiskalisch', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            Target(word='delegieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='Pappe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(prefix='Schalt', word='Kreis', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            Target(word='verschlüsselt', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            Target(prefix='Fälschungs', word='sicher', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            Target(word='Rheuma', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='synthetisieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='Gefäß', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
 
-            Target(word='ausgestiegen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(prefix='Bahn', word='Steig', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE, target_cnt=3),
-            Target(word='Steig', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='draußen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='geradeaus', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='helfen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='können', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='Ordnung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Praktikum', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='seit', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='tot', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            # Target(word='Licht', fix='', lb=True, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='abgeflogen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='arbeiten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            # Target(word='Aufzug', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='bis', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='erklären', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            # Target(word='Flughafen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='grillen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            # Target(word='Haltestelle', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Lösung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Schluss', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='schnell', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            # Target(word='sitzen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            # Target(word='warum', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+
 
             ]
 
@@ -676,8 +681,7 @@ if __name__ == '__main__':
             content = json.load(fp)
             for aid, _ in content.items():
                 article_ids[aid] = 0
-                path = f'{cache_folder}/{aid}.html'
-                if file_accessable(path):
+                if file_accessable(f'{cache_folder}/{aid}.html') or file_accessable(f'{cache_folder}/{aid}.txt'):
                     cached_article_ids.add(aid)
         print(f'load urls from history: {len(article_ids)}')
     if file_accessable(plus_aid_json_file): # get init article ids from last history
@@ -692,4 +696,3 @@ if __name__ == '__main__':
         json.dump(article_ids, fp)
     with open(plus_aid_json_file, 'w+', encoding='utf8') as fp: # save article_ids
         json.dump(plus_spiegel_aids, fp)
-

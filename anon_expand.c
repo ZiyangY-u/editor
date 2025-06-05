@@ -275,10 +275,16 @@ void python_crawler_target(char* word) {
         bl = true;
         br = true;
     }
-    printf("Target(word='$0', fix='', lb=%s, rb=%s, cs=%s, mode=",
-            (bl ? "True" : "False"),
-            (br ? "True" : "False"),
-            (w1=='v' || w1=='s' ? "True" : "False"));
+    if (w1 == 'c')
+        printf("Target(prefix='$1', word='$2', fix='', lb=%s, rb=%s, cs=%s, mode=",
+                (bl ? "True" : "False"),
+                (br ? "True" : "False"),
+                (w1=='v' || w1=='s' ? "True" : "False"));
+    else
+        printf("Target(word='$0', fix='', lb=%s, rb=%s, cs=%s, mode=",
+                (bl ? "True" : "False"),
+                (br ? "True" : "False"),
+                (w1=='v' || w1=='s' ? "True" : "False"));
     if (w1 == 'n')
         printf("NOUN_MODE),\n");
     if (w1 == 's')
@@ -287,11 +293,15 @@ void python_crawler_target(char* word) {
         printf("VERB_MODE),\n");
     if (w1 == 'p')
         printf("PHRASE_MODE),\n");
+    if (w1 == 'c')
+        printf("COMPOUND_NOUN_MODE),\n");
+    if (w1 == 'a')
+        printf("ADJECTIVE_MODE),\n");
 
 }
 
 void python_expand(char* word) {
-    if (matchn(word, "tn", 2) || matchn(word, "ts", 2) || matchn(word, "tv", 2) || matchn(word, "tp", 2))
+    if (matchn(word, "t", 1) && strlen(word) >= 2)
         python_crawler_target(word);
 }
 
