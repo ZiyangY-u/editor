@@ -328,7 +328,7 @@ class Target:
         if self.match_mode == PHRASE_MODE:
             kw = self.key_fix + '...' + self.key_noun_verb
         if self.match_mode == COMPOUND_NOUN_MODE:
-            kw = self.prefix + self.key_noun_verb
+            kw = self.prefix + self.key_noun_verb.lower()
         return kw
 
     def generate_prompt(self, hit_paras:list):
@@ -352,7 +352,7 @@ class Target:
 def process_hit(target, aid, url, paragraph_contents, hit_paragraph_nos):
     print(f'hit {target.get_kw()} in {aid}' + (' ' * 100))
     fname = f'./{folder_path}/article-{target.get_kw()}-' + aid + '.txt'
-    fname = unicodedata.normalize('NFD', fname).encode('ascii', 'ignore').decode('utf8')
+    fname = unicodedata.normalize('NFD', fname.replace('ß', 'ss')).encode('ascii', 'ignore').decode('utf8')
     with open(fname, 'w+', encoding='utf8') as f:
         f.write(url + '\n')
         f.write(target.generate_prompt([str(p) for p in sorted(hit_paragraph_nos)]))
@@ -632,7 +632,7 @@ if __name__ == '__main__':
 
     targets = [
 
-            Target(prefix='Wertschöpfung', word='Kette', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            Target(prefix='Wertschöpfungs', word='Kette', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
             Target(word='angegriffen', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
             Target(word='angepöbelt', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
             Target(word='tuscheln', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
