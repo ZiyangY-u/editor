@@ -1,6 +1,7 @@
 #!/usr/bin/python3.8
 
 import requests
+import unicodedata
 import zipfile
 import asyncio
 import httpx
@@ -351,6 +352,7 @@ class Target:
 def process_hit(target, aid, url, paragraph_contents, hit_paragraph_nos):
     print(f'hit {target.get_kw()} in {aid}' + (' ' * 100))
     fname = f'./{folder_path}/article-{target.get_kw()}-' + aid + '.txt'
+    fname = unicodedata.normalize('NFD', fname).encode('ascii', 'ignore').decode('utf8')
     with open(fname, 'w+', encoding='utf8') as f:
         f.write(url + '\n')
         f.write(target.generate_prompt([str(p) for p in sorted(hit_paragraph_nos)]))
