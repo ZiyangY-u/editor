@@ -17,6 +17,7 @@ from os import access, R_OK
 from os.path import isfile
 from pyquery import PyQuery as pq
 from datetime import datetime
+from functools import wraps
 
 TIMEOUT = httpx.Timeout(360.0, connect=360.0)
 PROXIES={ 'http': 'http://127.0.0.1:58591', 'https': 'http://127.0.0.1:58591', }
@@ -52,6 +53,8 @@ DW_HOME_URL = 'https://www.dw.com/de'
 DW_AID_TYPE = 30
 dw_aid_re = r'a-\d{8}'
 
+welt_aid_json_file = 'welt-aids.json'
+plus_aid_json_file = 'plus-aids.json'
 
 targets = []
 
@@ -62,9 +65,12 @@ received_bytes = 0
 cache_hit_cnt = 0
 tm1 = time.perf_counter()
 
-black_list = {
-        '252e57edaecec83003631c80e44de65baa14f041d2ed7387782a7a404da9c858',
-        'b23a07cac215495cc43af0a77ec764f3f1ef558e15add298deb36843258e38d4',
+manual_skip_list = {
+        'a-0ed2413e-3872-4dab-8d2a-cbdc6ca0fa66',
+        'a-25298a2a-9f51-41b9-9fa6-76f6b735cac6',
+        'a-26bc6320-8efe-494a-9959-160f7b89e187',
+        'a-6e0d2dcc-0002-0001-0000-000177967165',
+        'a-b8720172-229d-43e9-8db2-73d1930e8f1b',
         }
 
 def file_accessable(path):
@@ -79,6 +85,25 @@ def determine_url_by_aid(aid):
         return DW_HOME_URL + '/' + aid
     else:
         return WELT_HOME_URL + '/' + aid
+
+def determine_type_by_aid(aid):
+    if re.match(spiegel_aid_re, aid):
+        return SPIEGEL_AID_TYPE
+    if re.match(dw_aid_re, aid):
+        return DW_AID_TYPE
+    else:
+        return WELT_AID_TYPE
+
+def timeit(func):
+    @wraps(func)
+    def timeit_wrapper(*args, **kwargs):
+        stime = time.perf_counter()
+        result = func(*args, **kwargs)
+        etime = time.perf_counter()
+        elapse = etime - stime
+        print(f'{func.__name__} used {elapse:.4f} second' + ' ' * 120)
+        return result
+    return timeit_wrapper
 
 def _gaid(rst):
     _aid = rst[0]
@@ -380,18 +405,19 @@ def parse_txt_article(aid):
         for i, p in enumerate(a_content, start=1):
             if p.startswith(spiegel_plus_hint):
                 plus_spiegel_aids[aid] = 1
-                print('\nskip spiegel plus article', aid)
+                # print('\nskip spiegel plus article', aid)
                 return
             if target.hit(p):
                 hit_flag = True
                 hit_paragraph_nos.add(i)
         if hit_flag and url not in target.hit_urls:
             process_hit(target, aid, url, a_content, hit_paragraph_nos)
+    article_ids[aid] = 1 # marked as searched
     progress_bar(targets)
 
 def write_paragraphs(aid, fp, paragraphs:list):
     with open(fp, 'w+', encoding='utf8') as f:
-        for _, p in enumerate(paragraphs, start=1):
+        for _, p in enumerate((p.strip() for p in paragraphs if p.strip() != ''), start=1):
             f.write(p + '\n')
     if file_accessable(f'{cache_folder}/{aid}.html'):
         os.unlink(f'{cache_folder}/{aid}.html')
@@ -513,7 +539,6 @@ def readable_byte_len(bl):
         return f'{float(bl)/(1024):0.2f} Kb'
     return f'{float(bl):0.2f} byte'
 
-
 def progress_bar(targets):
     global tm1
     tm2 = time.perf_counter()
@@ -527,12 +552,6 @@ def progress_bar(targets):
     # progress += f' {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}'
     print(f'{progress}\r', end='')
 
-def is_all_done(targets):
-    for t in targets:
-        if not t.completed:
-            return False
-    return True
-
 def recruit_from_url(url):
     global article_ids, received_bytes
     before = len(article_ids)
@@ -544,12 +563,9 @@ def recruit_from_url(url):
     print(f'recruit {recruited} from {url}')
 
 def startwith_home(url):
-    if url.startswith(WELT_HOME_URL):
-        return True
-    if url.startswith(SPIEGEL_HOME_URL):
-        return True
-    if url.startswith(DW_HOME_URL):
-        return True
+    if url.startswith(WELT_HOME_URL): return True
+    if url.startswith(SPIEGEL_HOME_URL): return True
+    if url.startswith(DW_HOME_URL): return True
     return False
 
 def recruit_from_content(content):
@@ -570,52 +586,70 @@ def unsearched(aid):
         return True
     return False
 
-def determine_type_by_aid(aid):
-    if re.match(spiegel_aid_re, aid):
-        return SPIEGEL_AID_TYPE
-    if re.match(dw_aid_re, aid):
-        return DW_AID_TYPE
-    else:
-        return WELT_AID_TYPE
-
+@timeit
 def recruit_from_home():
     recruit_from_url(WELT_HOME_URL)
     recruit_from_url(SPIEGEL_HOME_URL)
     recruit_from_url(DW_HOME_URL)
-    # recruit_from_url(WELT_HOME_URL + '/wirtschaft/')
-    # recruit_from_url(WELT_HOME_URL + '/iconist/')
-    # recruit_from_url(WELT_HOME_URL + '/sport/')
-    # recruit_from_url(WELT_HOME_URL + '/vermischtes/')
-    # recruit_from_url(WELT_HOME_URL + '/politik/')
-    # recruit_from_url(WELT_HOME_URL + '/debatte/')
-    # recruit_from_url(WELT_HOME_URL + '/kultur/')
-    # recruit_from_url(WELT_HOME_URL + '/gesundheit/')
-    # recruit_from_url(WELT_HOME_URL + '/geschichte/')
-    # recruit_from_url(WELT_HOME_URL + '/reise/')
-    # recruit_from_url(WELT_HOME_URL + '/regionales/')
-    # recruit_from_url(WELT_HOME_URL + '/sonderthemen/')
 
-def start_crawl(targets):
+def print_aid_summary():
+    global article_ids, cached_article_ids
+    total, welt, spiegel, dw = 0, 0, 0, 0
+    for aid in article_ids.keys():
+        total += 1
+        type = determine_type_by_aid(aid)
+        if type == WELT_AID_TYPE: welt += 1
+        if type == SPIEGEL_AID_TYPE: spiegel += 1
+        if type == DW_AID_TYPE: dw += 1
+    print(f'links: ')
+    print(f'welt: {welt}({welt * 100 / total:.2f}%)', end=', ')
+    print(f'spiegel: {spiegel}({spiegel * 100 / total:.2f}%)', end=', ')
+    print(f'dw: {dw}({dw * 100 / total:.2f}%)', end='\n')
+    total, welt, spiegel, dw = 0, 0, 0, 0
+    for aid in cached_article_ids:
+        total += 1
+        type = determine_type_by_aid(aid)
+        if type == WELT_AID_TYPE: welt += 1
+        if type == SPIEGEL_AID_TYPE: spiegel += 1
+        if type == DW_AID_TYPE: dw += 1
+    print(f'cached: ')
+    print(f'welt: {welt}({welt * 100 / total:.2f}%)', end=', ')
+    print(f'spiegel: {spiegel}({spiegel * 100 / total:.2f}%)', end=', ')
+    print(f'dw: {dw}({dw * 100 / total:.2f}%)', end='\n')
+
+@timeit
+def sampling_aids():
+    uncached = [k for k, v in article_ids.items() if v == 0 and k not in cached_article_ids and k not in plus_spiegel_aids and k not in manual_skip_list]
+    aids1 = random.sample(uncached, THREADS) if len(uncached) > THREADS else []
+    aids2 = random.sample([k for k in cached_article_ids if k not in manual_skip_list], MAX_THREADS) if len(cached_article_ids) > MAX_THREADS else []
+
+    # expand spiegel and dw
+    aids_spiegel = [k for k in article_ids.keys() if determine_type_by_aid(k) == SPIEGEL_AID_TYPE and k not in plus_spiegel_aids and k not in cached_article_ids]
+    aids_spiegel = random.sample(aids_spiegel, 10) if len(aids_spiegel) > 10 else []
+    aids_dw = [k for k in article_ids.keys() if determine_type_by_aid(k) == DW_AID_TYPE and k not in plus_spiegel_aids and k not in cached_article_ids]
+    aids_dw = random.sample(aids_dw, 10) if len(aids_dw) > 10 else []
+
+    aids = [aid for aid in (aids1 + aids2 + aids_spiegel + aids_dw) if unsearched(aid)]
+    return aids
+
+@timeit
+def crawl(targets):
+    recruit_from_home()
     delete_tmp_articles()
 
-    while not is_all_done(targets) and urls_info(0) > THREADS and not file_accessable('./stop.txt'):
-        uncached = [k for k, v in article_ids.items() if v == 0 and k not in cached_article_ids and k not in plus_spiegel_aids]
-        aids1 = random.sample(uncached, THREADS) if len(uncached) > THREADS else []
-        aids2 = random.sample([k for k in cached_article_ids], MAX_THREADS) if len(cached_article_ids) > MAX_THREADS else []
-        aids = [aid for aid in (aids1 + aids2) if unsearched(aid)]
+    while not all(t.completed for t in targets) and urls_info(0) > THREADS and not file_accessable('./stop.txt'):
+        aids = sampling_aids()
 
         atm1 = time.perf_counter()
         done_aids = asyncio.run(launch(get_content_and_parse, aids))
         for aid in done_aids:
             article_ids[aid] = 1
         atm2 = time.perf_counter()
-        print(f'\nascyn run used {atm2-atm1:.2f} sec')
+        print(f'ascyn run used {atm2-atm1:.2f} sec for {len(done_aids)} articles' + ' ' * 100)
 
         progress_bar(targets)
 
     print(f'\n{urls_info(1)} article searched', end='\n')
-    tm2 = time.perf_counter()
-    print(f'totally {tm2-tm1:0.2f} sec used')
     bl = readable_byte_len(received_bytes)
     print(f'{bl} data received')
     print(f'{cache_hit_cnt} cache hit ({float(cache_hit_cnt * 100)/urls_info(1):.2f}%)')
@@ -626,9 +660,30 @@ def start_crawl(targets):
     zip_up_rst()
     delete_tmp_articles()
 
+@timeit
+def load_history_and_summary():
+    if file_accessable(welt_aid_json_file): # get init article ids from last history
+        with open(welt_aid_json_file, 'r', encoding='utf8') as fp:
+            content = json.load(fp)
+            for aid, _ in content.items():
+                article_ids[aid] = 0
+                if file_accessable(f'{cache_folder}/{aid}.html') or file_accessable(f'{cache_folder}/{aid}.txt'):
+                    cached_article_ids.add(aid)
+        print(f'load urls from history: {len(article_ids)}')
+    if file_accessable(plus_aid_json_file): # get init article ids from last history
+        with open(plus_aid_json_file, 'r', encoding='utf8') as fp:
+            plus_spiegel_aids = json.load(fp)
+        print(f'load plus urls from history: {len(plus_spiegel_aids)}')
+    print_aid_summary()
+
+@timeit
+def save_history():
+    with open(welt_aid_json_file, 'w+', encoding='utf8') as fp: # save article_ids
+        json.dump(article_ids, fp)
+    with open(plus_aid_json_file, 'w+', encoding='utf8') as fp: # save article_ids
+        json.dump(plus_spiegel_aids, fp)
+
 if __name__ == '__main__':
-    welt_aid_json_file = 'welt-aids.json'
-    plus_aid_json_file = 'plus-aids.json'
 
     targets = [
 
@@ -645,7 +700,7 @@ if __name__ == '__main__':
             Target(word='Abhilfe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
             Target(word='theologisch', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
             Target(word='Akronym', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(prefix='Entfernungs', word='Radius', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            # Target(prefix='Entfernungs', word='Radius', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
             Target(prefix='Bau', word='Gewerbe', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
             Target(word='Akzentuierung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
             Target(prefix='Ausgleichs', word='Zahlung', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
@@ -660,41 +715,10 @@ if __name__ == '__main__':
             Target(word='synthetisieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
             Target(word='Gefäß', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
 
-            # Target(word='Licht', fix='', lb=True, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='abgeflogen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='arbeiten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='Aufzug', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='bis', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='erklären', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='Flughafen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='grillen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='Haltestelle', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Lösung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Schluss', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='schnell', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='sitzen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='warum', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-
-
             ]
 
-    if file_accessable(welt_aid_json_file): # get init article ids from last history
-        with open(welt_aid_json_file, 'r', encoding='utf8') as fp:
-            content = json.load(fp)
-            for aid, _ in content.items():
-                article_ids[aid] = 0
-                if file_accessable(f'{cache_folder}/{aid}.html') or file_accessable(f'{cache_folder}/{aid}.txt'):
-                    cached_article_ids.add(aid)
-        print(f'load urls from history: {len(article_ids)}')
-    if file_accessable(plus_aid_json_file): # get init article ids from last history
-        with open(plus_aid_json_file, 'r', encoding='utf8') as fp:
-            plus_spiegel_aids = json.load(fp)
-        print(f'load plus urls from history: {len(plus_spiegel_aids)}')
+    load_history_and_summary()
 
-    recruit_from_home()
-    if len(targets) != 0: start_crawl(targets)
+    if len(targets) != 0: crawl(targets)
 
-    with open(welt_aid_json_file, 'w+', encoding='utf8') as fp: # save article_ids
-        json.dump(article_ids, fp)
-    with open(plus_aid_json_file, 'w+', encoding='utf8') as fp: # save article_ids
-        json.dump(plus_spiegel_aids, fp)
+    save_history()
