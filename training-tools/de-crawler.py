@@ -33,6 +33,7 @@ PHRASE_MODE        = 4
 COMPOUND_NOUN_MODE = 5
 ADJECTIVE_MODE     = 6
 OTHER_MODE         = 9
+MANUAL_TARGETS     = 10
 
 
 TARGET_CNT = 5 # default target cnt
@@ -65,13 +66,41 @@ received_bytes = 0
 cache_hit_cnt = 0
 tm1 = time.perf_counter()
 
+# a-d910b65e-6d6d-4358-a38e-84e525b0b5b6
 manual_skip_list = {
         'a-0ed2413e-3872-4dab-8d2a-cbdc6ca0fa66',
         'a-25298a2a-9f51-41b9-9fa6-76f6b735cac6',
         'a-26bc6320-8efe-494a-9959-160f7b89e187',
         'a-6e0d2dcc-0002-0001-0000-000177967165',
         'a-b8720172-229d-43e9-8db2-73d1930e8f1b',
+        'article12073266',
+        'article12605556',
+        'article12073266',
+        'article13528790', # too long
+        'article116955753', # too long
         }
+
+noun_skip_words = {
+        '', '(dem)', '(den)', '(der)', '(des)', '(die)', '(ein)', '(eine)', '(einem)', '(einen)', '(einer)', '(eines)', '(keine)', '(keinen)', '(keiner)', 'am', 'das', 'dem', 'den', 'der', 'des', 'die', 'ein', 'eine', 'einem', 'einen', 'einer', 'eines', 'er', 'es', 'ist', 'keine', 'keinen', 'keiner', 'sie', 'sind', '—'
+        }
+
+verb_skip_words = {
+        '-', 'bin', 'bist', 'habe', 'haben', 'habest', 'habet', 'habt', 'hast', 'hat', 'hatte', 'hatten', 'hattest', 'hattet', 'hätte', 'hätten', 'hättest', 'hättet', 'ist', 'sei', 'seid', 'seien', 'seiest', 'seiet', 'sein', 'sind', 'war', 'waren', 'warst', 'wart', 'werde', 'werden', 'werdet', 'wird', 'wirst', 'wäre', 'wären', 'wärest', 'wäret', 'würde', 'würden', 'würdest', 'würdet'
+        }
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+def cprint(color, content, end='\n'):
+    print(color + content + bcolors.ENDC, end=end)
 
 def file_accessable(path):
     if isfile(path) and access(path, R_OK):
@@ -137,10 +166,9 @@ def get_adj_declension(noun):
         tmp += (txt + ' ')
 
     for d in re.split(' |\n|,', tmp):
-        if d.strip() in { '','(keine)','(keinen)','(keiner)','keine','keinen','keiner','das','dem','den','der','des','die','ein','eine','einem','einen','einer','eines','—', 'am','er','es','ist','sie','sind',  }:
+        if d.strip() in noun_skip_words:
             continue
         rst.add(d.strip())
-    # print(f'adjective target: {", ".join(dkl for dkl in rst)}')
     return rst
 
 def get_declension2(noun):
@@ -151,87 +179,33 @@ def get_declension2(noun):
     tds = tbl('td')
     for td in tds.items():
         txt = str(td.text())
-        if txt in { 'das', 'dem', 'den', 'der', 'des', 'die', 'ein', 'eine', 'einem', 'einen', 'einer', 'eines' }:
+        if txt in noun_skip_words:
             continue
         if ',' in txt:
             for d in (d for d in txt.split(',')):
                 rst.add(d.strip().replace('0', '').replace('1', '').replace('2', '').replace('3', '').replace('4', '').replace('5', '').replace('6', '').replace('7', '').replace('8', '').replace('9', ''))
         else:
             rst.add(txt.strip().replace('0', '').replace('1', '').replace('2', '').replace('3', '').replace('4', '').replace('5', '').replace('6', '').replace('7', '').replace('8', '').replace('9', ''))
-    # print(f'noun target: {", ".join(dkl for dkl in rst)}')
     return rst
 
 def get_conjuncated(verb, prefix):
-    # time.sleep(random.randint(1, 5))
-    # resp = requests.get('https://api.verbix.com/conjugator/iv1/6153a464-b4f0-11ed-9ece-ee3761609078/1/13/113/' + verb, proxies=PROXIES)
     resp = requests.get('https://api.verbix.com/conjugator/iv1/6153a464-b4f0-11ed-9ece-ee3761609078/1/13/113/' + verb)
     content = json.loads(resp.content.decode('utf8'))
-    # print(content['p1']['html'])
 
     doc = pq(content['p1']['html'])
     conjuncated = doc('span.normal')
     irregular = doc('span.irregular')
     verbs = {verb}
     for c in itertools.chain(conjuncated.items(), irregular.items()):
-        for w in (w.strip() for w in str(c.text()).split(' ')):
+        for w in (w.strip().replace('(', '').replace(')', '') for w in str(c.text()).split(' ')):
             if prefix == '':
                 verbs.add(w)
             elif w.startswith(prefix) and len(w) > len(prefix):
                 verbs.add(w)
 
-    verbs.discard('habe')
-    verbs.discard('hast')
-    verbs.discard('hat')
-    verbs.discard('haben')
-    verbs.discard('habt')
-    verbs.discard('habet')
-    verbs.discard('habest')
+    for discard_w in verb_skip_words:
+        verbs.discard(discard_w)
 
-    verbs.discard('hatte')
-    verbs.discard('hattest')
-    verbs.discard('hatten')
-    verbs.discard('hattet')
-
-    verbs.discard('hätte')
-    verbs.discard('hättest')
-    verbs.discard('hätte')
-    verbs.discard('hätten')
-    verbs.discard('hättet')
-
-    verbs.discard('werde')
-    verbs.discard('wirst')
-    verbs.discard('wird')
-    verbs.discard('werden')
-    verbs.discard('werdet')
-    verbs.discard('werden')
-
-    verbs.discard('würde')
-    verbs.discard('würdest')
-    verbs.discard('würde')
-    verbs.discard('würden')
-    verbs.discard('würdet')
-    verbs.discard('würden')
-    verbs.discard('-')
-
-    verbs.discard('bin')
-    verbs.discard('bist')
-    verbs.discard('ist')
-    verbs.discard('sei')
-    verbs.discard('seid')
-    verbs.discard('seien')
-    verbs.discard('seiest')
-    verbs.discard('seiet')
-    verbs.discard('sein')
-    verbs.discard('sind')
-    verbs.discard('war')
-    verbs.discard('waren')
-    verbs.discard('warst')
-    verbs.discard('wart')
-    verbs.discard('wäre')
-    verbs.discard('wären')
-    verbs.discard('wärest')
-    verbs.discard('wäret')
-    # print(f'verb target: {", ".join(t for t in verbs)}')
     return verbs
 
 class Target:
@@ -250,14 +224,14 @@ class Target:
         if mode in (VERB_MODE, SEP_VERB_MODE):
             self.conjuncated = get_conjuncated(self.key_noun_verb, self.prefix)
             if len(self.conjuncated) == 0:
-                print(f'can not conjuncate:{self.key_noun_verb}')
+                cprint(bcolors.FAIL, f'can not conjuncate:{self.key_noun_verb}')
                 exit(1)
             print(f'verb target: {", ".join(t for t in self.conjuncated)}')
         if mode == NOUN_MODE and self.key_noun_verb[0].isupper():
             self.true_noun = True
             self.declensions = get_declension2(self.key_noun_verb)
             if len(self.declensions) == 0:
-                print(f'can not declension:{self.key_noun_verb}')
+                cprint(bcolors.FAIL, f'can not declension:{self.key_noun_verb}')
                 self.true_noun = False
             else:
                 print(f'noun target: {", ".join(dkl for dkl in self.declensions)}')
@@ -265,7 +239,7 @@ class Target:
             self.true_noun = True
             declensions = get_declension2(self.key_noun_verb)
             if len(declensions) == 0:
-                print(f'can not declension:{self.key_noun_verb}')
+                cprint(bcolors.FAIL, f'can not declension:{self.key_noun_verb}')
                 self.true_noun = False
                 self.key_noun_verb = self.prefix + self.key_noun_verb
             else: # compound noun and prefix
@@ -275,9 +249,10 @@ class Target:
         if mode == ADJECTIVE_MODE:
             declensions = get_adj_declension(self.key_noun_verb)
             if len(declensions) == 0:
-                print(f'can not declension:{self.key_noun_verb}')
+                cprint(bcolors.FAIL, f'can not declension:{self.key_noun_verb}')
+                self.declensions = []
             else:
-                self.declensions = declensions
+                self.declensions = declensions if self.prefix == '' else [self.prefix + d for d in declensions]
                 print(f'adjective target: {", ".join(dkl for dkl in self.declensions)}')
 
 
@@ -354,6 +329,8 @@ class Target:
             kw = self.key_fix + '...' + self.key_noun_verb
         if self.match_mode == COMPOUND_NOUN_MODE:
             kw = self.prefix + self.key_noun_verb.lower()
+        if self.match_mode == ADJECTIVE_MODE and self.prefix != '':
+            kw = self.prefix + self.key_noun_verb.lower()
         return kw
 
     def generate_prompt(self, hit_paras:list):
@@ -375,7 +352,7 @@ class Target:
         return prompt
 
 def process_hit(target, aid, url, paragraph_contents, hit_paragraph_nos):
-    print(f'hit {target.get_kw()} in {aid}' + (' ' * 100))
+    # print(f'hit {target.get_kw()} in {aid}' + (' ' * 100))
     fname = f'./{folder_path}/article-{target.get_kw()}-' + aid + '.txt'
     fname = unicodedata.normalize('NFD', fname.replace('ß', 'ss')).encode('ascii', 'ignore').decode('utf8')
     with open(fname, 'w+', encoding='utf8') as f:
@@ -386,7 +363,7 @@ def process_hit(target, aid, url, paragraph_contents, hit_paragraph_nos):
             f.write(p + '\n')
     target.hit_urls.add(url)
     if target.target_cnt == len(target.hit_urls):
-        print(f'{target.get_kw()} complete! at {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}')
+        cprint(bcolors.OKGREEN, f'{target.get_kw()} complete! at {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}' + (' ' * 100))
         target.completed = True
 
 def parse_txt_article(aid):
@@ -489,10 +466,10 @@ async def get_content_and_parse(aid):
         url = determine_url_by_aid(aid)
         async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=True) as client:
             resp = await client.get(url=url)
-            content = resp.content
+            content = resp.content.decode('utf8')
             received_bytes += len(content)
             with open(path, 'w+', encoding='utf8') as fw:
-                fw.write(content.decode('utf8'))
+                fw.write(content)
         parse_article(content, aid)
     return aid
 
@@ -543,10 +520,13 @@ def progress_bar(targets):
     global tm1
     tm2 = time.perf_counter()
     s = ''
-    for i, t in enumerate(targets, start=1):
+    incomplete = [t for t in targets if not t.completed]
+    ptargets = incomplete if len(incomplete) <= 30 else incomplete[:30]
+    for i, t in enumerate(ptargets, start=1):
         if i != 1:
             s += '|'
-        s += ('〇' if t.completed else str(t.target_cnt - len(t.hit_urls)))
+        # s += ('〇' if t.completed else str(t.target_cnt - len(t.hit_urls)))
+        s += str(t.target_cnt - len(t.hit_urls))
     bl = readable_byte_len(received_bytes)
     progress = f'[{s}] {urls_info(1)} searched, {urls_info(0)} remain {tm2-tm1:0.2f} sec {bl} received'
     # progress += f' {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}'
@@ -601,10 +581,10 @@ def print_aid_summary():
         if type == WELT_AID_TYPE: welt += 1
         if type == SPIEGEL_AID_TYPE: spiegel += 1
         if type == DW_AID_TYPE: dw += 1
-    print(f'links: ')
-    print(f'welt: {welt}({welt * 100 / total:.2f}%)', end=', ')
-    print(f'spiegel: {spiegel}({spiegel * 100 / total:.2f}%)', end=', ')
-    print(f'dw: {dw}({dw * 100 / total:.2f}%)', end='\n')
+    cprint(bcolors.OKGREEN, f'links: ')
+    cprint(bcolors.OKGREEN, f'welt: {welt}({welt * 100 / total:.2f}%)', end=', ')
+    cprint(bcolors.OKGREEN, f'spiegel: {spiegel}({spiegel * 100 / total:.2f}%)', end=', ')
+    cprint(bcolors.OKGREEN, f'dw: {dw}({dw * 100 / total:.2f}%)', end='\n')
     total, welt, spiegel, dw = 0, 0, 0, 0
     for aid in cached_article_ids:
         total += 1
@@ -612,16 +592,16 @@ def print_aid_summary():
         if type == WELT_AID_TYPE: welt += 1
         if type == SPIEGEL_AID_TYPE: spiegel += 1
         if type == DW_AID_TYPE: dw += 1
-    print(f'cached: ')
-    print(f'welt: {welt}({welt * 100 / total:.2f}%)', end=', ')
-    print(f'spiegel: {spiegel}({spiegel * 100 / total:.2f}%)', end=', ')
-    print(f'dw: {dw}({dw * 100 / total:.2f}%)', end='\n')
+    cprint(bcolors.OKCYAN, f'cached: ')
+    cprint(bcolors.OKCYAN, f'welt: {welt}({welt * 100 / total:.2f}%)', end=', ')
+    cprint(bcolors.OKCYAN, f'spiegel: {spiegel}({spiegel * 100 / total:.2f}%)', end=', ')
+    cprint(bcolors.OKCYAN, f'dw: {dw}({dw * 100 / total:.2f}%)', end='\n')
 
-@timeit
+# @timeit
 def sampling_aids():
     uncached = [k for k, v in article_ids.items() if v == 0 and k not in cached_article_ids and k not in plus_spiegel_aids and k not in manual_skip_list]
     aids1 = random.sample(uncached, THREADS) if len(uncached) > THREADS else []
-    aids2 = random.sample([k for k in cached_article_ids if k not in manual_skip_list], MAX_THREADS) if len(cached_article_ids) > MAX_THREADS else []
+    aids_cached = random.sample([k for k in cached_article_ids if k not in manual_skip_list], MAX_THREADS) if len(cached_article_ids) > MAX_THREADS else []
 
     # expand spiegel and dw
     aids_spiegel = [k for k in article_ids.keys() if determine_type_by_aid(k) == SPIEGEL_AID_TYPE and k not in plus_spiegel_aids and k not in cached_article_ids]
@@ -629,7 +609,7 @@ def sampling_aids():
     aids_dw = [k for k in article_ids.keys() if determine_type_by_aid(k) == DW_AID_TYPE and k not in plus_spiegel_aids and k not in cached_article_ids]
     aids_dw = random.sample(aids_dw, 10) if len(aids_dw) > 10 else []
 
-    aids = [aid for aid in (aids1 + aids2 + aids_spiegel + aids_dw) if unsearched(aid)]
+    aids = [aid for aid in (aids1 + aids_cached + aids_spiegel + aids_dw) if unsearched(aid)]
     return aids
 
 @timeit
@@ -662,12 +642,16 @@ def crawl(targets):
 
 @timeit
 def load_history_and_summary():
+    cprint(bcolors.HEADER, 'start loading history...')
     if file_accessable(welt_aid_json_file): # get init article ids from last history
         with open(welt_aid_json_file, 'r', encoding='utf8') as fp:
             content = json.load(fp)
+            _tmp_fn = set()
+            for filename in os.listdir(cache_folder):
+                _tmp_fn.add(filename)
             for aid, _ in content.items():
                 article_ids[aid] = 0
-                if file_accessable(f'{cache_folder}/{aid}.html') or file_accessable(f'{cache_folder}/{aid}.txt'):
+                if f'{aid}.html' in _tmp_fn or f'{aid}.txt' in _tmp_fn:
                     cached_article_ids.add(aid)
         print(f'load urls from history: {len(article_ids)}')
     if file_accessable(plus_aid_json_file): # get init article ids from last history
@@ -714,11 +698,76 @@ if __name__ == '__main__':
             Target(word='Rheuma', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
             Target(word='synthetisieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
             Target(word='Gefäß', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Röntgenstrahlung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='patentieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='Acetylsalicylsäure', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Enzym', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Aminosäure', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Saatgut', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Weizen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Gerste', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='altruistisch', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            Target(prefix='fach', word='kundig', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            Target(word='Gebrechen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='angesetzt', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Anatomie', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Gewerbe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='antioxidantisch', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            Target(word='lancieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='Muffel', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='heraufbeschworen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Anleger', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='verprellen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='eingebrochen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Steuersatz', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Organ', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Judikative', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(prefix='Personen', word='Verkehr', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            Target(word='Absatz', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='falten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='Wahlurne', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='verabschieden', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='gefangene', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Kapitulation', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='entgegengenommen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='ausgelaufen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='abgedankt', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='menschenverachtend', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            Target(word='pferchen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='Befugnis', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='aufgestellt', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Senat', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='erheben', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='Faser', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='titulieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='perfid', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            Target(word='Lockmittel', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='verschleiß', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='unsachgemäß', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            Target(prefix='Versand', word='Handel', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            Target(word='behaupten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+
+            # Target(word='empfängen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            # Target(word='Lied', fix='', lb=True, rb=True, cs=False, mode=NOUN_MODE),
+            # Target(word='Leute', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Vorwahl', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Fleisch', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='aufgehört', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Bahnsteig', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Handy', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Möbel', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='schicken', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            # Target(word='Schild', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='umgezogen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='zufrieden', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+
+            # Target(word='zum anderen schildern', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Hunger', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
 
             ]
 
     load_history_and_summary()
-
     if len(targets) != 0: crawl(targets)
-
     save_history()
+
+
