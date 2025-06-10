@@ -280,6 +280,11 @@ void python_crawler_target(char* word) {
                 (bl ? "True" : "False"),
                 (br ? "True" : "False"),
                 (w1=='v' || w1=='s' ? "True" : "False"));
+    else if (w1 == 's')
+        printf("Target(fix='$1', word='$2', lb=%s, rb=%s, cs=%s, mode=",
+                (bl ? "True" : "False"),
+                (br ? "True" : "False"),
+                (w1=='v' || w1=='s' ? "True" : "False"));
     else
         printf("Target(word='$0', fix='', lb=%s, rb=%s, cs=%s, mode=",
                 (bl ? "True" : "False"),
@@ -288,7 +293,7 @@ void python_crawler_target(char* word) {
     if (w1 == 'n')
         printf("NOUN_MODE),\n");
     if (w1 == 's')
-        printf("SEP_VERB_MODE),\n");
+        printf("SEP_VERB_MODE, target_cnt=10),\n");
     if (w1 == 'v')
         printf("VERB_MODE),\n");
     if (w1 == 'p')

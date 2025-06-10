@@ -19,6 +19,14 @@ from pyquery import PyQuery as pq
 from datetime import datetime
 from functools import wraps
 
+from selenium import webdriver
+from selenium.webdriver.edge.service import Service
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import pyperclip
+
 TIMEOUT = httpx.Timeout(360.0, connect=360.0)
 PROXIES={ 'http': 'http://127.0.0.1:58591', 'https': 'http://127.0.0.1:58591', }
 PROXY = 'http://127.0.0.1:58591'
@@ -73,10 +81,13 @@ manual_skip_list = {
         'a-26bc6320-8efe-494a-9959-160f7b89e187',
         'a-6e0d2dcc-0002-0001-0000-000177967165',
         'a-b8720172-229d-43e9-8db2-73d1930e8f1b',
+        'a-b4cd6f55-0002-0001-0000-000041784656', # too long
+        'article5118821', # too long
         'article12073266',
         'article12605556',
-        'article12073266',
         'article13528790', # too long
+        'article13663598', # too long
+        'article13903849', # too long
         'article116955753', # too long
         }
 
@@ -633,7 +644,7 @@ def crawl(targets):
     print(f'\n{urls_info(1)} article searched', end='\n')
     bl = readable_byte_len(received_bytes)
     print(f'{bl} data received')
-    print(f'{cache_hit_cnt} cache hit ({float(cache_hit_cnt * 100)/urls_info(1):.2f}%)')
+    cprint(bcolors.OKCYAN, f'{cache_hit_cnt} cache hit ({float(cache_hit_cnt * 100)/urls_info(1):.2f}%)')
     # print incomplete target(s)
     for t in targets:
         if not t.completed:
@@ -667,6 +678,29 @@ def save_history():
         json.dump(article_ids, fp)
     with open(plus_aid_json_file, 'w+', encoding='utf8') as fp: # save article_ids
         json.dump(plus_spiegel_aids, fp)
+
+def auto_ai_answer():
+    driver_path = './edgedriver_win64/msedgedriver.exe'
+    service = Service(driver_path)
+    service = webdriver.EdgeService(executable_path = driver_path)
+    driver = webdriver.Edge(service=service)
+    driver.get('https://www.wenxiaobai.com/')
+    print(driver.title)
+    print('start waiting input box')
+    wait = WebDriverWait(driver, 20)
+    input_box = wait.until(
+            EC.presence_of_element_located((By.XPATH, '//textarea[@placeholder="给 小白 发送消息"]'))
+            )
+    if input_box:
+        print('got input box')
+    with open(f'{folder_path}/article-ansehen-article121548889.txt', mode='r', encoding='utf8') as f:
+        content = f.read()
+    pyperclip.copy(content)
+    print('input content')
+    input_box.send_keys(Keys.CONTROL + "v")
+    print('enter')
+    input_box.send_keys(Keys.ENTER)
+    time.sleep(10)
 
 if __name__ == '__main__':
 
@@ -748,22 +782,13 @@ if __name__ == '__main__':
             # Target(prefix='Versand', word='Handel', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
             # Target(word='behaupten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
 
-            Target(word='Abflug', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Dank', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='duschen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='Ehefrau', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Getränk', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='glauben', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='Hähnchen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='hell', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            Target(word='Internet', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='kennen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='kulturell', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            Target(word='reisen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='Salz', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Stock', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Toilette', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='zwischen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='angesehen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(fix='an', word='sehen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
+            # Target(word='Anzug', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Apotheke', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Apparat', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='ärgern', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            # Target(word='Artikel', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
 
             ]
 
