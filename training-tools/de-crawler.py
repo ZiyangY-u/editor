@@ -19,13 +19,6 @@ from pyquery import PyQuery as pq
 from datetime import datetime
 from functools import wraps
 
-from selenium import webdriver
-from selenium.webdriver.edge.service import Service
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import pyperclip
 
 TIMEOUT = httpx.Timeout(360.0, connect=360.0)
 PROXIES={ 'http': 'http://127.0.0.1:58591', 'https': 'http://127.0.0.1:58591', }
@@ -650,7 +643,7 @@ def crawl(targets):
         if not t.completed:
             print(t.get_kw(), 'not completed', end='\n')
     zip_up_rst()
-    delete_tmp_articles()
+    # delete_tmp_articles()
 
 @timeit
 def load_history_and_summary():
@@ -679,28 +672,6 @@ def save_history():
     with open(plus_aid_json_file, 'w+', encoding='utf8') as fp: # save article_ids
         json.dump(plus_spiegel_aids, fp)
 
-def auto_ai_answer():
-    driver_path = './edgedriver_win64/msedgedriver.exe'
-    service = Service(driver_path)
-    service = webdriver.EdgeService(executable_path = driver_path)
-    driver = webdriver.Edge(service=service)
-    driver.get('https://www.wenxiaobai.com/')
-    print(driver.title)
-    print('start waiting input box')
-    wait = WebDriverWait(driver, 20)
-    input_box = wait.until(
-            EC.presence_of_element_located((By.XPATH, '//textarea[@placeholder="给 小白 发送消息"]'))
-            )
-    if input_box:
-        print('got input box')
-    with open(f'{folder_path}/article-ansehen-article121548889.txt', mode='r', encoding='utf8') as f:
-        content = f.read()
-    pyperclip.copy(content)
-    print('input content')
-    input_box.send_keys(Keys.CONTROL + "v")
-    print('enter')
-    input_box.send_keys(Keys.ENTER)
-    time.sleep(10)
 
 if __name__ == '__main__':
 
@@ -782,13 +753,13 @@ if __name__ == '__main__':
             # Target(prefix='Versand', word='Handel', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
             # Target(word='behaupten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
 
-            # Target(word='angesehen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(fix='an', word='sehen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
-            # Target(word='Anzug', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Apotheke', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Apparat', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='ärgern', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='Artikel', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='angesehen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(fix='an', word='sehen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
+            Target(word='Anzug', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Apotheke', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='Apparat', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='ärgern', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='Artikel', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
 
             ]
 
