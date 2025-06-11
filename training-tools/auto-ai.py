@@ -24,6 +24,7 @@ F_ROLE = 0
 fservice = webdriver.FirefoxService(executable_path = firefox_driver_path)
 firefox = webdriver.Firefox(service=fservice)
 f_refresh_cnt = REFRESH_CNT
+
 E_ROLE = 1
 eservice = webdriver.EdgeService(executable_path = edge_driver_path)
 edge = webdriver.Edge(service=eservice)
