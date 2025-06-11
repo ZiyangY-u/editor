@@ -341,7 +341,7 @@ class Target:
         kw = self.get_kw()
         idx = 1
         prompt = f'对于下面这篇德语文章\n'
-        prompt += f'{idx}.打印出‘{kw}’的音标(包括重音符号)'; idx += 1
+        # prompt += f'{idx}.打印出‘{kw}’的音标(包括重音符号)'; idx += 1
 
         if self.true_noun:
             prompt += f'以及阴阳性和复数形式\n';
@@ -487,19 +487,57 @@ def urls_info(flg): # 1 searched; 0 remain
     global article_ids
     return len(([k for k, v in article_ids.items() if v == flg]))
 
+def delete_file(file_path):
+    try:
+        if os.path.isfile(file_path) or os.path.islink(file_path):
+            os.unlink(file_path)  # 删除文件或符号链接
+        elif os.path.isdir(file_path):
+            shutil.rmtree(file_path)  # 删除子文件夹（可选）
+    except Exception as e:
+        print(f"删除 {file_path} 失败: {e}")
+
 def delete_tmp_articles():
     global folder_path
     for filename in os.listdir(folder_path):
         if not filename.startswith('article-'):
             continue
         file_path = os.path.join(folder_path, filename)
-        try:
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.unlink(file_path)  # 删除文件或符号链接
-            elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)  # 删除子文件夹（可选）
-        except Exception as e:
-            print(f"删除 {file_path} 失败: {e}")
+        delete_file(file_path)
+
+def collect_markdowns():
+    global folder_path
+    # delete md- files
+    for filename in os.listdir(folder_path):
+        if not filename.startswith('md-') or not filename.endswith('.md'):
+            continue
+        file_path = os.path.join(folder_path, filename)
+        delete_file(file_path)
+    # file key words
+    keywords = set()
+    for filename in os.listdir(folder_path):
+        if not filename.startswith('article-') or not filename.endswith('.md'):
+            continue
+        kw = filename.split('-')[1]
+        keywords.add(kw)
+    for k in keywords:
+        with open(f'{folder_path}/md-{k}.md', mode='w+', encoding='utf8') as mkf:
+            for filename in os.listdir(folder_path):
+                if not filename.startswith('article-') or not filename.endswith('.md') or k not in filename:
+                    continue
+                with open(f'{folder_path}/{filename}', mode='r', encoding='utf8') as rf:
+                    mkf.write('\n\n---\n\n')
+                    content = rf.read()
+                    mkf.write(content.replace('---', ''))
+    # zip up
+    target_zip = f'/md_archive{datetime.now().strftime("%Y%m%d-%H%M%S")}.zip'
+    with zipfile.ZipFile(folder_path + target_zip, 'w') as zipf:
+        for filename in os.listdir(folder_path):
+            if not filename.startswith('md-') or not filename.endswith('.md'):
+                continue
+            file_path = os.path.join(folder_path, filename)
+            zipf.write(file_path)
+    shutil.copyfile(f'{folder_path}/{target_zip}', f'{folder_path}/md_archive.zip')
+
 
 def zip_up_rst():
     global folder_path
@@ -753,18 +791,39 @@ if __name__ == '__main__':
             # Target(prefix='Versand', word='Handel', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
             # Target(word='behaupten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
 
-            Target(word='angesehen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(fix='an', word='sehen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
-            Target(word='Anzug', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Apotheke', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='Apparat', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='ärgern', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='Artikel', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(fix='auf', word='machen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
+            # Target(fix='auf', word='passen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
+            # Target(fix='auf', word='räumen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
+            # Target(word='aufregend', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            # Target(word='Ausbildung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(fix='aus', word='gehen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
+            # Target(fix='aus', word='packen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
+            # Target(fix='aus', word='ruhen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
+            # Target(word='außer', fix='', lb=True, rb=True, cs=False, mode=NOUN_MODE),
+            # Target(word='außerdem', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='außerhalb', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(fix='aus', word='sprechen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
+            # Target(fix='aus', word='steigen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
+            # Target(word='Ausstellung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(fix='aus', word='tragen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
+            # Target(word='Babysitter', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='backen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+
+            # Target(word='Ball', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='Band', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='beantworten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            # Target(word='kalt', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            # Target(word='Kamera', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(prefix='Mobil', word='Telefon', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
+            # Target(word='Passwort', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            # Target(word='schade', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            # Target(word='Teller', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
 
             ]
 
-    load_history_and_summary()
-    if len(targets) != 0: crawl(targets)
-    save_history()
+    # load_history_and_summary()
+    # if len(targets) != 0: crawl(targets)
+    # save_history()
 
+    collect_markdowns()
 

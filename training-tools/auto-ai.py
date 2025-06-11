@@ -6,7 +6,7 @@ import pyperclip
 from os import access, R_OK
 from os.path import isfile
 from selenium import webdriver
-from selenium.webdriver.firefox.service import Service
+from selenium.webdriver import firefox
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -14,10 +14,23 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
 folder_path = './articles'
-driver_path = './geckodriver-v0.36.0-win64/geckodriver.exe'
-skip_files = set()
+firefox_driver_path = './geckodriver-v0.36.0-win64/geckodriver.exe'
+edge_driver_path = './edgedriver_win64/msedgedriver.exe'
 
 MAX_SLEEP_TIME = 600
+REFRESH_CNT = 2
+
+F_ROLE = 0
+fservice = webdriver.FirefoxService(executable_path = firefox_driver_path)
+firefox = webdriver.Firefox(service=fservice)
+f_refresh_cnt = REFRESH_CNT
+E_ROLE = 1
+eservice = webdriver.EdgeService(executable_path = edge_driver_path)
+edge = webdriver.Edge(service=eservice)
+e_refresh_cnt = REFRESH_CNT
+
+sleep_time = 2
+skip_files = set()
 
 def file_accessable(path):
     if isfile(path) and access(path, R_OK):
@@ -32,57 +45,70 @@ def get_target():
             return f'{folder_path}/{filename}'
     return None
 
+def reopen(role):
+    if role == F_ROLE:
+        global firefox
+        firefox.quit()
+        firefox = webdriver.Firefox(service=fservice)
+        init(firefox)
+        f_refresh_cnt = REFRESH_CNT
+    if role == E_ROLE:
+        global edge
+        options = webdriver.EdgeOptions()
+        options.add_argument("--window-size=1624,768")
+        edge.quit()
+        edge = webdriver.Edge(service=eservice, options=options)
+        init(edge)
+        e_refresh_cnt = REFRESH_CNT
 
-def auto_ai_answer(question_path):
-    service = Service(driver_path)
-    service = webdriver.FirefoxService(executable_path = driver_path)
-    driver = webdriver.Firefox(service=service)
+def init(driver):
+    driver.get('https://www.wenxiaobai.com/?chatMode=temp')
 
-    driver.get('https://www.wenxiaobai.com/')
-    print('start waiting input box')
+def auto_ai_answer(driver, question_path):
+    wait = WebDriverWait(driver, 3)
+    new_dialog = wait.until(EC.presence_of_element_located((By.XPATH, '//*[local-name()="svg" and contains(@name, "chat-new")]')))
+    new_dialog.click()
+    time.sleep(2)
+
+    print('waiting\r', end='')
     wait = WebDriverWait(driver, 180)
     input_box = wait.until(
             EC.presence_of_element_located((By.XPATH, '//textarea[@placeholder="给 小白 发送消息"]'))
             )
     if input_box:
-        print('got input box')
+        print('waiting got\r', end='')
     with open(question_path, mode='r', encoding='utf8') as f:
         content = f.read()
     pyperclip.copy(content)
-    print('input content')
+    print('waiting got input\r', end='')
     input_box.send_keys(Keys.CONTROL + "v")
-    print('enter')
+    print('waiting got input enter')
     input_box.send_keys(Keys.ENTER)
 
     time.sleep(3)
     wait = WebDriverWait(driver, 2)
     try:
-        sent = wait.until(
-                # EC.presence_of_element_located((By.XPATH, '//*[local-name()="svg" and contains(@name, "new-send")]'))
-                EC.presence_of_element_located((By.XPATH, '//*[local-name()="svg" and contains(@name, "send-normal-stop")]'))
-                )
+        wait.until(EC.presence_of_element_located((By.XPATH, '//*[local-name()="svg" and contains(@name, "send-normal-stop")]')))
     except TimeoutException:
         skip_files.add(question_path)
         print(f'skip {question_path}')
-        driver.quit()
+        init(driver)
         return
 
     wait = WebDriverWait(driver, 180)
-    copy_btn = wait.until(
-            # EC.presence_of_element_located((By.XPATH, '//*[local-name()="svg" and contains(@name, "new-send")]'))
-            EC.presence_of_element_located((By.XPATH, '//*[local-name()="svg" and contains(@name, "chatbottomcopy")]'))
-            )
+    copy_btn = wait.until(EC.presence_of_element_located((By.XPATH, '//*[local-name()="svg" and contains(@name, "chatbottomcopy")]')))
     if copy_btn:
         print('done!')
         copy_btn.click()
         md_text = pyperclip.paste()
         with open(question_path.replace('.txt', '.md'), mode='w+', encoding='utf8') as f:
             f.write(md_text)
-    driver.quit()
 
 if __name__ == '__main__':
-    # auto_ai_answer(f'{folder_path}/article-ansehen-article121548889.txt')
-    sleep_time = 2
+    reopen(F_ROLE)
+    reopen(E_ROLE)
+    cnt = 0
+
     while True:
         target_f = get_target()
         if target_f is None:
@@ -90,9 +116,27 @@ if __name__ == '__main__':
         else:
             try:
                 print(f'target: {target_f}')
-                auto_ai_answer(target_f)
+                role = cnt % 2 # firefox, edge
+                tm1 = time.perf_counter()
+
+                if role == F_ROLE: # firefox
+                    auto_ai_answer(firefox, target_f)
+                    f_refresh_cnt -= 1
+                if role == E_ROLE: # edge
+                    auto_ai_answer(edge, target_f)
+                    e_refresh_cnt -= 1
+
+                tm2 = time.perf_counter()
+                print(f'{tm2-tm1:0.2f} sec used')
                 sleep_time = 2
             except:
-                pass
+                init(firefox)
+                init(edge)
+
+        if f_refresh_cnt == 0:
+            reopen(F_ROLE)
+        if e_refresh_cnt == 0:
+            reopen(E_ROLE)
         print(f'sleep for {sleep_time} sec')
         time.sleep(sleep_time)
+        cnt += 1
