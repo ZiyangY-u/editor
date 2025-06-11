@@ -351,7 +351,7 @@ class Target:
         prompt += f'{idx}.为这篇德语文章生成一篇简短的中文摘要\n'; idx += 1
         for hp in hit_paras:
             prompt += f'{idx}.翻译第{hp}段，并用粗体标出用到‘{kw}’的句子\n'; idx += 1
-            prompt += f'{idx}.打印原文第{hp}段，并用加粗斜体标记出用到了‘{kw}’的句子\n'; idx += 1
+            prompt += f'{idx}.打印原文第{hp}段，并用粗体标记出用到了‘{kw}’的句子\n'; idx += 1
 
         return prompt
 
@@ -527,7 +527,14 @@ def collect_markdowns():
                 with open(f'{folder_path}/{filename}', mode='r', encoding='utf8') as rf:
                     mkf.write('\n\n---\n\n')
                     content = rf.read()
-                    mkf.write(content.replace('---', ''))
+                    content = content.replace('---', '')
+                    bold_mark_idxs = [m.start() for m in re.finditer(r'\*\*', content)]
+                    # add one space in all even `**` for markdown bold display properly
+                    for i, idx in enumerate(reversed(bold_mark_idxs), start=1):
+                        if i % 2 == 0:
+                            continue
+                        content = content[:idx+2] + ' ' + content[idx+2:]
+                    mkf.write(content)
     # zip up
     target_zip = f'/md_archive{datetime.now().strftime("%Y%m%d-%H%M%S")}.zip'
     with zipfile.ZipFile(folder_path + target_zip, 'w') as zipf:

@@ -27,7 +27,9 @@ f_refresh_cnt = REFRESH_CNT
 
 E_ROLE = 1
 eservice = webdriver.EdgeService(executable_path = edge_driver_path)
-edge = webdriver.Edge(service=eservice)
+options = webdriver.EdgeOptions()
+options.add_argument("--window-size=1324,768")
+edge = webdriver.Edge(service=eservice, options=options)
 e_refresh_cnt = REFRESH_CNT
 
 sleep_time = 2
@@ -55,8 +57,6 @@ def reopen(role):
         f_refresh_cnt = REFRESH_CNT
     if role == E_ROLE:
         global edge
-        options = webdriver.EdgeOptions()
-        options.add_argument("--window-size=1624,768")
         edge.quit()
         edge = webdriver.Edge(service=eservice, options=options)
         init(edge)
@@ -65,7 +65,7 @@ def reopen(role):
 def init(driver):
     driver.get('https://www.wenxiaobai.com/?chatMode=temp')
 
-def auto_ai_answer(driver, question_path):
+def auto_ai_answer(driver, role, question_path):
     wait = WebDriverWait(driver, 3)
     new_dialog = wait.until(EC.presence_of_element_located((By.XPATH, '//*[local-name()="svg" and contains(@name, "chat-new")]')))
     new_dialog.click()
@@ -88,6 +88,12 @@ def auto_ai_answer(driver, question_path):
 
     time.sleep(3)
     wait = WebDriverWait(driver, 2)
+    try:
+        wait.until(EC.presence_of_element_located((By.XPATH, '//div[contains(string(), "去登录")]')))
+        reopen(role)
+    except TimeoutException:
+        pass
+
     try:
         wait.until(EC.presence_of_element_located((By.XPATH, '//*[local-name()="svg" and contains(@name, "send-normal-stop")]')))
     except TimeoutException:
@@ -121,10 +127,10 @@ if __name__ == '__main__':
                 tm1 = time.perf_counter()
 
                 if role == F_ROLE: # firefox
-                    auto_ai_answer(firefox, target_f)
+                    auto_ai_answer(firefox, F_ROLE, target_f)
                     f_refresh_cnt -= 1
                 if role == E_ROLE: # edge
-                    auto_ai_answer(edge, target_f)
+                    auto_ai_answer(edge, E_ROLE, target_f)
                     e_refresh_cnt -= 1
 
                 tm2 = time.perf_counter()
