@@ -360,7 +360,7 @@ def process_hit(target, aid, url, paragraph_contents, hit_paragraph_nos):
     fname = f'./{folder_path}/article-{target.get_kw()}-' + aid + '.txt'
     fname = unicodedata.normalize('NFD', fname.replace('ß', 'ss')).encode('ascii', 'ignore').decode('utf8')
     with open(fname, 'w+', encoding='utf8') as f:
-        f.write(url + '\n')
+        # f.write(url + '\n')
         f.write(target.generate_prompt([str(p) for p in sorted(hit_paragraph_nos)]))
         for i, p in enumerate(paragraph_contents, start=1):
             f.write(f'p{i}:\n')
@@ -524,16 +524,18 @@ def collect_markdowns():
             for filename in os.listdir(folder_path):
                 if not filename.startswith('article-') or not filename.endswith('.md') or k not in filename:
                     continue
+                mkf.write('\n\n---\n\n')
                 with open(f'{folder_path}/{filename}', mode='r', encoding='utf8') as rf:
-                    mkf.write('\n\n---\n\n')
-                    content = rf.read()
+                    content = ''
+                    for ln in rf:
+                        bold_mark_idxs = [m.start() for m in re.finditer(r'\*\*', ln)]
+                        # add one space in all even `**` for markdown bold display properly
+                        for i, idx in enumerate(reversed(bold_mark_idxs), start=1):
+                            if i % 2 == 0:
+                                continue
+                            ln = ln[:idx+2] + ' ' + ln[idx+2:]
+                        content += f'{ln}\n'
                     content = content.replace('---', '')
-                    bold_mark_idxs = [m.start() for m in re.finditer(r'\*\*', content)]
-                    # add one space in all even `**` for markdown bold display properly
-                    for i, idx in enumerate(reversed(bold_mark_idxs), start=1):
-                        if i % 2 == 0:
-                            continue
-                        content = content[:idx+2] + ' ' + content[idx+2:]
                     mkf.write(content)
     # zip up
     target_zip = f'/md_archive{datetime.now().strftime("%Y%m%d-%H%M%S")}.zip'
@@ -797,34 +799,6 @@ if __name__ == '__main__':
             # Target(word='unsachgemäß', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
             # Target(prefix='Versand', word='Handel', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
             # Target(word='behaupten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-
-            # Target(fix='auf', word='machen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
-            # Target(fix='auf', word='passen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
-            # Target(fix='auf', word='räumen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
-            # Target(word='aufregend', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='Ausbildung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(fix='aus', word='gehen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
-            # Target(fix='aus', word='packen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
-            # Target(fix='aus', word='ruhen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
-            # Target(word='außer', fix='', lb=True, rb=True, cs=False, mode=NOUN_MODE),
-            # Target(word='außerdem', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='außerhalb', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(fix='aus', word='sprechen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
-            # Target(fix='aus', word='steigen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
-            # Target(word='Ausstellung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(fix='aus', word='tragen', lb=False, rb=False, cs=True, mode=SEP_VERB_MODE, target_cnt=10),
-            # Target(word='Babysitter', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='backen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-
-            # Target(word='Ball', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Band', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='beantworten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='kalt', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='Kamera', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(prefix='Mobil', word='Telefon', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='Passwort', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='schade', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='Teller', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
 
             ]
 

@@ -112,8 +112,8 @@ def auto_ai_answer(driver, role, question_path):
             f.write(md_text)
 
 if __name__ == '__main__':
-    reopen(F_ROLE)
-    reopen(E_ROLE)
+    init(edge)
+    init(firefox)
     cnt = 0
 
     while True:
