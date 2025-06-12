@@ -528,12 +528,11 @@ def collect_markdowns():
                 with open(f'{folder_path}/{filename}', mode='r', encoding='utf8') as rf:
                     content = ''
                     for ln in rf:
+                        # add one space in `**` for markdown bold display properly
                         bold_mark_idxs = [m.start() for m in re.finditer(r'\*\*', ln)]
-                        # add one space in all even `**` for markdown bold display properly
                         for i, idx in enumerate(reversed(bold_mark_idxs), start=1):
-                            if i % 2 == 0:
-                                continue
-                            ln = ln[:idx+2] + ' ' + ln[idx+2:]
+                            split_idx = idx + 2 if i % 2 == 1 else idx
+                            ln = ln[:split_idx] + ' ' + ln[split_idx:]
                         content += f'{ln}\n'
                     content = content.replace('---', '')
                     mkf.write(content)
@@ -800,11 +799,21 @@ if __name__ == '__main__':
             # Target(prefix='Versand', word='Handel', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
             # Target(word='behaupten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
 
+            Target(word='zuerst', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='basteln', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='bauen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='Baustelle', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='beeilen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='beenden', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='begründen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            Target(word='Bein', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
+            Target(word='beliebt', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+
             ]
 
-    # load_history_and_summary()
-    # if len(targets) != 0: crawl(targets)
-    # save_history()
+    load_history_and_summary()
+    if len(targets) != 0: crawl(targets)
+    save_history()
 
-    collect_markdowns()
+    # collect_markdowns()
 
