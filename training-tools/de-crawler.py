@@ -175,6 +175,9 @@ def get_adj_declension(noun):
         rst.add(d.strip())
     return rst
 
+def rm_digits(word):
+    return word.strip().replace('0', '').replace('1', '').replace('2', '').replace('3', '').replace('4', '').replace('5', '').replace('6', '').replace('7', '').replace('8', '').replace('9', '')
+
 def get_declension2(noun):
     rst = set()
     resp = requests.get(f'https://en.wiktionary.org/wiki/{noun}')
@@ -187,9 +190,13 @@ def get_declension2(noun):
             continue
         if ',' in txt:
             for d in (d for d in txt.split(',')):
-                rst.add(d.strip().replace('0', '').replace('1', '').replace('2', '').replace('3', '').replace('4', '').replace('5', '').replace('6', '').replace('7', '').replace('8', '').replace('9', ''))
+                to_add = rm_digits(d)
+                if to_add not in noun_skip_words:
+                    rst.add(to_add)
         else:
-            rst.add(txt.strip().replace('0', '').replace('1', '').replace('2', '').replace('3', '').replace('4', '').replace('5', '').replace('6', '').replace('7', '').replace('8', '').replace('9', ''))
+            to_add = rm_digits(txt)
+            if to_add not in noun_skip_words:
+                rst.add(to_add)
     return rst
 
 def get_conjuncated(verb, prefix):
@@ -721,99 +728,18 @@ def save_history():
 
 if __name__ == '__main__':
 
-    targets = [
+    # targets = [
 
-            # Target(prefix='Wertschöpfungs', word='Kette', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='angegriffen', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='angepöbelt', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='tuscheln', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='kichern', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(prefix='Bloß', word='Stellung', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='aufbereitet', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='entwenden', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='versehen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='durchforsten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='Abhilfe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='theologisch', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='Akronym', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # # Target(prefix='Entfernungs', word='Radius', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(prefix='Bau', word='Gewerbe', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='Akzentuierung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(prefix='Ausgleichs', word='Zahlung', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='Bronchitis', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(prefix='gesamt', word='fiskalisch', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='delegieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='Pappe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(prefix='Schalt', word='Kreis', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='verschlüsselt', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(prefix='Fälschungs', word='sicher', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='Rheuma', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='synthetisieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='Gefäß', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Röntgenstrahlung', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='patentieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='Acetylsalicylsäure', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Enzym', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Aminosäure', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Saatgut', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Weizen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Gerste', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='altruistisch', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(prefix='fach', word='kundig', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='Gebrechen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='angesetzt', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Anatomie', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Gewerbe', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='antioxidantisch', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='lancieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='Muffel', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='heraufbeschworen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Anleger', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='verprellen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='eingebrochen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Steuersatz', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Organ', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Judikative', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(prefix='Personen', word='Verkehr', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='Absatz', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='falten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='Wahlurne', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='verabschieden', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='gefangene', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Kapitulation', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='entgegengenommen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='ausgelaufen', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='abgedankt', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='menschenverachtend', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='pferchen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='Befugnis', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='aufgestellt', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='Senat', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='erheben', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='Faser', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='titulieren', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            # Target(word='perfid', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='Lockmittel', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='verschleiß', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            # Target(word='unsachgemäß', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(prefix='Versand', word='Handel', fix='', lb=False, rb=False, cs=False, mode=COMPOUND_NOUN_MODE),
-            # Target(word='behaupten', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
+            # Target(word='Bescheid', fix='', lb=True, rb=True, cs=False, mode=NOUN_MODE),
+            # Target(word='gültig', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
+            # Target(word='Ruhm', fix='', lb=True, rb=True, cs=False, mode=NOUN_MODE),
 
-            Target(word='zuerst', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='basteln', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='bauen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='Baustelle', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='beeilen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='beenden', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='begründen', fix='', lb=False, rb=False, cs=True, mode=VERB_MODE),
-            Target(word='Bein', fix='', lb=False, rb=False, cs=False, mode=NOUN_MODE),
-            Target(word='beliebt', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
 
-            ]
+            # ]
 
-    load_history_and_summary()
-    if len(targets) != 0: crawl(targets)
-    save_history()
+    # load_history_and_summary()
+    # if len(targets) != 0: crawl(targets)
+    # save_history()
 
-    # collect_markdowns()
+    collect_markdowns()
 
