@@ -355,7 +355,7 @@ class Target:
         else:
             prompt += f'\n';
 
-        prompt += f'{idx}.为这篇德语文章生成一篇简短的中文摘要\n'; idx += 1
+        prompt += f'{idx}.为这篇德语文章生成一篇简短的中文摘要并提取5个关键词\n'; idx += 1
         for hp in hit_paras:
             prompt += f'{idx}.翻译第{hp}段，并用粗体标出用到‘{kw}’的句子\n'; idx += 1
             prompt += f'{idx}.打印原文第{hp}段，并用粗体标记出用到了‘{kw}’的句子\n'; idx += 1
@@ -729,11 +729,6 @@ def save_history():
 if __name__ == '__main__':
 
     # targets = [
-
-            # Target(word='Bescheid', fix='', lb=True, rb=True, cs=False, mode=NOUN_MODE),
-            # Target(word='gültig', fix='', lb=False, rb=False, cs=False, mode=ADJECTIVE_MODE),
-            # Target(word='Ruhm', fix='', lb=True, rb=True, cs=False, mode=NOUN_MODE),
-
 
             # ]
 
