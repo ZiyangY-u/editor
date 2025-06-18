@@ -350,12 +350,7 @@ class Target:
         prompt = f'对于下面这篇德语文章\n'
         # prompt += f'{idx}.打印出‘{kw}’的音标(包括重音符号)'; idx += 1
 
-        if self.true_noun:
-            prompt += f'以及阴阳性和复数形式\n';
-        else:
-            prompt += f'\n';
-
-        prompt += f'{idx}.为这篇德语文章生成一篇简短的中文摘要并提取5个关键词\n'; idx += 1
+        prompt += f'{idx}.为这篇德语文章生成一篇简短的中文摘要并提取5个关键词(逗号分隔)\n'; idx += 1
         for hp in hit_paras:
             prompt += f'{idx}.翻译第{hp}段，并用粗体标出用到‘{kw}’的句子\n'; idx += 1
             prompt += f'{idx}.翻译第{hp}段成日语，并用粗体标出用到‘{kw}’的句子\n'; idx += 1
