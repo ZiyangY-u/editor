@@ -533,7 +533,12 @@ def collect_markdowns():
             for filename in os.listdir(folder_path):
                 if not filename.startswith('article-') or not filename.endswith('.md') or k not in filename:
                     continue
-                mkf.write('\n\n---\n\n')
+                mkf.write('\n\n')
+                mkf.write('> =======================================================================<br>\n')
+                mkf.write('> ===============================NEW PAGE================================<br>\n')
+                mkf.write('> =======================================================================<br>\n')
+                mkf.write('\n')
+
                 with open(f'{folder_path}/{filename}', mode='r', encoding='utf8') as rf:
                     content = ''
                     for ln in rf:
@@ -543,7 +548,7 @@ def collect_markdowns():
                             split_idx = idx + 2 if i % 2 == 1 else idx
                             ln = ln[:split_idx] + ' ' + ln[split_idx:]
                         content += f'{ln}\n'
-                    content = content.replace('---', '')
+                    # content = content.replace('---', '')
                     mkf.write(content)
     # zip up
     target_zip = f'/md_archive{datetime.now().strftime("%Y%m%d-%H%M%S")}.zip'
