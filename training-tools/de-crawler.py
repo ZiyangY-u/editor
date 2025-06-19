@@ -678,9 +678,10 @@ def sampling_aids():
     return aids
 
 @timeit
-def crawl(targets):
+def crawl(targets, delete_tmp=True):
     recruit_from_home()
-    # delete_tmp_articles()
+    if delete_tmp:
+        delete_tmp_articles()
 
     while not all(t.completed for t in targets) and urls_info(0) > THREADS and not file_accessable('./stop.txt'):
         aids = sampling_aids()
@@ -740,7 +741,7 @@ if __name__ == '__main__':
             # ]
 
     # load_history_and_summary()
-    # if len(targets) != 0: crawl(targets)
+    # if len(targets) != 0: crawl(targets , True)
     # save_history()
 
     collect_markdowns()
