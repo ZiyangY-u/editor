@@ -268,40 +268,29 @@ void awk_expand(char *word) {
 }
 
 void python_crawler_target(char* word) {
-    bool bl = false, br = false;
-    if (strlen(word) > 2 && w2 == 'l') bl = true;
-    if (strlen(word) > 2 && w1 == 'r') br = true;
-    if (strlen(word) >= 4 && w2 == 'l' && w3 == 'r') {
-        bl = true;
-        br = true;
-    }
-    if (w1 == 'c')
-        printf("Target(prefix='$1', word='$2', fix='', lb=%s, rb=%s, cs=%s, mode=",
-                (bl ? "True" : "False"),
-                (br ? "True" : "False"),
-                (w1=='v' || w1=='s' ? "True" : "False"));
-    else if (w1 == 's')
-        printf("Target(fix='$1', word='$2', lb=%s, rb=%s, cs=%s, mode=",
-                (bl ? "True" : "False"),
-                (br ? "True" : "False"),
-                (w1=='v' || w1=='s' ? "True" : "False"));
+    bool bl = false, br = false, cs = false;
+    if (strlen(word) > 2 && strstr(word+2, "l")) bl = true;
+    if (strlen(word) > 2 && strstr(word+2, "r")) br = true;
+    if (strlen(word) > 2 && strstr(word+2, "c")) cs = true;
+
+    if (w1 == 'c' || w1 == 's') // compound noun and separatable verb
+        printf("Target(prefix='$1', word='$2'");
+    else if (w1 == 'p' || w1 == 'P') // phrase
+        printf("Target(prefix='$1', word='$2', suffix='$3'");
     else
-        printf("Target(word='$0', fix='', lb=%s, rb=%s, cs=%s, mode=",
-                (bl ? "True" : "False"),
-                (br ? "True" : "False"),
-                (w1=='v' || w1=='s' ? "True" : "False"));
-    if (w1 == 'n')
-        printf("NOUN_MODE),\n");
-    if (w1 == 's')
-        printf("SEP_VERB_MODE, target_cnt=10),\n");
-    if (w1 == 'v')
-        printf("VERB_MODE),\n");
-    if (w1 == 'p')
-        printf("PHRASE_MODE),\n");
-    if (w1 == 'c')
-        printf("COMPOUND_NOUN_MODE),\n");
-    if (w1 == 'a')
-        printf("ADJECTIVE_MODE),\n");
+        printf("Target(word='$0'");
+
+    if (bl) printf(", lb=True");
+    if (br) printf(", rb=True");
+    if (w1 == 'v' || w1 == 's' || cs) printf(", cs=True");
+
+    if (w1 == 'n') printf(", mode=NOUN_MODE),\n");
+    if (w1 == 's') printf(", mode=SEP_VERB_MODE, target_cnt=10),\n");
+    if (w1 == 'v') printf(", mode=VERB_MODE),\n");
+    if (w1 == 'p') printf(", mode=PHRASE_MODE),\n");
+    if (w1 == 'P') printf(", mode=VERB_PHRASE_MODE),\n");
+    if (w1 == 'c') printf(", mode=COMPOUND_NOUN_MODE),\n");
+    if (w1 == 'a') printf(", mode=ADJECTIVE_MODE),\n");
 
 }
 

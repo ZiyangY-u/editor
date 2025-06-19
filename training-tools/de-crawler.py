@@ -33,6 +33,7 @@ SEP_VERB_MODE      = 3
 PHRASE_MODE        = 4
 COMPOUND_NOUN_MODE = 5
 ADJECTIVE_MODE     = 6
+VERB_PHRASE_MODE   = 7
 OTHER_MODE         = 9
 MANUAL_TARGETS     = 10
 
@@ -199,7 +200,7 @@ def get_declension2(noun):
                 rst.add(to_add)
     return rst
 
-def get_conjuncated(verb, prefix):
+def get_conjuncated(verb, prefix, mode):
     resp = requests.get('https://api.verbix.com/conjugator/iv1/6153a464-b4f0-11ed-9ece-ee3761609078/1/13/113/' + verb)
     content = json.loads(resp.content.decode('utf8'))
 
@@ -209,7 +210,7 @@ def get_conjuncated(verb, prefix):
     verbs = {verb}
     for c in itertools.chain(conjuncated.items(), irregular.items()):
         for w in (w.strip().replace('(', '').replace(')', '') for w in str(c.text()).split(' ')):
-            if prefix == '':
+            if prefix == '' or mode in (SEP_VERB_MODE, VERB_PHRASE_MODE):
                 verbs.add(w)
             elif w.startswith(prefix) and len(w) > len(prefix):
                 verbs.add(w)
@@ -220,9 +221,8 @@ def get_conjuncated(verb, prefix):
     return verbs
 
 class Target:
-    def __init__(self, word:str, fix:str, lb:bool, rb:bool, cs:bool, mode, target_cnt=TARGET_CNT, prefix=''):
+    def __init__(self, word:str, mode, lb=False, rb=False, cs=False, target_cnt=TARGET_CNT, prefix='', suffix=''):
         self.key_noun_verb = word # noun or verb
-        self.key_fix = fix
         self.lborder = lb # left border
         self.rborder = rb # right border
         self.case_sensitive = cs
@@ -230,10 +230,11 @@ class Target:
         self.hit_urls = set()
         self.target_cnt = target_cnt
         self.prefix = prefix
+        self.suffix = suffix
         self.completed = False
         self.true_noun = False
-        if mode in (VERB_MODE, SEP_VERB_MODE):
-            self.conjuncated = get_conjuncated(self.key_noun_verb, self.prefix)
+        if mode in (VERB_MODE, SEP_VERB_MODE, VERB_PHRASE_MODE):
+            self.conjuncated = get_conjuncated(self.key_noun_verb, self.prefix, self.match_mode)
             if len(self.conjuncated) == 0:
                 cprint(bcolors.FAIL, f'can not conjuncate:{self.key_noun_verb}')
                 exit(1)
@@ -305,29 +306,33 @@ class Target:
 
         if self.match_mode == VERB_MODE:
             for kw in self.conjuncated:
-                pattern = r"\b" + kw.lower() + r"\b[^\.:,]*\b" + self.key_fix + r"\b"
-                if self.search(pattern, paragraph):
-                    return True
-            for kw in self.conjuncated:
-                pattern = r"\b" + self.key_fix + kw.lower() + r"\b"
+                pattern = r"\b" + kw.lower() + r"\b"
                 if self.search(pattern, paragraph):
                     return True
             return False
         if self.match_mode == SEP_VERB_MODE:
             for kw in self.conjuncated:
-                pattern = r"\b" + kw.lower() + r"\b[^\.:,]*\b" + self.key_fix + r"\b"
+                pattern = r"\b" + kw.lower() + r"\b[^\.:,]*\b" + self.prefix + r"\b"
                 if self.search(pattern, paragraph):
                     return True
             for kw in self.conjuncated:
-                pattern = r"\b" + self.key_fix + kw.lower() + r"\b"
+                pattern = r"\b" + self.prefix + kw.lower() + r"\b"
                 if self.search(pattern, paragraph): return True
-                pattern = r"\b" + self.key_fix + 'zu' + kw.lower() + r"\b"
+                pattern = r"\b" + self.prefix + 'zu' + kw.lower() + r"\b"
                 if self.search(pattern, paragraph): return True
             return False
         if self.match_mode == PHRASE_MODE:
-            pattern = r"\b" + self.key_fix + r"\b[^\.]*\b" + self.key_noun_verb + r"\b"
+            pattern = r"\b" + self.prefix + r"\b[^\.]*\b" + self.key_noun_verb + r"\b"
+            if self.suffix != '':
+                pattern += (r"\b[^\.]*\b" + self.suffix)
             if self.search(pattern, paragraph):
                 return True
+            return False
+        if self.match_mode == VERB_PHRASE_MODE:
+            for kw in self.conjuncated:
+                pattern = r"\b" + self.prefix + r"\b[^\.]*\b" + kw + r"\b" + (r"\b[^\.]*\b" + self.suffix if self.suffix != '' else '')
+                if self.search(pattern, paragraph):
+                    return True
             return False
 
     def get_kw(self):
@@ -335,9 +340,9 @@ class Target:
         if self.match_mode == VERB_MODE:
             kw = self.key_noun_verb
         if self.match_mode == SEP_VERB_MODE:
-            kw = self.key_fix + self.key_noun_verb
-        if self.match_mode == PHRASE_MODE:
-            kw = self.key_fix + '...' + self.key_noun_verb
+            kw = self.prefix + self.key_noun_verb
+        if self.match_mode in (PHRASE_MODE, VERB_PHRASE_MODE):
+            kw = self.prefix + '...' + self.key_noun_verb + ('...' + self.suffix if self.suffix != '' else '')
         if self.match_mode == COMPOUND_NOUN_MODE:
             kw = self.prefix + self.key_noun_verb.lower()
         if self.match_mode == ADJECTIVE_MODE and self.prefix != '':
@@ -670,7 +675,7 @@ def sampling_aids():
 @timeit
 def crawl(targets):
     recruit_from_home()
-    delete_tmp_articles()
+    # delete_tmp_articles()
 
     while not all(t.completed for t in targets) and urls_info(0) > THREADS and not file_accessable('./stop.txt'):
         aids = sampling_aids()
