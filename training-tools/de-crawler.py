@@ -535,7 +535,7 @@ def collect_markdowns():
                     continue
                 mkf.write('\n\n')
                 mkf.write('> =======================================================================<br>\n')
-                mkf.write('> ===============================NEW PAGE================================<br>\n')
+                mkf.write('> ===============================NEW PAGE=================================<br>\n')
                 mkf.write('> =======================================================================<br>\n')
                 mkf.write('\n')
 
@@ -547,7 +547,7 @@ def collect_markdowns():
                         for i, idx in enumerate(reversed(bold_mark_idxs), start=1):
                             split_idx = idx + 2 if i % 2 == 1 else idx
                             ln = ln[:split_idx] + ' ' + ln[split_idx:]
-                        content += f'{ln}\n'
+                        content += f'{ln.rstrip()}\n'
                     # content = content.replace('---', '')
                     mkf.write(content)
     # zip up
