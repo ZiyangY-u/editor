@@ -3,6 +3,7 @@
 import os
 import time
 import pyperclip
+import shutil
 from os import access, R_OK
 from os.path import isfile
 from selenium import webdriver
@@ -12,7 +13,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from datetime import datetime
 
+one_drive_path = 'C:\\Users\\fvdi0046\\OneDrive2\\OneDrive\\articles'
 folder_path = './articles'
 firefox_driver_path = './geckodriver-v0.36.0-win64/geckodriver.exe'
 edge_driver_path = './edgedriver_win64/msedgedriver.exe'
@@ -108,8 +111,14 @@ def auto_ai_answer(driver, role, question_path):
         print('done!')
         copy_btn.click()
         md_text = pyperclip.paste()
-        with open(question_path.replace('.txt', '.md'), mode='w+', encoding='utf8') as f:
+        target_file = question_path.replace('.txt', '.md')
+        with open(target_file, mode='w+', encoding='utf8') as f:
             f.write(md_text)
+        fname = target_file.split('/')[-1]
+        one_drive_target_path = one_drive_path + '\\' + datetime.now().strftime("%Y%m%d")
+        if not os.path.exists(one_drive_target_path):
+            os.makedirs(one_drive_target_path)
+        shutil.copyfile(target_file, f'{one_drive_target_path}\\{fname}')
 
 if __name__ == '__main__':
     init(edge)
