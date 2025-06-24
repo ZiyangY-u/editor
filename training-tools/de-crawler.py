@@ -13,6 +13,7 @@ import shutil
 import random
 import itertools
 import aiofiles
+import logging
 from os import access, R_OK
 from os.path import isfile
 from pyquery import PyQuery as pq
@@ -23,6 +24,15 @@ from functools import wraps
 TIMEOUT = httpx.Timeout(360.0, connect=360.0)
 PROXIES={ 'http': 'http://127.0.0.1:58591', 'https': 'http://127.0.0.1:58591', }
 PROXY = 'http://127.0.0.1:58591'
+
+ONE_DRIVE_PATH = 'C:\\Users\\fvdi0046\\OneDrive2\\OneDrive\\articles'
+MAX_SLEEP_TIME = 600
+logging.basicConfig(filename=ONE_DRIVE_PATH + '\\crawl_log.log',
+                    filemode='a',
+                    format='%(asctime)s,%(msecs)03d %(name)s %(levelname)s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    level=logging.INFO)
+logging.getLogger("httpx").setLevel(logging.CRITICAL) # not let httpx logging
 
 THREADS = 20
 MAX_THREADS = 100
@@ -267,6 +277,26 @@ class Target:
                 self.declensions = declensions if self.prefix == '' else [self.prefix + d for d in declensions]
                 print(f'adjective target: {", ".join(dkl for dkl in self.declensions)}')
 
+    def __str__(self):
+        s = []
+        if self.prefix: s.append('prefix = ' + self.prefix)
+        s.append('word = ' + self.key_noun_verb)
+        if self.suffix: s.append('suffix = ' + self.suffix)
+        if self.lborder: s.append('left-border')
+        if self.rborder: s.append('right-border')
+        if self.case_sensitive: s.append('case-sensitive')
+        s.append(f'target cnt = {self.target_cnt}')
+
+        if self.match_mode == NOUN_MODE: s.append(f'NOUN_MODE')
+        if self.match_mode == VERB_MODE: s.append(f'VERB_MODE')
+        if self.match_mode == SEP_VERB_MODE: s.append(f'SEP_VERB_MODE')
+        if self.match_mode == PHRASE_MODE: s.append(f'PHRASE_MODE')
+        if self.match_mode == COMPOUND_NOUN_MODE: s.append(f'COMPOUND_NOUN_MODE')
+        if self.match_mode == ADJECTIVE_MODE: s.append(f'ADJECTIVE_MODE')
+        if self.match_mode == VERB_PHRASE_MODE: s.append(f'VERB_PHRASE_MODE')
+        if self.match_mode == OTHER_MODE: s.append(f'OTHER_MODE')
+        if self.match_mode == MANUAL_TARGETS: s.append(f'MANUAL_TARGETS')
+        return ', '.join(s)
 
     def wrap_border(self, noun):
         pattern = noun.lower() if not self.case_sensitive else noun
@@ -377,6 +407,7 @@ def process_hit(target, aid, url, paragraph_contents, hit_paragraph_nos):
     target.hit_urls.add(url)
     if target.target_cnt == len(target.hit_urls):
         cprint(bcolors.OKGREEN, f'{target.get_kw()} complete! at {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}' + (' ' * 100))
+        logging.info(f'{target.get_kw()} complete!')
         target.completed = True
 
 def parse_txt_article(aid):
@@ -733,16 +764,68 @@ def save_history():
     with open(plus_aid_json_file, 'w+', encoding='utf8') as fp: # save article_ids
         json.dump(plus_spiegel_aids, fp)
 
+def start_sentry():
+    global targets
+    sleep_time = 2
+    while True:
+        print(f'sleep for {sleep_time} sec')
+        time.sleep(sleep_time)
+        sleep_time = sleep_time + 10 if sleep_time + 10 < MAX_SLEEP_TIME else MAX_SLEEP_TIME
+        if not file_accessable(ONE_DRIVE_PATH + '\\targets.txt'): continue
+        print('file accessable')
+        with open(ONE_DRIVE_PATH + '\\targets.txt', 'r', encoding='utf8') as f:
+            content = f.read().splitlines()
+        if len(content) <= 1: continue
+        print('file has content')
+        first_ln = content[0]
+        if first_ln.strip() != 'RUN':
+            continue
+        logging.info('accept RUN instruction')
+        targets = []
+        for ln in content[1:]: # first word should be target
+            words = ln.split()
+            prefix, word, mode, lb, rb, cs, tc = '', '', NOUN_MODE, False, False, False, TARGET_CNT
+
+            for w in words:
+                if w == 'N': mode = NOUN_MODE
+                if w == 'S': mode = SEP_VERB_MODE
+                if w == 'V': mode = VERB_MODE
+                if w == 'C': mode = COMPOUND_NOUN_MODE
+                if w == 'A': mode = ADJECTIVE_MODE
+                if w == 'l': lb = True
+                if w == 'r': rb = True
+                if w == 'c': cs = True
+            if mode == COMPOUND_NOUN_MODE or mode == SEP_VERB_MODE:
+                prefix, word = words[0], words[1]
+            else:
+                word = words[0]
+            t = Target(prefix=prefix, word=word, lb=lb, rb=rb, cs=cs, mode=mode, target_cnt=tc)
+            logging.info(f'Target: {t}')
+            targets.append(t)
+
+        if len(targets) != 0:
+            logging.info('sentry active!')
+            load_history_and_summary()
+            crawl(targets , False) # sentry do not clear result
+            save_history()
+            shutil.copyfile(f'{ONE_DRIVE_PATH}\\targets.txt', f'{ONE_DRIVE_PATH}\\targets-bak.txt')
+            with open(f'{ONE_DRIVE_PATH}\\targets.txt', 'w+', encoding='utf8') as f:
+                f.write('DONE!')
+            logging.info('sentry sleep')
+
 
 if __name__ == '__main__':
 
-    # targets = [
+    targets = [
 
-            # ]
+            ]
 
-    # load_history_and_summary()
-    # if len(targets) != 0: crawl(targets , True)
-    # save_history()
 
-    collect_markdowns()
+    if len(targets) != 0:
+        load_history_and_summary()
+        crawl(targets , True)
+        save_history()
 
+    # collect_markdowns()
+
+    start_sentry()
