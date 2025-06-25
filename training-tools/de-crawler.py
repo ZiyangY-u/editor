@@ -31,6 +31,7 @@ logging.basicConfig(filename=ONE_DRIVE_PATH + '\\crawl_log.log',
                     filemode='a',
                     format='%(asctime)s,%(msecs)03d %(name)s %(levelname)s %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
+                    encoding='utf8',
                     level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.CRITICAL) # not let httpx logging
 
@@ -121,6 +122,13 @@ def file_accessable(path):
     if isfile(path) and access(path, R_OK):
         return True
     return False
+
+def is_integer(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
 
 def determine_url_by_aid(aid):
     if re.match(spiegel_aid_re, aid):
@@ -510,7 +518,11 @@ async def get_content_and_parse(aid):
     else:
         url = determine_url_by_aid(aid)
         async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=True) as client:
-            resp = await client.get(url=url)
+            try:
+                resp = await client.get(url=url)
+            except:
+                logging.info(f'error in request: {url}')
+                return aid
             content = resp.content.decode('utf8')
             received_bytes += len(content)
             with open(path, 'w+', encoding='utf8') as fw:
@@ -795,6 +807,7 @@ def start_sentry():
                 if w == 'l': lb = True
                 if w == 'r': rb = True
                 if w == 'c': cs = True
+                if is_integer(w): tc = int(w)
             if mode == COMPOUND_NOUN_MODE or mode == SEP_VERB_MODE:
                 prefix, word = words[0], words[1]
             else:
