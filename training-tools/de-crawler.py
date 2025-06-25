@@ -26,7 +26,7 @@ PROXIES={ 'http': 'http://127.0.0.1:58591', 'https': 'http://127.0.0.1:58591', }
 PROXY = 'http://127.0.0.1:58591'
 
 ONE_DRIVE_PATH = 'C:\\Users\\fvdi0046\\OneDrive2\\OneDrive\\articles'
-MAX_SLEEP_TIME = 600
+MAX_SLEEP_TIME = 300
 logging.basicConfig(filename=ONE_DRIVE_PATH + '\\crawl_log.log',
                     filemode='a',
                     format='%(asctime)s,%(msecs)03d %(name)s %(levelname)s %(message)s',

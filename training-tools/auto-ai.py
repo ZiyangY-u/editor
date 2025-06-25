@@ -20,7 +20,7 @@ folder_path = './articles'
 firefox_driver_path = './geckodriver-v0.36.0-win64/geckodriver.exe'
 edge_driver_path = './edgedriver_win64/msedgedriver.exe'
 
-MAX_SLEEP_TIME = 600
+MAX_SLEEP_TIME = 300
 REFRESH_CNT = 2
 
 F_ROLE = 0
@@ -53,16 +53,26 @@ def get_target():
 
 def reopen(role):
     if role == F_ROLE:
-        global firefox
+        global firefox, f_refresh_cnt
         firefox.quit()
-        firefox = webdriver.Firefox(service=fservice)
-        init(firefox)
+        while True:
+            try:
+                firefox = webdriver.Firefox(service=fservice)
+                init(firefox)
+                break
+            except:
+                continue
         f_refresh_cnt = REFRESH_CNT
     if role == E_ROLE:
-        global edge
+        global edge, e_refresh_cnt
         edge.quit()
-        edge = webdriver.Edge(service=eservice, options=options)
-        init(edge)
+        while True:
+            try:
+                edge = webdriver.Edge(service=eservice, options=options)
+                init(edge)
+                break
+            except:
+                continue
         e_refresh_cnt = REFRESH_CNT
 
 def init(driver):
