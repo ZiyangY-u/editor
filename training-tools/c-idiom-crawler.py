@@ -19,6 +19,7 @@ from os.path import isfile
 from pyquery import PyQuery as pq
 from datetime import datetime
 from functools import wraps
+from urllib.parse import urlparse, urlunparse
 
 TIMEOUT = httpx.Timeout(5.0, connect=5.0)
 ONE_DRIVE_PATH = 'C:\\Users\\fvdi0046\\OneDrive2\\OneDrive\\articles'
@@ -58,6 +59,12 @@ def file_accessable(path):
         return True
     return False
 
+def remove_url_params(url):
+    parsed = urlparse(url)
+    # 保留除查询参数外的所有部分
+    cleaned = parsed._replace(query=None)
+    return urlunparse(cleaned)
+
 async def launch(async_fun, params):
     aids = await asyncio.gather(*map(async_fun, params))
     return aids
@@ -68,6 +75,13 @@ class Target:
         self.hit_urls = set()
         self.target_cnt = target_cnt
         self.completed = False
+        print(f'init target: {self.word}')
+        # send explain question to auto-ai
+        with open(f'{folder_path}/article-{self.word}.txt', 'w+', encoding='utf8') as f:
+            f.write('对于成语‘{self.word}’\n')
+            f.write('1.请你标注它的拼音\n')
+            f.write('2.解释它的意思并说明适用场景\n')
+            f.write('3.说明它的出处\n')
 
     def get_kw(self):
         return self.word
@@ -95,7 +109,7 @@ def process_hit(target, url, header, paragraph_contents):
     with open(fname, 'w+', encoding='utf8') as f:
         f.write('### ' + header + '\n')
         for _, p in enumerate(paragraph_contents, start=1):
-            p2w = p.replace(kw, f' **{kw}** ') if kw in p else p
+            p2w = p.replace(kw, f'**{kw}**') if kw in p else p
             f.write(p2w + '\n\n')
     target.hit_urls.add(url)
     # copy result to OneDrive
@@ -169,7 +183,7 @@ def recruit_from_content(content):
     for a in anchors:
         if 'href' not in a.attrib:
             continue
-        ref = a.attrib['href']
+        ref = remove_url_params(a.attrib['href'])
         if valid_url(ref):
             article_urls[ref] = 0 # recruit url
 
@@ -239,24 +253,30 @@ async def get_content_and_parse(url):
 def crawl(targets, delete_tmp=True):
     recruit_from_home()
 
+    print('start')
     while not all(t.completed for t in targets) and urls_info(0) > THREADS and not file_accessable('./stop.txt'):
         urls = sampling_urls()
         done_urls = asyncio.run(launch(get_content_and_parse, urls))
         for url in done_urls:
             article_urls[url] = 1
 
-
+def get_targets_from_list():
+    everyday_idioms_cnt = 10
+    list_path = ONE_DRIVE_PATH + '\\c-idioms.txt'
+    if not file_accessable(list_path):
+        print(f'list not accessable {list_path}')
+        return
+    with open(list_path, 'r', encoding='utf8') as f:
+        idiom_list = f.read().splitlines()
+        idioms = random.sample(idiom_list, everyday_idioms_cnt)
+        _targets = [Target(word=w) for w in idioms]
+        return _targets
 
 
 
 
 if __name__ == '__main__':
-    targets = [
-
-            Target(word='相得益彰'),
-            Target(word='珠联璧合'),
-
-            ]
+    targets = get_targets_from_list()
 
     load_history_and_summary()
     crawl(targets)
