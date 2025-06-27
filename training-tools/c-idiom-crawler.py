@@ -21,7 +21,7 @@ from datetime import datetime
 from functools import wraps
 from urllib.parse import urlparse, urlunparse
 
-TIMEOUT = httpx.Timeout(5.0, connect=5.0)
+TIMEOUT = httpx.Timeout(10.0, connect=10.0)
 ONE_DRIVE_PATH = 'C:\\Users\\fvdi0046\\OneDrive2\\OneDrive\\articles'
 MAX_SLEEP_TIME = 600
 # logging.basicConfig(filename=ONE_DRIVE_PATH + '\\crawl_log.log',
@@ -38,12 +38,22 @@ TARGET_CNT = 5 # default target cnt
 
 article_urls = {}
 cached_article_urls = set()
+skip_urls = {}
 
 # 人民日报
 PEOPLE_AID_TYPE = 1
-people_article_regex = r'.*people\.com\.cn.*?[a-z0-9]{3,6}-[a-z0-9]{8}\.html'
+PEOPLE_ARTICLE_REGEX = r'.*people\.com\.cn.*?[a-z0-9]{3,6}-[a-z0-9]{8}\.html'
+# 新华社
+NEWS_AID_TYPE = 2
+NEWS_ARTICLE_REGEX = r'.*[0-9]{8}/[a-z0-9]{32}/c.html'
+NEWS_HOME = 'https://www.news.cn/'
+# 新京报
+BJNEWS_AID_TYPE = 3
+BJNEWS_ARTICLE_REGEX = r'.*/detail/[0-9]{16}.html'
+BJNEWS_HOME = 'https://www.bjnews.com.cn/'
 
 history_url_json_file = 'c-idiom-urls.json'
+skip_url_json_file = 'c-idiom-skip-urls.json'
 
 folder_path = './articles'
 cache_folder = './c-cache'
@@ -63,7 +73,7 @@ def remove_url_params(url):
     parsed = urlparse(url)
     # 保留除查询参数外的所有部分
     cleaned = parsed._replace(query=None)
-    return urlunparse(cleaned)
+    return urlunparse(cleaned).replace('"', '')
 
 async def launch(async_fun, params):
     aids = await asyncio.gather(*map(async_fun, params))
@@ -78,7 +88,7 @@ class Target:
         print(f'init target: {self.word}')
         # send explain question to auto-ai
         with open(f'{folder_path}/article-{self.word}.txt', 'w+', encoding='utf8') as f:
-            f.write('对于成语‘{self.word}’\n')
+            f.write(f'对于成语‘{self.word}’\n')
             f.write('1.请你标注它的拼音\n')
             f.write('2.解释它的意思并说明适用场景\n')
             f.write('3.说明它的出处\n')
@@ -100,6 +110,10 @@ def urls_info(flg): # 1 searched; 0 remain
 def determine_type_by_aid(url):
     if 'people.com' in url:
         return PEOPLE_AID_TYPE
+    if 'news.cn' in url:
+        return NEWS_AID_TYPE
+    if 'bjnews.com.cn' in url:
+        return BJNEWS_AID_TYPE
     return PEOPLE_AID_TYPE
 
 def process_hit(target, url, header, paragraph_contents):
@@ -125,6 +139,12 @@ def process_hit(target, url, header, paragraph_contents):
 def parse_txt_article(url):
     global targets
     fp = f'{cache_folder}/{u2f(url)}.txt'
+    size_bytes = os.path.getsize(fp)
+    if size_bytes < 1024:
+        del article_urls[url]
+        delete_file(fp)
+        skip_urls[url] = 1
+        return
     a_content = []
     with open(fp, 'r', encoding='utf8') as f:
         a_content = [line.strip() for line in f]
@@ -156,8 +176,26 @@ def parse_people_article(content, url):
     paragraphs = [str(p.text()) for p in paragraphs.items()]
     write_paragraphs(url, headers[0] if len(headers) > 0 else '', paragraphs)
 
+# 新华社
+def parse_news_article(content, url):
+    doc = pq(content)
+    headers = doc('h1')
+    headers = [str(p.text()) for p in headers.items() if len(str(p.text()).strip()) != 0]
+    paragraphs = doc('p')
+    paragraphs = [str(p.text()) for p in paragraphs.items()]
+    write_paragraphs(url, headers[0] if len(headers) > 0 else '', paragraphs)
+
+# 新京报
+def parse_bjnews_article(content, url):
+    pass
+
 def is_article_url(url):
-    if 'people.com' in url and re.match(people_article_regex, url):
+    t = determine_type_by_aid(url)
+    if t == PEOPLE_AID_TYPE and re.match(PEOPLE_ARTICLE_REGEX, url):
+        return True
+    if t == NEWS_AID_TYPE and re.match(NEWS_ARTICLE_REGEX, url):
+        return True
+    if t == BJNEWS_AID_TYPE and re.match(BJNEWS_ARTICLE_REGEX, url):
         return True
     return False
 
@@ -165,15 +203,23 @@ def parse_article(content, url):
     try:
         recruit_from_content(content)
     except:
-        print(f'error in recruit from {url}')
-    type = determine_type_by_aid(url)
+        print(f'\nerror in recruit from {url}', end='')
+    t = determine_type_by_aid(url)
     if is_article_url(url):
-        if type == PEOPLE_AID_TYPE:
+        if t == PEOPLE_AID_TYPE:
             parse_people_article(content, url)
+        if t == NEWS_AID_TYPE:
+            parse_news_article(content, url)
+        if t == BJNEWS_AID_TYPE:
+            parse_news_article(content, url)
     article_urls[url] = 1 # marked as searched
 
 def valid_url(url):
     if 'people.com' in url:
+        return True
+    if 'news.cn' in url:
+        return True
+    if 'bjnews.com.cn' in url:
         return True
     return False
 
@@ -183,24 +229,60 @@ def recruit_from_content(content):
     for a in anchors:
         if 'href' not in a.attrib:
             continue
-        ref = remove_url_params(a.attrib['href'])
-        if valid_url(ref):
+        raw_ref = a.attrib['href']
+        if 'news.cn' in raw_ref and raw_ref.startswith('//'):
+            raw_ref = 'https:' + raw_ref
+        if re.match(NEWS_ARTICLE_REGEX, raw_ref) and raw_ref.startswith('/') and 'https:' not in raw_ref:
+            raw_ref = NEWS_HOME + raw_ref
+        ref = remove_url_params(raw_ref)
+        if valid_url(ref) and ref not in article_urls:
             article_urls[ref] = 0 # recruit url
 
 def recruit_from_url(url):
     global article_urls
     before = len(article_urls)
-    response = requests.get(url, timeout=10.0)
-    recruit_from_content(response.content)
+    try:
+        response = requests.get(url, timeout=15.0)
+        recruit_from_content(response.content)
+    except:
+        print(f'error in recruiting from {url}')
     recruited = len(article_urls) - before
     print(f'recruit {recruited} from {url}')
 
 def recruit_from_home():
-    try:
-        recruit_from_url('http://www.people.com.cn/')
-        recruit_from_url('http://hb.people.com.cn/')
-    except:
-        pass
+    recruit_targets = [
+            'http://www.people.com.cn/',
+            'https://www.news.cn/',
+            'https://www.bjnews.com.cn/',
+            'http://hb.people.com.cn/',
+            'https://www.news.cn/comments/index.html',
+            'https://www.bjnews.com.cn/zhengshi',
+            'https://www.bjnews.com.cn/hao',
+            'https://www.bjnews.com.cn/depth',
+            'https://www.bjnews.com.cn/gongyi',
+            'https://www.bjnews.com.cn/diyikandian',
+            # 'https://www.bjnews.com.cn/news',
+            # 'https://www.bjnews.com.cn/beijing',
+            # 'https://www.bjnews.com.cn/guoji',
+            # 'https://www.bjnews.com.cn/zhengshi',
+            # 'https://www.bjnews.com.cn/point',
+            # 'https://www.bjnews.com.cn/financial',
+            # 'https://www.bjnews.com.cn/industrial',
+            # 'https://www.bjnews.com.cn/entertainment',
+            # 'https://www.bjnews.com.cn/culture',
+            # 'https://www.bjnews.com.cn/sports',
+            # 'https://www.bjnews.com.cn/car',
+            # 'https://www.bjnews.com.cn/estate',
+            # 'https://www.bjnews.com.cn/education',
+            # 'https://www.bjnews.com.cn/photo',
+            # 'https://www.bjnews.com.cn/technology',
+            # 'https://www.bjnews.com.cn/thinktank',
+            # 'https://www.bjnews.com.cn/country',
+            ]
+    rts = random.sample(recruit_targets, 5)
+    for t in rts:
+        recruit_from_url(t)
+
 
 def load_history_and_summary():
     if file_accessable(history_url_json_file): # get init article ids from last history
@@ -211,13 +293,22 @@ def load_history_and_summary():
                 _tmp_fn.add(filename)
             for url, _ in content.items():
                 article_urls[url] = 0
-                if u2f(url) in _tmp_fn:
+                if u2f(url) + '.txt' in _tmp_fn:
                     cached_article_urls.add(url)
         print(f'load urls from history: {len(article_urls)}')
+        print(f'load cached urls from history: {len(cached_article_urls)}')
+    if file_accessable(skip_url_json_file): # skip list
+        with open(skip_url_json_file, 'r', encoding='utf8') as fp:
+            content = json.load(fp)
+            for k, _ in content.items():
+                skip_urls[k] = 1
 
 def save_history():
     with open(history_url_json_file, 'w+', encoding='utf8') as fp: # save article_ids
         json.dump(article_urls, fp)
+        print(f'{len(article_urls)} urls saved')
+    with open(skip_url_json_file, 'w+', encoding='utf8') as fp: # save skip_urls
+        json.dump(skip_urls, fp)
 
 def unsearched(url):
     if url not in article_urls:
@@ -227,10 +318,16 @@ def unsearched(url):
     return False
 
 def sampling_urls():
-    uncached = [k for k, v in article_urls.items() if v == 0 and k not in cached_article_urls]
-    urls1 = random.sample(uncached, THREADS) if len(uncached) > THREADS else []
-    urls_cached = random.sample([k for k in cached_article_urls], MAX_THREADS) if len(cached_article_urls) > MAX_THREADS else []
-    urls = [url for url in (urls1 + urls_cached) if unsearched(url)]
+    uncached = [k for k, v in article_urls.items() if v == 0 and k not in cached_article_urls and k not in skip_urls]
+    urls_uncache = random.sample(uncached, THREADS) if len(uncached) > THREADS else []
+
+    urls_cached = [k for k in cached_article_urls if k not in skip_urls]
+    urls_cached = random.sample(urls_cached, MAX_THREADS) if len(urls_cached) > MAX_THREADS else []
+
+    urls_expand = [k for k, v in article_urls.items() if v == 0 and len(k) < 50]
+    urls_expand = random.sample(urls_expand, THREADS) if len(urls_expand) > THREADS else []
+
+    urls = [url for url in (urls_uncache + urls_cached + urls_expand) if unsearched(url)]
     return urls
 
 async def get_content_and_parse(url):
@@ -249,13 +346,34 @@ async def get_content_and_parse(url):
         parse_article(content, url)
     return url
 
+def delete_file(file_path):
+    try:
+        if os.path.isfile(file_path) or os.path.islink(file_path):
+            os.unlink(file_path)  # 删除文件或符号链接
+        elif os.path.isdir(file_path):
+            shutil.rmtree(file_path)  # 删除子文件夹（可选）
+    except Exception as e:
+        print(f"删除 {file_path} 失败: {e}")
 
-def crawl(targets, delete_tmp=True):
+def delete_tmp_articles():
+    global folder_path
+    for filename in os.listdir(folder_path):
+        if not filename.startswith('article-'):
+            continue
+        file_path = os.path.join(folder_path, filename)
+        delete_file(file_path)
+
+def crawl(targets):
     recruit_from_home()
 
     print('start')
+    loop_cnt = 0
     while not all(t.completed for t in targets) and urls_info(0) > THREADS and not file_accessable('./stop.txt'):
+        loop_cnt += 1
         urls = sampling_urls()
+        info = f'{loop_cnt}th run at {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}'
+        info += f' {len([k for k, v in article_urls.items() if v == 1])} searched'
+        print(f'{info}\n', end='')
         done_urls = asyncio.run(launch(get_content_and_parse, urls))
         for url in done_urls:
             article_urls[url] = 1
@@ -276,14 +394,9 @@ def get_targets_from_list():
 
 
 if __name__ == '__main__':
+    delete_tmp_articles()
     targets = get_targets_from_list()
 
     load_history_and_summary()
     crawl(targets)
     save_history()
-
-    # test_url = 'opinion.people.com.cn/n1/2025/0529/c1003-40490150.html'
-    # resp = requests.get('http://' + test_url, timeout=10)
-    # print(resp.status_code)
-    # parse_people_article(resp.content.decode('utf8'), test_url)
-

@@ -780,11 +780,11 @@ def start_sentry():
     global targets
     sleep_time = 2
     while True:
-        print(f'sleep for {sleep_time} sec')
+        print(f'sleep for {sleep_time} sec at {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}\r', end='')
         time.sleep(sleep_time)
         sleep_time = sleep_time + 10 if sleep_time + 10 < MAX_SLEEP_TIME else MAX_SLEEP_TIME
         if not file_accessable(ONE_DRIVE_PATH + '\\targets.txt'): continue
-        print('file accessable')
+        # print('file accessable')
         with open(ONE_DRIVE_PATH + '\\targets.txt', 'r', encoding='utf8') as f:
             content = f.read().splitlines()
         if len(content) <= 1: continue
