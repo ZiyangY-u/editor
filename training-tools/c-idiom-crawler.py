@@ -367,8 +367,9 @@ def crawl(targets):
     recruit_from_home()
 
     print('start')
+    max_loop = 200
     loop_cnt = 0
-    while not all(t.completed for t in targets) and urls_info(0) > THREADS and not file_accessable('./stop.txt'):
+    while not all(t.completed for t in targets) and urls_info(0) > THREADS and not file_accessable('./stop.txt') and loop_cnt < max_loop:
         loop_cnt += 1
         urls = sampling_urls()
         info = f'{loop_cnt}th run at {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}'
@@ -386,6 +387,7 @@ def get_targets_from_list():
         return
     with open(list_path, 'r', encoding='utf8') as f:
         idiom_list = f.read().splitlines()
+        random.seed(datetime.now().strftime("%Y%m%d"))
         idioms = random.sample(idiom_list, everyday_idioms_cnt)
         _targets = [Target(word=w) for w in idioms]
         return _targets
@@ -394,9 +396,11 @@ def get_targets_from_list():
 
 
 if __name__ == '__main__':
-    delete_tmp_articles()
-    targets = get_targets_from_list()
+    # delete_tmp_articles()
+    while True:
+        targets = get_targets_from_list()
 
-    load_history_and_summary()
-    crawl(targets)
-    save_history()
+        load_history_and_summary()
+        crawl(targets)
+        save_history()
+        time.sleep(60 * 5) # 5 minutes
