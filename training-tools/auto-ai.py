@@ -76,7 +76,14 @@ def reopen(role):
         e_refresh_cnt = REFRESH_CNT
 
 def init(driver):
-    driver.get('https://www.wenxiaobai.com/?chatMode=temp')
+    while True:
+        try:
+            driver.get('https://www.wenxiaobai.com/?chatMode=temp')
+            wait = WebDriverWait(driver, 60)
+            wait.until(EC.presence_of_element_located((By.XPATH, '//textarea[@placeholder="给 小白 发送消息"]')))
+        except:
+            continue
+        break
 
 def auto_ai_answer(driver, role, question_path):
     wait = WebDriverWait(driver, 3)
