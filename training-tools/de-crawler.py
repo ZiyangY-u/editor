@@ -664,7 +664,7 @@ def recruit_from_content(content):
             continue
         ref = a.attrib['href']
         _aid = gaid(ref)
-        if (ref[0] == '/' or startwith_home(ref)) and _aid and _aid not in article_ids:
+        if ((len(ref) > 0 and ref[0] == '/') or startwith_home(ref)) and _aid and _aid not in article_ids:
             article_ids[_aid] = 0 # recruit url
 
 def unsearched(aid):
@@ -727,6 +727,8 @@ def crawl(targets, delete_tmp=True):
         delete_tmp_articles()
 
     while not all(t.completed for t in targets) and urls_info(0) > THREADS and not file_accessable('./stop.txt'):
+        if file_accessable(ONE_DRIVE_PATH + '\\stop.txt'):
+            break
         aids = sampling_aids()
 
         atm1 = time.perf_counter()
