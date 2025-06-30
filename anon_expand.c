@@ -285,7 +285,7 @@ void python_crawler_target(char* word) {
     if (w1 == 'v' || w1 == 's' || cs) printf(", cs=True");
 
     if (w1 == 'n') printf(", mode=NOUN_MODE),\n");
-    if (w1 == 's') printf(", mode=SEP_VERB_MODE, target_cnt=10),\n");
+    if (w1 == 's') printf(", mode=SEP_VERB_MODE, target_cnt=7),\n");
     if (w1 == 'v') printf(", mode=VERB_MODE),\n");
     if (w1 == 'p') printf(", mode=PHRASE_MODE),\n");
     if (w1 == 'P') printf(", mode=VERB_PHRASE_MODE),\n");

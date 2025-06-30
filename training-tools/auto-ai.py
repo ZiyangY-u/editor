@@ -131,10 +131,17 @@ def auto_ai_answer(driver, role, question_path):
         target_file = question_path.replace('.txt', '.md')
         with open(target_file, mode='w+', encoding='utf8') as f:
             f.write(md_text)
-        fname = target_file.split('/')[-1]
         one_drive_target_path = one_drive_path + '\\' + datetime.now().strftime("%Y%m%d")
         if not os.path.exists(one_drive_target_path):
             os.makedirs(one_drive_target_path)
+        # count result file
+        kw = target_file.split('-')[1]
+        kw_cnt = 0
+        for filename in os.listdir(one_drive_target_path):
+            if kw in filename:
+                kw_cnt += 1
+        fname = target_file.split('/')[-1].replace(kw, f'{kw}-{kw_cnt+1}')
+        print(fname)
         shutil.copyfile(target_file, f'{one_drive_target_path}\\{fname}')
 
 if __name__ == '__main__':

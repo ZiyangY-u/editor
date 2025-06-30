@@ -743,7 +743,8 @@ def crawl(targets, delete_tmp=True):
     print(f'\n{urls_info(1)} article searched', end='\n')
     bl = readable_byte_len(received_bytes)
     print(f'{bl} data received')
-    cprint(bcolors.OKCYAN, f'{cache_hit_cnt} cache hit ({float(cache_hit_cnt * 100)/urls_info(1):.2f}%)')
+    if urls_info(1) != 0:
+        cprint(bcolors.OKCYAN, f'{cache_hit_cnt} cache hit ({float(cache_hit_cnt * 100)/urls_info(1):.2f}%)')
     # print incomplete target(s)
     for t in targets:
         if not t.completed:

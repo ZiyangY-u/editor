@@ -87,7 +87,7 @@ class Target:
         self.completed = False
         print(f'init target: {self.word}')
         # send explain question to auto-ai
-        with open(f'{folder_path}/article-{self.word}.txt', 'w+', encoding='utf8') as f:
+        with open(f'{folder_path}/article-{self.word}-.txt', 'w+', encoding='utf8') as f:
             f.write(f'对于成语‘{self.word}’\n')
             f.write('1.请你标注它的拼音\n')
             f.write('2.解释它的意思并说明适用场景\n')
@@ -131,6 +131,13 @@ def process_hit(target, url, header, paragraph_contents):
     if not os.path.exists(one_drive_target_path):
         os.makedirs(one_drive_target_path)
     target_file = fname.split('/')[-1]
+    # count result file
+    kw = target_file.split('-')[1]
+    kw_cnt = 0
+    for filename in os.listdir(one_drive_target_path):
+        if kw in filename:
+            kw_cnt += 1
+    target_file = target_file.split('/')[-1].replace(kw, f'{kw}-{kw_cnt+1}')
     shutil.copyfile(fname, f'{one_drive_target_path}\\{target_file}')
     if target.target_cnt == len(target.hit_urls):
         print(f'{kw} complete!')
@@ -370,6 +377,8 @@ def crawl(targets):
     max_loop = 200
     loop_cnt = 0
     while not all(t.completed for t in targets) and urls_info(0) > THREADS and not file_accessable('./stop.txt') and loop_cnt < max_loop:
+        if file_accessable(ONE_DRIVE_PATH + '\\stop.txt'):
+            break
         loop_cnt += 1
         urls = sampling_urls()
         info = f'{loop_cnt}th run at {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}'
