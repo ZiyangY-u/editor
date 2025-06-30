@@ -393,15 +393,19 @@ def get_targets_from_list():
     list_path = ONE_DRIVE_PATH + '\\c-idioms.txt'
     if not file_accessable(list_path):
         print(f'list not accessable {list_path}')
-        return
+        return []
+    _targets1 = []
+    if file_accessable(f'{ONE_DRIVE_PATH}\\c-targets.txt'):
+        with open(ONE_DRIVE_PATH + '\\c-targets.txt', 'r', encoding='utf8') as f:
+            content = f.read().splitlines()
+            _targets1 = [Target(word=w) for w in content]
+
     with open(list_path, 'r', encoding='utf8') as f:
         idiom_list = f.read().splitlines()
         random.seed(datetime.now().strftime("%Y%m%d"))
         idioms = random.sample(idiom_list, everyday_idioms_cnt)
         _targets = [Target(word=w) for w in idioms]
-        return _targets
-
-
+        return [t for t in (_targets + _targets1)]
 
 
 if __name__ == '__main__':
