@@ -707,15 +707,15 @@ def print_aid_summary():
 
 # @timeit
 def sampling_aids():
-    uncached = [k for k, v in article_ids.items() if v == 0 and k not in cached_article_ids and k not in plus_spiegel_aids and k not in manual_skip_list]
-    aids1 = random.sample(uncached, THREADS) if len(uncached) > THREADS else []
-    aids_cached = random.sample([k for k in cached_article_ids if k not in manual_skip_list], MAX_THREADS) if len(cached_article_ids) > MAX_THREADS else []
+    uncached = (k for k, v in article_ids.items() if v == 0 and k not in cached_article_ids and k not in plus_spiegel_aids and k not in manual_skip_list)
+    aids1 = list(itertools.islice((k for k in uncached if random.randint(0, 1) == 1), THREADS))
+    aids_cached = list(itertools.islice((k for k in cached_article_ids if k not in manual_skip_list if random.randint(0, 1) == 1), THREADS))
 
     # expand spiegel and dw
-    aids_spiegel = [k for k in article_ids.keys() if determine_type_by_aid(k) == SPIEGEL_AID_TYPE and k not in plus_spiegel_aids and k not in cached_article_ids]
-    aids_spiegel = random.sample(aids_spiegel, 10) if len(aids_spiegel) > 10 else []
-    aids_dw = [k for k in article_ids.keys() if determine_type_by_aid(k) == DW_AID_TYPE and k not in plus_spiegel_aids and k not in cached_article_ids]
-    aids_dw = random.sample(aids_dw, 10) if len(aids_dw) > 10 else []
+    aids_spiegel = (k for k in article_ids.keys() if determine_type_by_aid(k) == SPIEGEL_AID_TYPE and k not in plus_spiegel_aids and k not in cached_article_ids)
+    aids_spiegel = list(itertools.islice(aids_spiegel, 10))
+    aids_dw = (k for k in article_ids.keys() if determine_type_by_aid(k) == DW_AID_TYPE and k not in plus_spiegel_aids and k not in cached_article_ids)
+    aids_dw = list(itertools.islice(aids_dw, 10))
 
     aids = [aid for aid in (aids1 + aids_cached + aids_spiegel + aids_dw) if unsearched(aid)]
     return aids

@@ -22,7 +22,8 @@ from functools import wraps
 from urllib.parse import urlparse, urlunparse
 
 TIMEOUT = httpx.Timeout(10.0, connect=10.0)
-ONE_DRIVE_PATH = 'C:\\Users\\fvdi0046\\OneDrive2\\OneDrive\\articles'
+# ONE_DRIVE_PATH = 'C:\\Users\\fvdi0046\\OneDrive2\\OneDrive\\articles'
+ONE_DRIVE_PATH = 'C:\\Users\\ziyan\\OneDrive\\articles'
 MAX_SLEEP_TIME = 600
 # logging.basicConfig(filename=ONE_DRIVE_PATH + '\\crawl_log.log',
 #                     filemode='a',
@@ -51,6 +52,10 @@ NEWS_HOME = 'https://www.news.cn/'
 BJNEWS_AID_TYPE = 3
 BJNEWS_ARTICLE_REGEX = r'.*/detail/[0-9]{16}.html'
 BJNEWS_HOME = 'https://www.bjnews.com.cn/'
+# 半月谈
+BYT_AID_TYPE = 4
+BYT_ARTICLE_REGEX = r'.*/detail/[0-9]{8}/[0-9]{34}_1.html'
+BYT_HOME = 'http://www.banyuetan.org/'
 
 history_url_json_file = 'c-idiom-urls.json'
 skip_url_json_file = 'c-idiom-skip-urls.json'
@@ -85,7 +90,7 @@ class Target:
         self.hit_urls = set()
         self.target_cnt = target_cnt
         self.completed = False
-        print(f'init target: {self.word}')
+        # print(f'init target: {self.word}')
         # send explain question to auto-ai
         with open(f'{folder_path}/article-{self.word}-.txt', 'w+', encoding='utf8') as f:
             f.write(f'对于成语‘{self.word}’\n')
@@ -114,6 +119,8 @@ def determine_type_by_aid(url):
         return NEWS_AID_TYPE
     if 'bjnews.com.cn' in url:
         return BJNEWS_AID_TYPE
+    if 'banyuetan.org' in url:
+        return BYT_AID_TYPE
     return PEOPLE_AID_TYPE
 
 def process_hit(target, url, header, paragraph_contents):
@@ -204,6 +211,8 @@ def is_article_url(url):
         return True
     if t == BJNEWS_AID_TYPE and re.match(BJNEWS_ARTICLE_REGEX, url):
         return True
+    if t == BYT_AID_TYPE and re.match(BYT_ARTICLE_REGEX, url):
+        return True
     return False
 
 def parse_article(content, url):
@@ -219,14 +228,12 @@ def parse_article(content, url):
             parse_news_article(content, url)
         if t == BJNEWS_AID_TYPE:
             parse_news_article(content, url)
+        if t == BYT_AID_TYPE:
+            parse_news_article(content, url)
     article_urls[url] = 1 # marked as searched
 
 def valid_url(url):
-    if 'people.com' in url:
-        return True
-    if 'news.cn' in url:
-        return True
-    if 'bjnews.com.cn' in url:
+    if 'people.com' in url or 'news.cn' in url or 'bjnews.com.cn' in url or 'banyuetan.org' in url:
         return True
     return False
 
@@ -268,23 +275,11 @@ def recruit_from_home():
             'https://www.bjnews.com.cn/depth',
             'https://www.bjnews.com.cn/gongyi',
             'https://www.bjnews.com.cn/diyikandian',
-            # 'https://www.bjnews.com.cn/news',
-            # 'https://www.bjnews.com.cn/beijing',
-            # 'https://www.bjnews.com.cn/guoji',
-            # 'https://www.bjnews.com.cn/zhengshi',
-            # 'https://www.bjnews.com.cn/point',
-            # 'https://www.bjnews.com.cn/financial',
-            # 'https://www.bjnews.com.cn/industrial',
-            # 'https://www.bjnews.com.cn/entertainment',
-            # 'https://www.bjnews.com.cn/culture',
-            # 'https://www.bjnews.com.cn/sports',
-            # 'https://www.bjnews.com.cn/car',
-            # 'https://www.bjnews.com.cn/estate',
-            # 'https://www.bjnews.com.cn/education',
-            # 'https://www.bjnews.com.cn/photo',
-            # 'https://www.bjnews.com.cn/technology',
-            # 'https://www.bjnews.com.cn/thinktank',
-            # 'https://www.bjnews.com.cn/country',
+            'http://www.banyuetan.org/',
+            'http://www.banyuetan.org/byt/jinritan/index.html',
+            'http://www.banyuetan.org/byt/banyuetanpinglun/index.html',
+            'http://www.banyuetan.org/byt/jicengzhili/index.html',
+            'http://www.banyuetan.org/byt/shizhengjiangjie/index.html',
             ]
     rts = random.sample(recruit_targets, 5)
     for t in rts:
@@ -302,7 +297,19 @@ def load_history_and_summary():
                 article_urls[url] = 0
                 if u2f(url) + '.txt' in _tmp_fn:
                     cached_article_urls.add(url)
+        total, people_cnt, news_cnt, bjnews_cnt, byt_cnt = 0, 0, 0, 0, 0
+        for url in article_urls.keys():
+            type_id = determine_type_by_aid(url)
+            total += 1
+            if type_id == PEOPLE_AID_TYPE: people_cnt += 1
+            if type_id == NEWS_AID_TYPE: news_cnt += 1
+            if type_id == BJNEWS_AID_TYPE: bjnews_cnt += 1
+            if type_id == BYT_AID_TYPE: byt_cnt += 1
         print(f'load urls from history: {len(article_urls)}')
+        print(f'人民网：{people_cnt}({people_cnt * 100 / total:.2f}%)')
+        print(f'新华社：{news_cnt}({news_cnt * 100 / total:.2f}%)')
+        print(f'新京报：{bjnews_cnt}({bjnews_cnt * 100 / total:.2f}%)')
+        print(f'半月谈：{byt_cnt}({byt_cnt * 100 / total:.2f}%)')
         print(f'load cached urls from history: {len(cached_article_urls)}')
     if file_accessable(skip_url_json_file): # skip list
         with open(skip_url_json_file, 'r', encoding='utf8') as fp:
@@ -334,7 +341,10 @@ def sampling_urls():
     urls_expand = [k for k, v in article_urls.items() if v == 0 and len(k) < 50]
     urls_expand = random.sample(urls_expand, THREADS) if len(urls_expand) > THREADS else []
 
-    urls = [url for url in (urls_uncache + urls_cached + urls_expand) if unsearched(url)]
+    urls_bjnews = list(itertools.islice((k for k, v in article_urls.items() if v == 0 and determine_type_by_aid(k) == BJNEWS_AID_TYPE), 10))
+    urls_byt = list(itertools.islice((k for k, v in article_urls.items() if v == 0 and determine_type_by_aid(k) == BYT_AID_TYPE), 10))
+
+    urls = [url for url in (urls_uncache + urls_cached + urls_expand + urls_bjnews + urls_byt) if unsearched(url)]
     return urls
 
 async def get_content_and_parse(url):
@@ -416,4 +426,4 @@ if __name__ == '__main__':
         load_history_and_summary()
         crawl(targets)
         save_history()
-        time.sleep(60 * 5) # 5 minutes
+        time.sleep(60 * 1) # 5 minutes
