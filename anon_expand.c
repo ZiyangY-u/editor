@@ -294,6 +294,14 @@ void python_crawler_target(char* word) {
 
 }
 
+void text_expand(char* word) {
+    printf("$0 %c", toupper(w1));
+    if (strlen(word) > 2 && strstr(word+2, "l")) printf(" l");
+    if (strlen(word) > 2 && strstr(word+2, "r")) printf(" r");
+    if (strlen(word) > 2 && strstr(word+2, "c")) printf(" c");
+    printf("\n");
+}
+
 void python_expand(char* word) {
     if (matchn(word, "t", 1) && strlen(word) >= 2)
         python_crawler_target(word);
@@ -324,6 +332,8 @@ int main(int argc, char *argv[])
         awk_expand(argv[1]);
     if (match("python", argv[2]))
         python_expand(argv[1]);
+    if (match("text", argv[2]))
+        text_expand(argv[1]);
 
     return 0;
 }
