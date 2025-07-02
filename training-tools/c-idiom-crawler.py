@@ -219,7 +219,7 @@ def parse_article(content, url):
     try:
         recruit_from_content(content)
     except:
-        print(f'\nerror in recruit from {url}', end='')
+        print(f'\nerror in recruit from {url}')
     t = determine_type_by_aid(url)
     if is_article_url(url):
         if t == PEOPLE_AID_TYPE:
@@ -420,10 +420,10 @@ def get_targets_from_list():
 
 if __name__ == '__main__':
     # delete_tmp_articles()
+    load_history_and_summary()
     while True:
         targets = get_targets_from_list()
 
-        load_history_and_summary()
         crawl(targets)
         save_history()
         time.sleep(60 * 1) # 5 minutes

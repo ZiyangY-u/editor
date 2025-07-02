@@ -299,6 +299,7 @@ void text_expand(char* word) {
     if (strlen(word) > 2 && strstr(word+2, "l")) printf(" l");
     if (strlen(word) > 2 && strstr(word+2, "r")) printf(" r");
     if (strlen(word) > 2 && strstr(word+2, "c")) printf(" c");
+    if (w1 == 's') printf(" 7");
     printf("\n");
 }
 

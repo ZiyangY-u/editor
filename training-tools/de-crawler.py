@@ -350,7 +350,7 @@ class Target:
             return False
         if self.match_mode == SEP_VERB_MODE:
             for kw in self.conjuncated:
-                pattern = r"\b" + kw.lower() + r"\b[^\.:,]*\b" + self.prefix + r"\b"
+                pattern = r"\b" + kw.lower() + r"\b[^\.:,]*\b" + self.prefix + r" [^a-zA-Z0-9]"
                 if self.search(pattern, paragraph):
                     return True
             for kw in self.conjuncated:
@@ -822,7 +822,7 @@ def start_sentry():
         if len(targets) != 0:
             logging.info('sentry active!')
             load_history_and_summary()
-            crawl(targets , False) # sentry do not clear result
+            crawl(targets , True) # sentry do not clear result
             save_history()
             shutil.copyfile(f'{ONE_DRIVE_PATH}\\targets.txt', f'{ONE_DRIVE_PATH}\\targets-bak.txt')
             with open(f'{ONE_DRIVE_PATH}\\targets.txt', 'w+', encoding='utf8') as f:
