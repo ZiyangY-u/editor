@@ -350,7 +350,7 @@ class Target:
             return False
         if self.match_mode == SEP_VERB_MODE:
             for kw in self.conjuncated:
-                pattern = r"\b" + kw.lower() + r"\b[^\.:,]*\b" + self.prefix + r" [^a-zA-Z0-9]"
+                pattern = r"\b" + kw.lower() + r"\b[^\.:,]*\b" + self.prefix + r"[^a-zA-Z0-9] "
                 if self.search(pattern, paragraph):
                     return True
             for kw in self.conjuncated:
@@ -707,15 +707,15 @@ def print_aid_summary():
 
 # @timeit
 def sampling_aids():
-    uncached = (k for k, v in article_ids.items() if v == 0 and k not in cached_article_ids and k not in plus_spiegel_aids and k not in manual_skip_list)
+    uncached = (k for k, _ in article_ids.items() if unsearched(k) and k not in cached_article_ids and k not in plus_spiegel_aids)
     aids1 = list(itertools.islice((k for k in uncached if random.randint(0, 1) == 1), THREADS))
-    aids_cached = list(itertools.islice((k for k in cached_article_ids if k not in manual_skip_list if random.randint(0, 1) == 1), THREADS))
+    aids_cached = list(itertools.islice((k for k in cached_article_ids if unsearched(k) and random.randint(0, 1) == 1), MAX_THREADS))
 
     # expand spiegel and dw
-    aids_spiegel = (k for k in article_ids.keys() if determine_type_by_aid(k) == SPIEGEL_AID_TYPE and k not in plus_spiegel_aids and k not in cached_article_ids)
-    aids_spiegel = list(itertools.islice(aids_spiegel, 10))
-    aids_dw = (k for k in article_ids.keys() if determine_type_by_aid(k) == DW_AID_TYPE and k not in plus_spiegel_aids and k not in cached_article_ids)
-    aids_dw = list(itertools.islice(aids_dw, 10))
+    aids_spiegel = (k for k, _ in article_ids.items() if determine_type_by_aid(k) == SPIEGEL_AID_TYPE and k not in plus_spiegel_aids and k not in cached_article_ids and unsearched(k))
+    aids_spiegel = list(itertools.islice((k for k in aids_spiegel if random.randint(0, 1) == 1), 10))
+    aids_dw = (k for k in article_ids.keys() if determine_type_by_aid(k) == DW_AID_TYPE and unsearched(k) and k not in cached_article_ids)
+    aids_dw = list(itertools.islice((k for k in aids_dw if random.randint(0, 1) == 1), 10))
 
     aids = [aid for aid in (aids1 + aids_cached + aids_spiegel + aids_dw) if unsearched(aid)]
     return aids

@@ -90,7 +90,7 @@ class Target:
         self.hit_urls = set()
         self.target_cnt = target_cnt
         self.completed = False
-        # print(f'init target: {self.word}')
+        print(f'init target: {self.word}')
         # send explain question to auto-ai
         with open(f'{folder_path}/article-{self.word}-.txt', 'w+', encoding='utf8') as f:
             f.write(f'对于成语‘{self.word}’\n')

@@ -295,12 +295,14 @@ void python_crawler_target(char* word) {
 }
 
 void text_expand(char* word) {
-    printf("$0 %c", toupper(w1));
-    if (strlen(word) > 2 && strstr(word+2, "l")) printf(" l");
-    if (strlen(word) > 2 && strstr(word+2, "r")) printf(" r");
-    if (strlen(word) > 2 && strstr(word+2, "c")) printf(" c");
-    if (w1 == 's') printf(" 7");
-    printf("\n");
+    if (w0 == 't') {
+        printf("$0 %c", toupper(w1));
+        if (strlen(word) > 2 && strstr(word+2, "l")) printf(" l");
+        if (strlen(word) > 2 && strstr(word+2, "r")) printf(" r");
+        if (strlen(word) > 2 && strstr(word+2, "c")) printf(" c");
+        if (w1 == 's') printf(" 7");
+        printf("\n");
+    }
 }
 
 void python_expand(char* word) {
