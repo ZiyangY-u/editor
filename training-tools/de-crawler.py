@@ -520,10 +520,10 @@ async def get_content_and_parse(aid):
         async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=True) as client:
             try:
                 resp = await client.get(url=url)
+                content = resp.content.decode('utf8')
             except:
                 logging.info(f'error in request: {url}')
                 return aid
-            content = resp.content.decode('utf8')
             received_bytes += len(content)
             with open(path, 'w+', encoding='utf8') as fw:
                 fw.write(content)
