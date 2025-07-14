@@ -798,6 +798,7 @@ def start_sentry():
         logging.info('accept RUN instruction')
         targets = []
         for ln in content[1:]: # first word should be target
+            if len(ln.strip()) == 0: continue # skip empty line
             words = ln.split()
             prefix, word, mode, lb, rb, cs, tc = '', '', NOUN_MODE, False, False, False, TARGET_CNT
 
