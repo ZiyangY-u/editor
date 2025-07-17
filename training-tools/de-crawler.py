@@ -74,6 +74,7 @@ targets = []
 
 folder_path = './articles'
 cache_folder = './cache'
+sentence_len = 20 # count by word
 
 received_bytes = 0
 cache_hit_cnt = 0
@@ -315,9 +316,15 @@ class Target:
         return pattern
 
     def search(self, pat, content):
-        if self.case_sensitive:
-            return re.search(pat, content)
-        return re.search(pat, content, re.IGNORECASE)
+        sentences = content.split('.')
+        for sentence in sentences:
+            if len(sentence.split(' ')) > sentence_len:
+                continue
+            if self.case_sensitive and re.search(pat, content):
+                return True
+            elif not self.case_sensitive and re.search(pat, content, re.IGNORECASE):
+                return True
+        return False
 
     def hit(self, paragraph):
         if self.match_mode == NOUN_MODE or self.match_mode == COMPOUND_NOUN_MODE:
