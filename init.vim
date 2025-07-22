@@ -224,11 +224,13 @@ fu! PumRenderVerticalScope(col)
 endf
 fu! RenderVerticalScope(start, dense, end, col)
     cal ClearVirtualTxt()
-    let offset = a:start
-    while offset <= (a:end == -1 ? winheight(0) : a:end)
-        let [txt, hl] = [string(offset), 'QuickScopePrimary']
-        cal VirtualMarkWrapper(line('.')-offset-1, a:col, txt, hl)
-        cal VirtualMarkWrapper(line('.')+offset-1, a:col, txt, hl)
+    let [offset, upcnt, downcnt] = [a:start, 1, 1]
+    while offset <= (a:end == -1 ? max([line('.') - line('w0'), line('w$') - line('w0')]) : a:end)
+        let [upln, downln] = [line('.')-offset, line('.')+offset]
+        cal VirtualMarkWrapper(upln-1, a:col, string(upcnt), 'QuickScopePrimary')
+        cal VirtualMarkWrapper(downln-1, a:col, string(downcnt), 'QuickScopePrimary')
+        if foldclosed(upln) == -1 || foldclosed(upln) == upln | let upcnt += 1 | en
+        if foldclosed(downln) == -1 || foldclosed(downln) == downln | let downcnt += 1 | en
         let offset += a:dense
     endwhile
 endf
