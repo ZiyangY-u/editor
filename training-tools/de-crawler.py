@@ -402,10 +402,10 @@ class Target:
 
         prompt += f'{idx}.为这篇德语文章生成一篇简短的中文摘要并提取5个关键词(逗号分隔)\n'; idx += 1
         for hp in hit_paras:
-            prompt += f'{idx}.翻译第{hp}段，并用粗体标出用到‘{kw}’的句子\n'; idx += 1
+            prompt += f'{idx}.打印原文第{hp}段，并用粗体标记出用到了‘{kw}’的句子\n'; idx += 1
             prompt += f'{idx}.翻译第{hp}段成日语，并用粗体标出用到‘{kw}’的句子\n'; idx += 1
             prompt += f'{idx}.翻译第{hp}段成英语，并用粗体标出用到‘{kw}’的句子\n'; idx += 1
-            prompt += f'{idx}.打印原文第{hp}段，并用粗体标记出用到了‘{kw}’的句子\n'; idx += 1
+            prompt += f'{idx}.翻译第{hp}段，并用粗体标出用到‘{kw}’的句子\n'; idx += 1
 
         return prompt
 

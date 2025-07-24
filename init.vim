@@ -269,12 +269,12 @@ fu! ToggleRoadmap()
         exe 'bo vsplit |b'.g:roadmapbuf.'|vert res 25'
         cal setbufvar(g:roadmapbuf, '&rnu', 0) | cal setbufvar(g:roadmapbuf, '&nu', 0)
         cal setbufvar(g:roadmapbuf, '&ft', 'roadmap')
-        syn match rmap_mks /󰉁.*/ containedin=ALL | hi rmap_mks ctermfg=196
-        syn match rmap_git /.*/ containedin=ALL | hi rmap_git ctermfg=208
-        syn match rmap_anchor / .*/ containedin=ALL | hi rmap_anchor ctermfg=129
-        syn match rmap_qf /󰙒 .*/ containedin=ALL | hi rmap_qf ctermfg=227
-        syn match rmap_curr /^>/ containedin=ALL | hi rmap_curr ctermfg=82
-        syn match rmap_extmk / .*/ containedin=ALL | hi rmap_extmk ctermfg=154
+        syn match rmap_mks    /󰉁.*/  containedin=ALL | hi rmap_mks      ctermfg=196
+        syn match rmap_git    /.*/  containedin=ALL | hi rmap_git      ctermfg=208
+        syn match rmap_anchor / .*/ containedin=ALL | hi rmap_anchor   ctermfg=129
+        syn match rmap_qf     /󰙒 .*/ containedin=ALL | hi rmap_qf       ctermfg=227
+        syn match rmap_curr   /^>/   containedin=ALL | hi rmap_curr     ctermfg=82
+        syn match rmap_extmk  / .*/ containedin=ALL | hi rmap_extmk    ctermfg=154
         wincmd p " jump back to main window
     en
 endf
