@@ -227,3 +227,23 @@ if (\$0 ~ /After request/) delete threads[$1]
 printf "\n"
 
 endsnippet
+
+snippet wf2j "webform to json" w
+if (\$0 ~ /name=/) {
+    printf "'%s':", \$2; getline;
+    if (\$0 !~ /WebKitFormBoundary/) {
+        if (\$0 == "null") printf "None,\n"
+        else if (\$0 == "false") printf "False,\n"
+        else if (\$0 == "true") printf "True,\n"
+        else printf "'%s',\n", \$0
+    }
+    else printf "'',\n"
+}
+endsnippet
+
+snippet wq "wrap quote" w
+\$0 = "'" \$0 "'"
+endsnippet
+snippet wQ "wrap Quote" w
+\$0 = "\\"" \$0 "\\""
+endsnippet
