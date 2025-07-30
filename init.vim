@@ -50,7 +50,7 @@ hi awkFS cterm=bold ctermfg=196 ctermbg=DarkCyan
 let g:asyncCnt = 0
 fu! ActStl(isActive)
     if &ft == 'qf' && a:isActive == 1 | retu " QuickFix List %l/%L %P" | en
-    if exists('b:is_dy_buf') && b:is_dy_buf == 1 | retu DyStl() | en
+    if exists('b:is_dy_buf') && b:is_dy_buf == 1 && exists('*DyStl') | retu DyStl() | en
     if a:isActive == 0
         retu "%#error#%r%#mod#%m%#sleepWindow# %t %y %= ln:%l/%L %P "
     en
@@ -70,19 +70,6 @@ fu! ActStl(isActive)
     if &ft == 'tex' | let stl.='%#texPage# 󰗚 [%{GetPdfLoc()}]' | en " tex Pdf page number
     let stl.="%#posBar#%  %v[%c] %P %#totalL#%L% "
     let stl.=" %#fileType#% %y %{strlen(&fenc)?&fenc:'none'}/%{strlen(&ff)?&ff:''} "
-    retu stl
-endf
-fu! DyStl()
-    let stl="%#error#Dy-Reading:"
-    let stl.="%<%#c1# %{b:dy_file}"
-    let stl.="%=" " left/right separator
-    if exists('b:is_dy_buf') && exists('b:chunk_mark') && exists('b:dy_total_ln') && b:_chunk_mark != ''
-        let stl.= '%#error# ' . printf(' %.1f', 100.0 * len(b:chunk_mark) * g:dy_line_chunk_size / b:dy_total_ln) . "%{'% '}"
-    endif
-    let stl.="%#posBar# %{string(b:dy_endln*100.0/b:dy_total_ln).'%'} %{b:dy_total_ln} "
-    if exists('b:dy_search_rst')
-        let stl.="[%{b:dy_cursor+1}/%{len(b:dy_search_rst)}] "
-    endif
     retu stl
 endf
 
