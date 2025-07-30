@@ -4,11 +4,16 @@ let g:dynamic_read = '~/.config/nvim/dy-read'
 let g:dynamic_bufsize = 1000
 let g:dy_line_chunk_size = 10000
 
-fu! s:GetProgress(bn, total_marks, jobId, data, event) abort
-    let marks = getbufvar(a:bn, 'chunk_mark')
-    cal setbufvar(a:bn, 'chunk_mark', marks + filter(a:data, 'len(v:val) > 0'))
-    echom printf('Openinig... %.2f%%', len(marks) * 99.0 / a:total_marks)
-    redraw
+fu! s:GetProgress(bn, jobId, data, event) abort
+    let marks = getbufvar(a:bn, '_chunk_mark') . join(a:data, '|')
+    cal setbufvar(a:bn, '_chunk_mark', marks)
+    cal setbufvar(a:bn, 'chunk_mark', split(marks, '|'))
+    redrawstatus
+endf
+
+fu! s:OnDyOpened(bn, jobId, data, event)
+    cal setbufvar(a:bn, '_chunk_mark', '')
+    redrawstatus
 endf
 
 fu! DynamicOpen(file)
@@ -19,10 +24,11 @@ fu! DynamicOpen(file)
     cal setbufvar(bn, 'is_dy_buf', 1)
     cal setbufvar(bn, 'dy_total_ln', split(system('wc -l '.file))[0])
     cal setbufvar(bn, 'chunk_mark', ['0'])
+    cal setbufvar(bn, '_chunk_mark', '0|')
 
-    " let BnGetProgress = function('s:GetProgress', [bn, (getbufvar(bn, 'dy_total_ln') / g:dy_line_chunk_size)])
-    " cal jobwait([ jobstart(g:dynamic_chunk_calc.' '.file.' '.g:dy_line_chunk_size, {'on_stdout' : BnGetProgress}) ])
-    cal setbufvar(bn, 'chunk_mark', ['0'] + split(system(g:dynamic_chunk_calc.' '.file.' '.g:dy_line_chunk_size), '\n'))
+    let job_opts = {'on_stdout' : function('s:GetProgress', [bn]), 'on_exit' : function('s:OnDyOpened', [bn])}
+    cal jobstart(g:dynamic_chunk_calc.' '.file.' '.g:dy_line_chunk_size, job_opts)  " async
+    " cal setbufvar(bn, 'chunk_mark', ['0'] + split(system(g:dynamic_chunk_calc.' '.file.' '.g:dy_line_chunk_size), '\n')) " sync
 
     exe 'tabe '.tempname
     cal DynamicLoad(1, g:dynamic_bufsize)
@@ -48,6 +54,11 @@ fu! DynamicLoad(start, end)
 endf
 
 fu! DyRelocate(ln)
+    let ln = (a:ln == 'end' ? b:dy_total_ln-g:dynamic_bufsize : str2nr(a:ln))
+    if (ln/g:dy_line_chunk_size) >= len(b:chunk_mark)
+        echoh Title | echo 'fail to move to uncalculated area' | echoh None | retu
+    endif
+
     if a:ln == 'top' | cal DynamicLoad(1, g:dynamic_bufsize) | sil exe 'norm gg' | retu | endif
     if a:ln == 'end' | cal DynamicLoad(b:dy_total_ln-g:dynamic_bufsize, b:dy_total_ln) | sil exe 'norm G' | retu | endif
     let [ln, half_bs] = [str2nr(a:ln), g:dynamic_bufsize/2]

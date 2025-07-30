@@ -76,6 +76,9 @@ fu! DyStl()
     let stl="%#error#Dy-Reading:"
     let stl.="%<%#c1# %{b:dy_file}"
     let stl.="%=" " left/right separator
+    if exists('b:is_dy_buf') && exists('b:chunk_mark') && exists('b:dy_total_ln') && b:_chunk_mark != ''
+        let stl.= '%#error# ' . printf(' %.1f', 100.0 * len(b:chunk_mark) * g:dy_line_chunk_size / b:dy_total_ln) . "%{'% '}"
+    endif
     let stl.="%#posBar# %{string(b:dy_endln*100.0/b:dy_total_ln).'%'} %{b:dy_total_ln} "
     if exists('b:dy_search_rst')
         let stl.="[%{b:dy_cursor+1}/%{len(b:dy_search_rst)}] "
@@ -926,6 +929,7 @@ nn <expr> <a-i> (line('$') == line('.') \|\| line('.') == 1) ? 'ddP' : 'ddkP'
 nn ,q @=((expand('%')=='')?':quit!':((&mod==0)?':quit':':echo"Not Saved"'))<CR><CR>
 nn ,Q :quita!<CR>
 nn ,w @=(&ft == 'qfedit' ? ':cal ReflectAll()' : ':update')<CR><CR>
+ca qa cal ClearTmpBuf() \| qall
 "   surround operations ('s' for surround, 'S' for remove surround)
 nn s :set opfunc=SurroundOp<cr>g@
 vn s :<c-u>cal SurroundOp(visualmode())<cr>
