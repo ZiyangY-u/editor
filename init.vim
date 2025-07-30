@@ -50,10 +50,10 @@ hi awkFS cterm=bold ctermfg=196 ctermbg=DarkCyan
 let g:asyncCnt = 0
 fu! ActStl(isActive)
     if &ft == 'qf' && a:isActive == 1 | retu " QuickFix List %l/%L %P" | en
-    if exists('b:is_dy_buf') && b:is_dy_buf == 1 && exists('*DyStl') | retu DyStl() | en
     if a:isActive == 0
         retu "%#error#%r%#mod#%m%#sleepWindow# %t %y %= ln:%l/%L %P "
     en
+    if IsDyBuf() && exists('*DyStl') | retu DyStl() | en
     let stl=""
     let stl.="%#error#%r%#mod#%m"
     let stl.= (g:jumpMode == 'n' ? "%#ModColor#" : "%#JumpModColor#")
@@ -268,6 +268,14 @@ fu! ToggleRoadmap()
         wincmd p " jump back to main window
     en
 endf
+
+fu! CurrentLn()
+    retu (IsDyBuf() ? trim(split(getline('.'), '|')[0]) : line('.'))
+endf
+fu! EndLn()
+    retu (IsDyBuf() ? b:dy_total_ln : line('$'))
+endf
+
 fu! RefreshRoadMap(timer)
     if !exists('g:roadmapbuf') || &ft == 'roadmap' | retu | en
     if index(tabpagebuflist(), g:roadmapbuf) < 0 | cal timer_pause(g:refresh, 1) | en
@@ -277,21 +285,27 @@ fu! RefreshRoadMap(timer)
 
     let marks = GetMarks()
 
-    if !has_key(marks, str2nr(line('.'))) | let marks[str2nr(line('.'))] = '>>>>>' | en
+    if !has_key(marks, str2nr(CurrentLn())) | let marks[str2nr(CurrentLn())] = '>>>>>' | en
     if exists('b:anchorLn') && b:anchorLn != 0 | let marks[str2nr(b:anchorLn)] = ' ' | en
+
     let [sortedlist, idx] = [sort(map(keys(marks), {_,v -> str2nr(v)}), 'n'), 2]
     for ln in sortedlist
         if !has_key(marks, ln) | continue | en
-        if line('.') == str2nr(ln) && marks[ln] == '>>>>>'
+        if CurrentLn() == str2nr(ln) && marks[ln] == '>>>>>'
             call setbufline(g:roadmapbuf, idx, ['>'])
         el
-            let fmt = (line('.') == str2nr(ln) ? '> ' : '  '). '%'.len(line('$')).'d %s'
+            let fmt = (CurrentLn() == str2nr(ln) ? '> ' : '  '). '%'.len(EndLn()).'d %s'
             call setbufline(g:roadmapbuf, idx, [printf(fmt, ln, marks[ln])])
         en
         let idx += 1
     endfor
 endf
 fu! GetMarks() " marks for road map and jumping
+    if IsDyBuf()
+        let b:roadmarks = sort(map(keys(copy(b:dy_marks)), {_,v -> str2nr(v)}), 'n')
+        retu copy(b:dy_marks)
+    endif
+
     let marks = {}
     for mk in getmarklist(bufnr()) " marks
         let [mkn, ln] = [mk['mark'], mk['pos'][1]]
@@ -315,8 +329,11 @@ fu! GetMarks() " marks for road map and jumping
     retu marks
 endf
 fu! GoMark(flag) " 0 for prev; 1 for next
-    let next = filter(copy(b:roadmarks), {_,i -> a:flag ? (i>line('.')) : (i<line('.'))})
-    if len(next) > 0 | exe (a:flag ? next[0] : next[-1]) | en
+    let next = filter(copy(b:roadmarks), {_, i -> a:flag ? (i > CurrentLn()) : (i < CurrentLn())})
+    if len(next) > 0
+        let target = (a:flag ? next[0] : next[-1])
+        exe (IsDyBuf() ? 'DyLocate '.target : target)
+    en
     cal RefreshRoadMap('')
 endf
 let g:refresh = timer_start(1000, 'RefreshRoadMap', {'repeat': -1})
@@ -560,7 +577,7 @@ ca ae tabe \| e +/main/;norm\ ztjj <c-r>=g:awk_file<cr>
 ca ase bo vsplit \| e +/main/;norm\ ztjj <c-r>=g:awk_file<cr>
 fu! AwkToTemp() " direct awk result to a new temporary file
     let target_file = expand('%:p')
-    if exists('b:is_dy_buf') && b:is_dy_buf == 1 | let target_file = b:dy_file | endif
+    if IsDyBuf() | let target_file = b:dy_file | endif
     cal execute(printf('tabe | e %s | r !awk -f %s %s', tempname(), g:awk_file, target_file))
     exe "norm ggdd:w\n"
 endf

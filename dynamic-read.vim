@@ -4,6 +4,13 @@ let g:dynamic_read = '~/.config/nvim/dy-read'
 let g:dynamic_bufsize = 1000
 let g:dy_line_chunk_size = 10000
 
+fu! IsDyBuf()
+    if exists('b:is_dy_buf') && b:is_dy_buf == 1
+        retu v:true
+    endif
+    retu v:false
+endf
+
 fu! s:GetProgress(bn, jobId, data, event) abort
     let marks = getbufvar(a:bn, '_chunk_mark') . join(a:data, '|')
     cal setbufvar(a:bn, '_chunk_mark', marks)
@@ -25,6 +32,7 @@ fu! DynamicOpen(file)
     cal setbufvar(bn, 'dy_total_ln', split(system('wc -l '.file))[0])
     cal setbufvar(bn, 'chunk_mark', ['0'])
     cal setbufvar(bn, '_chunk_mark', '0|')
+    cal setbufvar(bn, 'dy_marks', {})
 
     let job_opts = {'on_stdout' : function('s:GetProgress', [bn]), 'on_exit' : function('s:OnDyOpened', [bn])}
     cal jobstart(g:dynamic_chunk_calc.' '.file.' '.g:dy_line_chunk_size, job_opts)  " async
@@ -130,6 +138,9 @@ au CursorHold * if exists('b:is_dy_buf') && b:is_dy_buf==1 && line('.') < 20 && 
 
 fu! DyStl()
     let stl="%#error#Dy-Reading:"
+    if g:jumpMode == 'r' " roadmap
+        let stl.="%#JumpModColor# R "
+    endif
     let stl.="%<%#c1# %{b:dy_file}"
     let stl.="%=" " left/right separator
     if exists('b:is_dy_buf') && exists('b:chunk_mark') && exists('b:dy_total_ln') && b:_chunk_mark != ''
@@ -141,3 +152,11 @@ fu! DyStl()
     endif
     retu stl
 endf
+
+fu! DyMark(bn, ln, msg)
+    let marks = getbufvar(a:bn, 'dy_marks')
+    let marks[a:ln] = a:msg
+    cal setbufvar(a:bn, 'dy_marks', marks)
+endf
+
+com! -nargs=1 DyMark :cal DyMark(bufnr(), CurrentLn(), <f-args>)
