@@ -34,7 +34,7 @@ fu! DynamicOpen(file)
     cal setbufvar(bn, '_chunk_mark', '0|')
     cal setbufvar(bn, 'dy_marks', {})
 
-    let job_opts = {'on_stdout' : function('s:GetProgress', [bn]), 'on_exit' : function('s:OnDyOpened', [bn])}
+    let job_opts = {'detach' : v:true, 'on_stdout' : function('s:GetProgress', [bn]), 'on_exit' : function('s:OnDyOpened', [bn])}
     cal jobstart(g:dynamic_chunk_calc.' '.file.' '.g:dy_line_chunk_size, job_opts)  " async
     " cal setbufvar(bn, 'chunk_mark', ['0'] + split(system(g:dynamic_chunk_calc.' '.file.' '.g:dy_line_chunk_size), '\n')) " sync
 
@@ -64,7 +64,8 @@ endf
 fu! DyRelocate(ln)
     let ln = (a:ln == 'end' ? b:dy_total_ln-g:dynamic_bufsize : str2nr(a:ln))
     if (ln/g:dy_line_chunk_size) >= len(b:chunk_mark)
-        echoh Title | echo 'fail to move to uncalculated area' | echoh None | retu
+        let msg = 'fail to move to ' . (b:_chunk_mark == '' ? 'unreachable' : 'uncalculated') . ' area'
+        echoh Title | echo msg | echoh None | retu
     endif
 
     if a:ln == 'top' | cal DynamicLoad(1, g:dynamic_bufsize) | sil exe 'norm gg' | retu | endif
@@ -160,3 +161,4 @@ fu! DyMark(bn, ln, msg)
 endf
 
 com! -nargs=1 DyMark :cal DyMark(bufnr(), CurrentLn(), <f-args>)
+com! -nargs=0 DyUnmark :unlet b:dy_marks[CurrentLn()]

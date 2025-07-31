@@ -868,9 +868,19 @@ nn ,T :cal SplitOp('-tabe \|', '')<CR>
 vn ,T :cal SplitOp('-tabe \|', Selected())<CR>
 nn t gt
 nn T gT
+
+" buf-renmaing and dynamic-read file display
+let g:buf_name = {}
+com! -nargs=1 RenameBuf :let g:buf_name[bufnr()] = <f-args>
 fu! Bufname(bn)
-    retu (getbufvar(a:bn, 'is_dy_buf') == 1 ? getbufvar(a:bn, 'dy_file') : bufname(a:bn))
+    if getbufvar(a:bn, 'is_dy_buf') == 1
+        retu getbufvar(a:bn, 'dy_file')
+    elseif has_key(g:buf_name, a:bn)
+        retu g:buf_name[a:bn]
+    endif
+    return bufname(a:bn)
 endf
+
 fu! Shortf(fname)
     retu fnamemodify(a:fname, ':p:t')
 endf
@@ -933,7 +943,7 @@ nn <expr> <a-i> (line('$') == line('.') \|\| line('.') == 1) ? 'ddP' : 'ddkP'
 nn ,q @=((expand('%')=='')?':quit!':((&mod==0)?':quit':':echo"Not Saved"'))<CR><CR>
 nn ,Q :quita!<CR>
 nn ,w @=(&ft == 'qfedit' ? ':cal ReflectAll()' : ':update')<CR><CR>
-ca qa cal ClearTmpBuf() \| qall
+ca qa sil cal ClearTmpBuf() \| qall
 "   surround operations ('s' for surround, 'S' for remove surround)
 nn s :set opfunc=SurroundOp<cr>g@
 vn s :<c-u>cal SurroundOp(visualmode())<cr>
@@ -1382,13 +1392,14 @@ fu! ClearNoName() abort
     endfor
 endf
 fu! ClearTmpBuf()
+    if exists('g:roadmapbuf') | sil exe 'bd! '.g:roadmapbuf | en
     for buf in getbufinfo()
         let path = expand('#'.buf.bufnr.':p')
         if match(path, '^/tmp/nvim') >= 0 || match(path, '^man://') >= 0
-            exe 'bd! '.path | en
+            sil exe 'bd! '.path | en
     endfor
 endf
-au ExitPre * cal ClearTmpBuf() | cal ClearNoName()
+au ExitPre * sil cal ClearTmpBuf() | cal ClearNoName()
 fu! RelPath(path, anchor) " return relative path
     if a:path == '' | retu '' | en
     retu trim(system('realpath '.a:path.' --relative-to '.a:anchor))
