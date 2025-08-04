@@ -664,6 +664,12 @@ fu! BufJumpBack()
         let _ = bufnr('%')
     endw
 endf
+fu! ModWinResize()
+    if g:jumpMode != 'w' | retu | en
+    let [h, l] = (win_screenpos(winnr())[1] == 1 ? ['<', '>'] : ['>', '<'])
+    exe 'nn h <c-w>'.h
+    exe 'nn l <c-w>'.l
+endf
 nn <a-o> :cal BufJumpBack()<cr>
 let g:jumpMode = 'n'
 let g:jumpModeNames = {'n':'Normal','m':'Mark','f':'Fold','s':'Scroll','q':'Quickfix','d':'Diff','w':'Window','c':'Conflict', 'r':'Roadmap'}
@@ -694,7 +700,9 @@ fu! OmniJumpBoot(backNormFlag)
     for direct in split('hjkl', '\zs')
         exe printf('nn %s %s', direct, get(jumpMoves, g:jumpMode.direct, direct))
     endfor
+    cal ModWinResize()
 endf
+au WinEnter * sil cal ModWinResize()
 nn <leader>j :cal OmniJumpBoot(0)<CR>
 nn <leader><leader> :cal OmniJumpBoot(1)<cr>
 " past and auto-indent
