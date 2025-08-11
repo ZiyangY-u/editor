@@ -96,9 +96,9 @@ fu! DyExpandDown()
 endf
 
 fu! DyNext() " return next line number
-    let current_ln = split(getline('.'), '|')[0]+0
+    let current_ln = CurrentLn()
     for b:dy_cursor in range(0, len(b:dy_search_rst)-1)
-        if b:dy_search_rst[b:dy_cursor] > current_ln
+        if str2nr(b:dy_search_rst[b:dy_cursor]) > str2nr(current_ln)
             let current_ln = b:dy_search_rst[b:dy_cursor] | break
         endif
     endfor
@@ -106,9 +106,9 @@ fu! DyNext() " return next line number
 endf
 
 fu! DyPrev() " return previouse line number
-    let current_ln = split(getline('.'), '|')[0]+0
+    let current_ln = CurrentLn()
     for b:dy_cursor in reverse(range(0, len(b:dy_search_rst)-1))
-        if b:dy_search_rst[b:dy_cursor] < current_ln
+        if str2nr(b:dy_search_rst[b:dy_cursor]) < str2nr(current_ln)
             let current_ln = b:dy_search_rst[b:dy_cursor] | break
         endif
     endfor
