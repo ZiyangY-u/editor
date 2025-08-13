@@ -305,6 +305,17 @@ void text_expand(char* word) {
     }
 }
 
+void xl_expand(char* word) {
+    if (strlen(word) >= 2 && isalpha(w0) && is_all_digit(word+1))
+        printf("'%c%s'", toupper(w0), word+1);
+    if (strlen(word) >= 3 && isalpha(w0) && isalpha(w1) && is_all_digit(word+2))
+        printf("'%c%c%s'", toupper(w0), toupper(w1),word+2);
+    if (isupper(w0) && w1 == 'i')
+        printf("f'%c{i}'", w0);
+    if (isupper(w0) && isupper(w1) && w2 == 'i')
+        printf("f'%c%c{i}'", w0, w1);
+}
+
 void python_expand(char* word) {
     if (matchn(word, "t", 1) && strlen(word) >= 2)
         python_crawler_target(word);
@@ -333,6 +344,8 @@ int main(int argc, char *argv[])
         git_expand(argv[1]);
     if (match("awk", argv[2]))
         awk_expand(argv[1]);
+    if (match("xl-script.py", argv[3]))
+        xl_expand(argv[1]);
     if (match("python", argv[2]))
         python_expand(argv[1]);
     if (match("text", argv[2]))

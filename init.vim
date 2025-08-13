@@ -597,6 +597,9 @@ fu! AwkOp(type)
     if g:autoIndentFlg == 1 | exe 'norm! `]j=`[' | en " auto indent after AwkOp
 endf
 nn <silent> ,a :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=AwkOp<cr>g@
+" openpyxl misc
+com! -nargs=0 EditXl tabe | e ~/.config/nvim/xl-script.py
+ca xl !python3 ~/.config/nvim/xl-script.py <C-R>=expand('%:p')<cr>
 " QuickFix Reflection
 fu! OpenQfBuf()
     let [g:qfbufnr, idx] = [bufadd('QuickFix-Reflection'), 1]
@@ -1194,7 +1197,7 @@ let g:snipScopeTimer = timer_start(100, 'SnipScope', {'repeat': -1})
 au InsertEnter * let g:exAnonExpand = '' | cal timer_pause(g:snipScopeTimer, 0)
 au InsertLeave * cal timer_pause(g:snipScopeTimer, 1)
 au InsertLeave * cal DelLineExtMark(g:snipsMk, 0, -1)
-au CursorMovedI * cal AnonRefresh()
+au CursorMovedI * cal timer_start(100, 'AnonRefresh')
 fu! s:GetExpanded(jobId, data, event) abort
     if a:jobId == g:expandingId
         let g:exAnonExpand = a:data[0] | endif
@@ -1217,10 +1220,10 @@ fu! InsertingWord()
         endif
     en
 endf
-fu! AnonRefresh()
+fu! AnonRefresh(timer)
     let cw = InsertingWord()
     if cw == '' | retu | en
-    let cmd = g:jpIme ? ("~/.config/nvim/romaji_hirakana '".substitute(cw, '^\\', '', '')."'") : ('~/.config/nvim/anon_expand '.cw.' '.&ft)
+    let cmd = g:jpIme ? ("~/.config/nvim/romaji_hirakana '".substitute(cw, '^\\', '', '')."'") : printf('~/.config/nvim/anon_expand %s %s %s', cw, &ft, expand('%:t'))
     let g:expandingId = jobstart(cmd, {'on_stdout': function('s:GetExpanded'), 'stdout_buffered':v:true})
 endf
 fu! AnonExpand() " Anon Expand: regex match and regex replace and expand!
