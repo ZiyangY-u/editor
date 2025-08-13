@@ -306,6 +306,8 @@ void text_expand(char* word) {
 }
 
 void xl_expand(char* word) {
+    if (w0 == 'c' && w1 == 'i')
+        printf("f'{c}{i}'");
     if (strlen(word) >= 2 && isalpha(w0) && is_all_digit(word+1))
         printf("'%c%s'", toupper(w0), word+1);
     if (strlen(word) >= 3 && isalpha(w0) && isalpha(w1) && is_all_digit(word+2))

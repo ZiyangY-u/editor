@@ -600,6 +600,7 @@ nn <silent> ,a :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=AwkOp
 " openpyxl misc
 com! -nargs=0 EditXl tabe | e ~/.config/nvim/xl-script.py
 ca xl !python3 ~/.config/nvim/xl-script.py <C-R>=expand('%:p')<cr>
+ca xlrb !python3 ~/.config/nvim/xl-rollback.py <C-R>=expand('%:p')<cr>
 " QuickFix Reflection
 fu! OpenQfBuf()
     let [g:qfbufnr, idx] = [bufadd('QuickFix-Reflection'), 1]

@@ -10,7 +10,7 @@ from openpyxl.formatting.rule import FormulaRule
 auto_open_flg = True
 
 # styles
-RedFill = PatternFill(start_color='EE1111', end_color='EE1111', fill_type='solid')
+RedFill = PatternFill(start_color='EE1111', end_color='EE1111', bgColor='EE1111', fill_type='solid')
 norm_side = Side(border_style='thin', color='000000')
 
 def normal_border_style(directs):
@@ -56,26 +56,23 @@ rf = reflect_formula # short cut
 # ############################## ↓↓↓ script here ↓↓↓ ##############################
 
 def process_sheet(ws):
-    ws['A1'] = 'link to current sheet'
-    sl(ws, 'A1', None, 'A10')
-    ws['A2'] = 'link to another sheet'
-    sl(ws, 'A2', 'sheetname', 'A10')
-
-    ws['a10'] = 10
-    formula = 'a10 > 5'
-    scf(ws, 'a10', formula, fill=RedFill, border=nbs('hk'))
-    for i in range(1, 1000):
-        ws[f'A{i}'] = i
-        set_link(ws, f'A{i}', None, f'B{i}')
+    formula = '=AND(NOT(ISBLANK(F5)), NOT(NUMBERVALUE(F5) = 0), NOT(NUMBERVALUE(F5) = 1))'
+    formula2 = '=ISBLANK(F5)'
+    for c in ['F','G','H','I','J','K','Q','BP','BQ','BS']:
+        print(f'process col {c}')
+        for i in range(5, 3000):
+            scf(ws, f'{c}{i}', rf(formula, 'F5', f'{c}{i}'), fill=RedFill)
+            scf(ws, f'{c}{i}', rf(formula2, 'F5', f'{c}{i}'), fill=RedFill)
 
 def process(fp):
     wb = openpyxl.load_workbook(fp) # load workbook
     print(wb.sheetnames)
-    ws = wb['test_sheet'] # active worksheet
+    ws = wb['取引先情報'] # active worksheet
 
     process_sheet(ws)
 
     wb.save(fp) # save workbook
+    wb.close()
 
 # ############################## ↑↑↑ script here ↑↑↑ ##############################
 
