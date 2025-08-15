@@ -60,6 +60,10 @@ snippet sub "gsub" w
 gsub("$0", "", \$0)
 print \$0
 endsnippet
+snippet gs "gensub" w
+gensub(/$0/, "", "g", \$0)
+endsnippet
+
 snippet t2s "tab to space" w
 gsub("\t", sprintf("%$0s", ""), \$0) # change tab to spaces
 print \$0
