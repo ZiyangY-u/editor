@@ -74,7 +74,8 @@ fu! ActStl(isActive)
 endf
 
 set stl=%!ActStl(1)
-au WinNew,WinEnter,BufWinEnter * setl stl=%!ActStl(1) cuc cul
+au WinNew,WinEnter,BufWinEnter * setl stl=%!ActStl(1) cul
+au WinNew,WinEnter,BufWinEnter * if &ft !=# 'nerdtree' | setl cuc | en
 au WinLeave * setl stl=%!ActStl(0) nocuc
 au WinLeave * if !nvim_get_option_value('diff', {'scope':'local'}) | setl nocul | en
 
