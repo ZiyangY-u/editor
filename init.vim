@@ -589,13 +589,9 @@ fu! AwkRange(n)
 endf
 com! -nargs=1 AwkRange :cal AwkRange(<f-args>)
 fu! AwkOp(type)
-    echom 'AwkOp:'.a:type
-    if a:type ==# 'line'
-        exe printf("'[,']!awk -f %s FILE_NAME=%s", g:awk_file, expand('%:p'))
-    elseif a:type ==# 'char'
-        exe printf(".!awk -f %s FILE_NAME=%s", g:awk_file, expand('%:p'))
-    en
-    if g:autoIndentFlg == 1 | exe 'norm! `]j=`[' | en " auto indent after AwkOp
+    let range = (a:type ==# 'line' ? "'[,']" : ".")
+    exe printf("%s!awk -f %s FILE_NAME=%s", range, g:awk_file, expand('%:p'))
+    if g:autoIndentFlg == 1 | exe 'norm! `]j=`[' | en " auto indent after Op
 endf
 nn <silent> ,a :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=AwkOp<cr>g@
 " openpyxl misc
@@ -638,6 +634,39 @@ fu! ReflectAll()
     norm :q
 endf
 com! -nargs=0 QfEdit :cal OpenQfBuf()
+" sqlfluff misc
+let g:fluffConfigPath = ''
+fu! SqlOp(type)
+    exe printf("%s!sqlfluff fix --quiet -", (a:type ==# 'line' ? "'[,']" : "."))
+endf
+nn <silent> ,,s :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=SqlOp<cr>g@
+let g:sqlLintMk = nvim_create_namespace('sqlLintMk')
+fu! s:putSqlLintRst(jobId, data, event) abort
+    let g:asyncCnt -= 1 | redrawt
+    let bufnr = '' " get bufnr from tab-windows
+    for tn in range(1, tabpagenr('$'))
+        let winIds = gettabinfo(tn)[0]['windows']
+        let bufnrs = uniq(map(winIds, {_,wi -> getwininfo(wi)[0]['bufnr']}))
+        let bufnr = filter(copy(bufnrs), {_, bn -> getbufvar(bn, 'sqlJobId') == a:jobId})
+        if !empty(bufnr) | break | en
+    endfor
+    if empty(bufnr) | return | en
+
+    for info in filter(copy(a:data), '!empty(v:val)')
+        let _info = split(info, '|') 
+        let [ln, txt] = [str2nr(_info[0]), printf('■ %s|%s', _info[1], _info[2])]
+        cal nvim_buf_set_extmark(bufnr[0], g:sqlLintMk, ln-1, 0, { "virt_text":[[txt, 'SnipMark']], "hl_mode":"combine" })
+    endfor
+endf
+fu! SqlLintCmd()
+    let g:asyncCnt += 1
+    cal DelLineExtMark(g:sqlLintMk, 0, -1)
+    let cmd = printf("sqlfluff lint %s --format json %s |", expand('%'), (empty(g:fluffConfigPath) ? '' : ' --config '.g:fluffConfigPath))
+    let cmd .= " python3 -c 'import sys, json;"
+    let cmd .= " [print(v[\"start_line_no\"], v[\"code\"], v[\"description\"], sep=\"|\") for v in json.load(sys.stdin)[0][\"violations\"]]'"
+    return cmd
+endf
+com! -nargs=0 SQLint :let b:sqlJobId = jobstart(SqlLintCmd(), {'stdout_buffered':v:true, 'on_stdout':function('s:putSqlLintRst')})
 
 " }}}
 " => Handle -------------------- {{{
@@ -1073,7 +1102,7 @@ fu! EnhancedMark() abort
 endf
 nn m :cal EnhancedMark()<CR>
 " Encodings
-ca jis e ++enc=sjis
+ca jis e ++enc=ms932
 ca dos e ++ff=dos
 ca jdos e ++enc=sjis ++ff=dos
 " }}}
@@ -1122,10 +1151,6 @@ cal plug#begin('~/.vim/plugged')
     Plug 'wellle/targets.vim'
     Plug 'williamboman/nvim-lsp-installer'
     Plug 'yuezk/vim-js'
-    Plug 'prettier/vim-prettier', {
-                \ 'do': 'yarn install --frozen-lockfile --production',
-                \ 'branch': 'release/0.x'
-                \ }
 
 cal plug#end()
 " }}}
@@ -1311,8 +1336,6 @@ fu! AsyncRunPost()
     redrawt
 endf
 au User AsyncRunStop :cal AsyncRunPost()
-" vim-prettier
-let g:prettier#autoformat = 0
 " vim-floaterm
 tmap ,q jk:quit<cr>
 tmap <F3> jk:FloatermNext<cr>

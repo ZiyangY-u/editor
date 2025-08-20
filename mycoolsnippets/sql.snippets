@@ -99,7 +99,7 @@ endsnippet
 # -----------------------------------------------------------------------------------------------------
 
 snippet recovery "description" w
-USE [$1]
+USE $1
 
  -- 1、バックアップテーブル作成全件コピーする
 SELECT * INTO WKDB.DBO.`!v getreg('"')`_BAK_`date +%Y%m%d`_1 FROM $1.DBO.`!v getreg('"')`
@@ -152,7 +152,7 @@ AND A.$4 = B.$4
 endsnippet
 
 snippet recovery_ins "" w
-USE [$1]
+USE $1
 
 -- 1、バックアップテーブル作成全件コピーする
 SELECT * INTO WKDB.DBO.`!v getreg('"')`_BAK_`date +%Y%m%d`_1 FROM $1.DBO.`!v getreg('"')`
@@ -232,26 +232,26 @@ snippet oid "ORG_ID" w
 ORG_ID
 endsnippet
 
-snippet uag "USE [AGDB]" w
-USE [AGDB]
+snippet uag "USE AGDB" w
+USE AGDB
 endsnippet
-snippet uagw "USE [AGDB_WUHAN]" w
-USE [AGDB_WUHAN]
+snippet uagw "USE AGDB_WUHAN" w
+USE AGDB_WUHAN
 endsnippet
-snippet usas "USE [SASDB]" w
-USE [SASDB]
+snippet usas "USE SASDB" w
+USE SASDB
 endsnippet
-snippet usasw "USE [SASDB_WUHAN]" w
-USE [SASDB_WUHAN]
+snippet usasw "USE SASDB_WUHAN" w
+USE SASDB_WUHAN
 endsnippet
-snippet ubi "USE [SASBI]" w
-USE [SASBI]
+snippet ubi "USE SASBI" w
+USE SASBI
 endsnippet
-snippet ubid "USE [SASBI_DEV]" w
-USE [SASBI_DEV]
+snippet ubid "USE SASBI_DEV" w
+USE SASBI_DEV
 endsnippet
-snippet ubiw "USE [SASBI_WUHAN]" w
-USE [SASBI_WUHAN]
+snippet ubiw "USE SASBI_WUHAN" w
+USE SASBI_WUHAN
 endsnippet
 
 snippet ston "statistics on" w
@@ -267,8 +267,9 @@ snippet oR "ORIGINAL_KBN" w
 ORIGINAL_KBN = 'R'
 endsnippet
 
-snippet lh "lihua" w
+snippet prod "prod" w
 麻烦查一下本番数据
+本番データを取ってください
 endsnippet
 
 snippet nl "newline" w
