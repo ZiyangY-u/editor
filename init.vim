@@ -1056,11 +1056,12 @@ fu! GoToTag(edit, query)
 endfu
 " Toggle
 fu! ToggleAll()
-    echoh MoreMsg | echo '[C]ontext [B]lankChar auto[I]ndent [H]orizonCursor [A]wkShadow' | echoh None
+    echoh MoreMsg | echo '[C]ontext [B]lankChar auto[I]ndent [H]orizonCursor [A]wkShadow [R]ainbowBacket' | echoh None
     let ch = nr2char(getchar())
     if ch == 'c' | sil exe ':cal SignMarks()|ContextToggle'| en
     if ch == 'b' | exe ':setl '.(&list == 1 ? 'nolist' : 'list') | en
     if ch == 'h' | exe (&cuc == 1 ? 'setl nocuc' : 'setl cuc') | en
+    if ch == 'r' | exe 'RainbowToggle' | en
     if ch == 'i'
         let g:autoIndentFlg = (g:autoIndentFlg == 1 ? 0 : 1)
         echo 'auto indent '.(g:autoIndentFlg == 1 ? 'ON' : 'OFF')
@@ -1151,6 +1152,7 @@ cal plug#begin('~/.vim/plugged')
     Plug 'wellle/targets.vim'
     Plug 'williamboman/nvim-lsp-installer'
     Plug 'yuezk/vim-js'
+    Plug 'luochen1990/rainbow'
 
 cal plug#end()
 " }}}
@@ -1341,6 +1343,12 @@ tmap ,q jk:quit<cr>
 tmap <F3> jk:FloatermNext<cr>
 " text-object
 call textobj#user#plugin('calling', { 'calling': { 'pattern': '\<\w*[\./@]\w*\>', 'select': ['v'], },})
+" rainbow
+let g:rainbow_conf = {
+            \	'ctermfgs': ['lightblue', 'lightyellow', 'lightgreen', 'lightcyan', 'lightmagenta'],
+            \	'operators': '',
+            \	'parentheses': ['start=/(/ end=/)/ fold', 'start=/\[/ end=/\]/ fold', 'start=/{/ end=/}/ fold'],
+            \}
 " }}}
 " => File type Specific -------------------- {{{
 aug filetypes
