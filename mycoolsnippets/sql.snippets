@@ -105,9 +105,9 @@ USE $1
 SELECT * INTO WKDB.DBO.`!v getreg('"')`_BAK_`date +%Y%m%d`_1 FROM $1.DBO.`!v getreg('"')`
 SELECT * INTO WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 FROM $1.DBO.`!v getreg('"')`
 ALTER TABLE WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1 ADD R_DATE smalldatetime, U_FLAG smallint
-SELECT '`!v getreg('"')`', COUNT(1) FROM $1.DBO.`!v getreg('"')` union all
-SELECT '`!v getreg('"')`_BAK_`date +%Y%m%d`_1', COUNT(1) FROM WKDB.DBO.`!v getreg('"')`_BAK_`date +%Y%m%d`_1 union all
-SELECT '`!v getreg('"')`_WK_`date +%Y%m%d`_1', COUNT(1) FROM WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1
+SELECT '`!v getreg('"')`' AS TABLE_NAME, COUNT(1) AS CNT FROM $1.DBO.`!v getreg('"')` union all
+SELECT '`!v getreg('"')`_BAK_`date +%Y%m%d`_1' AS TABLE_NAME, COUNT(1) AS CNT FROM WKDB.DBO.`!v getreg('"')`_BAK_`date +%Y%m%d`_1 union all
+SELECT '`!v getreg('"')`_WK_`date +%Y%m%d`_1' AS TABLE_NAME, COUNT(1) AS CNT FROM WKDB.DBO.`!v getreg('"')`_WK_`date +%Y%m%d`_1
  -- 問題があるデータを問い合わせ
  -- ２、データリカバリー（ワークテーブル）
  -- ワークテーブル更新前チェック

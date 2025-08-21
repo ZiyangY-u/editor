@@ -1177,6 +1177,8 @@ endfu
 " emmet
 let g:user_emmet_install_global = 0
 let g:user_emmet_leader_key = '<c-y>'
+" nerdtree
+ca tf NERDTreeFind
 " fzf.vim
 let $FZF_DEFAULT_OPTS='--no-preview -0'
 let g:fzf_preview_window = []
