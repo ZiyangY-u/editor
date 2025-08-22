@@ -1706,9 +1706,9 @@ fu! ComparePos(pl, pr)
     if a:pl['bufnr'] != a:pr['bufnr']
         retu a:pl['bufnr'] > a:pr['bufnr']
     elseif a:pl['lnum'] != a:pr['lnum']
-        retu a:pl['lnum'] > a:pr['lnum']
+        retu str2nr(a:pl['lnum']) > str2nr(a:pr['lnum'])
     elseif a:pl['col'] != a:pr['col']
-        retu a:pl['col'] < a:pr['col'] " for result in same line, let cursor move right to left
+        retu str2nr(a:pl['col']) < str2nr(a:pr['col']) " for result in same line, let cursor move right to left
     en
     retu 0
 endf
