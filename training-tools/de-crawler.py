@@ -14,6 +14,7 @@ import random
 import itertools
 import aiofiles
 import logging
+from typing import Dict
 from os import access, R_OK
 from os.path import isfile
 from pyquery import PyQuery as pq
@@ -71,6 +72,7 @@ welt_aid_json_file = 'welt-aids.json'
 plus_aid_json_file = 'plus-aids.json'
 
 targets = []
+history_words = []
 
 folder_path = './articles'
 cache_folder = './cache'
@@ -239,6 +241,33 @@ def get_conjuncated(verb, prefix, mode):
 
     return verbs
 
+class Result:
+    def __init__(self, word):
+        self.word = word
+        self.rst_list = []
+    def __hash__(self):
+        return hash(self.word)
+    def __eq__(self, other):
+        if not isinstance(other, Result):
+            return NotImplemented
+        return self.word == other.word
+
+    def add_candidate(self, aid, purity, prompt):
+        """
+        purity: count of learned word in sentence(s) / count of all words in sentence(s)
+        prompt: write to file
+        """
+        self.rst_list.append({'aid': aid, 'purity': purity, 'prompt': prompt})
+
+    def write_results(self):
+        for rst in sorted(self.rst_list, key=lambda x : x['purity'], reverse=True)[:5]:
+            fname = f'./{folder_path}/article-{self.word}-' + rst['aid'] + '.txt'
+            fname = unicodedata.normalize('NFD', fname.replace('ß', 'ss')).encode('ascii', 'ignore').decode('utf8')
+            with open(fname, 'w+', encoding='utf8') as f:
+                f.write(rst['prompt'])
+
+results : Dict[str, Result]
+
 class Target:
     def __init__(self, word:str, mode, lb=False, rb=False, cs=False, target_cnt=TARGET_CNT, prefix='', suffix=''):
         self.key_noun_verb = word # noun or verb
@@ -326,6 +355,14 @@ class Target:
                 return True
         return False
 
+    def calc_purity_params(self, paragraph):
+        word_len, hist_word_len = len(paragraph.split(' ')), 0
+        for w in history_words:
+            if w in paragraph:
+                hist_word_len += 1
+        return (hist_word_len, word_len)
+        
+
     def hit(self, paragraph):
         if self.match_mode == NOUN_MODE or self.match_mode == COMPOUND_NOUN_MODE:
             if self.true_noun:
@@ -380,7 +417,7 @@ class Target:
                     return True
             return False
 
-    def get_kw(self):
+    def get_kw(self) -> str:
         kw = self.key_noun_verb
         if self.match_mode == VERB_MODE:
             kw = self.key_noun_verb
@@ -395,30 +432,30 @@ class Target:
         return kw
 
     def generate_prompt(self, hit_paras:list):
-        kw = self.get_kw()
         idx = 1
         prompt = f'对于下面这篇德语文章\n'
         # prompt += f'{idx}.打印出‘{kw}’的音标(包括重音符号)'; idx += 1
 
         prompt += f'{idx}.为这篇德语文章生成一篇简短的中文摘要并提取5个关键词(逗号分隔)\n'; idx += 1
         for hp in hit_paras:
-            prompt += f'{idx}.打印原文第{hp}段，并用粗体标记出用到了‘{kw}’的句子\n'; idx += 1
-            prompt += f'{idx}.翻译第{hp}段成日语，并用粗体标出用到‘{kw}’的句子\n'; idx += 1
-            prompt += f'{idx}.翻译第{hp}段成英语，并用粗体标出用到‘{kw}’的句子\n'; idx += 1
-            prompt += f'{idx}.翻译第{hp}段，并用粗体标出用到‘{kw}’的句子\n'; idx += 1
+            prompt += f'{idx}.打印原文第{hp}段\n'; idx += 1
+            prompt += f'{idx}.翻译第{hp}段成日语\n'; idx += 1
+            prompt += f'{idx}.翻译第{hp}段成英语\n'; idx += 1
+            prompt += f'{idx}.翻译第{hp}段成中文\n'; idx += 1
 
         return prompt
 
-def process_hit(target, aid, url, paragraph_contents, hit_paragraph_nos):
-    # print(f'hit {target.get_kw()} in {aid}' + (' ' * 100))
-    fname = f'./{folder_path}/article-{target.get_kw()}-' + aid + '.txt'
-    fname = unicodedata.normalize('NFD', fname.replace('ß', 'ss')).encode('ascii', 'ignore').decode('utf8')
-    with open(fname, 'w+', encoding='utf8') as f:
-        # f.write(url + '\n')
-        f.write(target.generate_prompt([str(p) for p in sorted(hit_paragraph_nos)]))
+def process_hit(target:Target, aid, url, paragraph_contents, hit_paragraph_nos, purity=0.0):
+    # print(f'hit {target.get_kw()} in {aid} of purity {purity:0.4f}' + (' ' * 100))
+    global results
+    result = results.get(target.get_kw())
+    if result is not None:
+        prompt = target.generate_prompt([str(p) for p in sorted(hit_paragraph_nos)]) + '\n'
         for i, p in enumerate(paragraph_contents, start=1):
-            f.write(f'p{i}:\n')
-            f.write(p + '\n')
+            prompt += f'p{i}:\n'
+            prompt += f'{p}\n'
+        result.add_candidate(aid, purity, prompt)
+
     target.hit_urls.add(url)
     if target.target_cnt == len(target.hit_urls):
         cprint(bcolors.OKGREEN, f'{target.get_kw()} complete! at {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}' + (' ' * 100))
@@ -434,20 +471,24 @@ def parse_txt_article(aid):
     with open(fp, 'r', encoding='utf8') as f:
         a_content = [line.strip() for line in f]
     for target in targets:
-        if target.completed or url in target.hit_urls:
-            continue
-        hit_flag = False
-        hit_paragraph_nos = set()
+        if url in target.hit_urls: continue
+        hit_flag, hit_paragraph_nos = False, set()
+        total_word_len, hist_word_len = 0, 0
+
         for i, p in enumerate(a_content, start=1):
             if p.startswith(spiegel_plus_hint):
                 plus_spiegel_aids[aid] = 1
-                # print('\nskip spiegel plus article', aid)
                 return
             if target.hit(p):
                 hit_flag = True
                 hit_paragraph_nos.add(i)
+                # calculate purity
+                _hist_word_len, _word_len = target.calc_purity_params(p)
+                total_word_len += _word_len
+                hist_word_len += _hist_word_len
         if hit_flag and url not in target.hit_urls:
-            process_hit(target, aid, url, a_content, hit_paragraph_nos)
+            # print(f'hit {target.get_kw()} of purity {hist_word_len}/{total_word_len}' + (' ' * 100))
+            process_hit(target, aid, url, a_content, hit_paragraph_nos, purity=(float(hist_word_len)/float(total_word_len)))
     article_ids[aid] = 1 # marked as searched
     progress_bar(targets)
 
@@ -728,12 +769,17 @@ def sampling_aids():
     return aids
 
 @timeit
-def crawl(targets, delete_tmp=True):
+def crawl(targets, delete_tmp=True, least_run_circle=15):
+    global results, history_words
     recruit_from_home()
     if delete_tmp:
         delete_tmp_articles()
+    with open(ONE_DRIVE_PATH + '\\history.txt', 'r', encoding='utf8') as f:
+        history_words = f.read().splitlines()
 
-    while not all(t.completed for t in targets) and urls_info(0) > THREADS and not file_accessable('./stop.txt'):
+    circles = 0
+    while (not all(t.completed for t in targets) and urls_info(0) > THREADS and not file_accessable('./stop.txt')) or circles < least_run_circle:
+        circles += 1
         if file_accessable(ONE_DRIVE_PATH + '\\stop.txt'):
             break
         aids = sampling_aids()
@@ -746,6 +792,9 @@ def crawl(targets, delete_tmp=True):
         print(f'ascyn run used {atm2-atm1:.2f} sec for {len(done_aids)} articles' + ' ' * 100)
 
         progress_bar(targets)
+
+    for r in results.values():
+        r.write_results()
 
     print(f'\n{urls_info(1)} article searched', end='\n')
     bl = readable_byte_len(received_bytes)
@@ -787,7 +836,7 @@ def save_history():
         json.dump(plus_spiegel_aids, fp)
 
 def start_sentry():
-    global targets
+    global targets, results
     sleep_time = 2
     while True:
         print(f'sleep for {sleep_time} sec at {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}\r', end='')
@@ -803,7 +852,8 @@ def start_sentry():
         if first_ln.strip() != 'RUN':
             continue
         logging.info('accept RUN instruction')
-        targets = []
+        targets, results = [], {} # init targets and results
+
         for ln in content[1:]: # first word should be target
             if len(ln.strip()) == 0: continue # skip empty line
             words = ln.split()
@@ -826,10 +876,12 @@ def start_sentry():
             t = Target(prefix=prefix, word=word, lb=lb, rb=rb, cs=cs, mode=mode, target_cnt=tc)
             logging.info(f'Target: {t}')
             targets.append(t)
+            r = Result(t.get_kw())
+            results[t.get_kw()] = r
 
         if len(targets) != 0:
             logging.info('sentry active!')
-            load_history_and_summary()
+            # load_history_and_summary()
             crawl(targets , True) # sentry do not clear result
             save_history()
             shutil.copyfile(f'{ONE_DRIVE_PATH}\\targets.txt', f'{ONE_DRIVE_PATH}\\targets-bak.txt')
@@ -840,15 +892,13 @@ def start_sentry():
 
 if __name__ == '__main__':
 
-    targets = [
+    targets = [ ]
 
-            ]
+    load_history_and_summary()
 
-
-    if len(targets) != 0:
-        load_history_and_summary()
-        crawl(targets , True)
-        save_history()
+    # if len(targets) != 0:
+    #     crawl(targets , True)
+    #     save_history()
 
     # collect_markdowns()
 

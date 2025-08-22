@@ -1374,7 +1374,7 @@ aug filetypes
     " auto save file to OneDrive
     au BufWritePost init.vim sil exe ':!cp ~/.config/nvim/init.vim ~/OneDrive'
     au BufWritePost *.tex cal CompileTex()
-    au BufRead targets.txt let g:pLang='de'
+    au BufRead targets.txt,history.txt let g:pLang='de'
 aug END
 " }}}
 " => Functions -------------------- {{{
