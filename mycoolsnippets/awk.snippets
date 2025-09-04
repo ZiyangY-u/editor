@@ -69,12 +69,10 @@ gsub("\t", sprintf("%$0s", ""), \$0) # change tab to spaces
 print \$0
 endsnippet
 snippet s2t "space to tab" w
-gsub("( ){$0}", "\t", \$0) # change spaces to tab
-print \$0
+gsub("( ){$0}", "\t", \$0); print \$0 # change spaces to tab
 endsnippet
 snippet t2n "tab to carriage return" w
-gsub("\t", "\n", \$0) # change tab to newline
-print \$0
+gsub("\t", "\n", \$0); print \$0 # change tab to newline
 endsnippet
 snippet s2n "space to carriage return" w
 gsub("( ){$0}", "\n", \$0) # change spaces to tab
@@ -160,6 +158,16 @@ gsub("[\\t]+", "\\t", \$0)
 gsub("^[\\t]*", "", \$0)
 for (i = 0; i < leading; i++) printf " "
 print \$0
+endsnippet
+snippet rl "reduce line" w
+# reduce lines
+if (trim(\$0) != "") {
+    is_line_blank = 0
+        print \$0
+} else if (is_line_blank == 0) { # first blank line
+    is_line_blank = 1
+        print \$0
+}
 endsnippet
 
 snippet trans "transpose" w

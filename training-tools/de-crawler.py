@@ -76,7 +76,7 @@ history_words = []
 
 folder_path = './articles'
 cache_folder = './cache'
-sentence_len = 20 # count by word
+sentence_len = 40 # count by word
 
 received_bytes = 0
 cache_hit_cnt = 0
@@ -261,6 +261,8 @@ class Result:
 
     def write_results(self):
         for rst in sorted(self.rst_list, key=lambda x : x['purity'], reverse=True)[:5]:
+            purity, aid = rst['purity'], rst['aid']
+            logging.info(f'writing `{self.word}` result of purity {purity:0.4f} in {aid}')
             fname = f'./{folder_path}/article-{self.word}-' + rst['aid'] + '.txt'
             fname = unicodedata.normalize('NFD', fname.replace('ß', 'ss')).encode('ascii', 'ignore').decode('utf8')
             with open(fname, 'w+', encoding='utf8') as f:
@@ -439,9 +441,9 @@ class Target:
         prompt += f'{idx}.为这篇德语文章生成一篇简短的中文摘要并提取5个关键词(逗号分隔)\n'; idx += 1
         for hp in hit_paras:
             prompt += f'{idx}.打印原文第{hp}段\n'; idx += 1
+            prompt += f'{idx}.翻译第{hp}段成中文\n'; idx += 1
             prompt += f'{idx}.翻译第{hp}段成日语\n'; idx += 1
             prompt += f'{idx}.翻译第{hp}段成英语\n'; idx += 1
-            prompt += f'{idx}.翻译第{hp}段成中文\n'; idx += 1
 
         return prompt
 
@@ -483,11 +485,11 @@ def parse_txt_article(aid):
                 hit_flag = True
                 hit_paragraph_nos.add(i)
                 # calculate purity
-                _hist_word_len, _word_len = target.calc_purity_params(p)
+                _hist_word_len, _word_len = target.calc_purity_params(p.lower())
                 total_word_len += _word_len
                 hist_word_len += _hist_word_len
         if hit_flag and url not in target.hit_urls:
-            # print(f'hit {target.get_kw()} of purity {hist_word_len}/{total_word_len}' + (' ' * 100))
+            print(f'hit {target.get_kw()} of purity {hist_word_len}/{total_word_len}' + (' ' * 100))
             process_hit(target, aid, url, a_content, hit_paragraph_nos, purity=(float(hist_word_len)/float(total_word_len)))
     article_ids[aid] = 1 # marked as searched
     progress_bar(targets)
