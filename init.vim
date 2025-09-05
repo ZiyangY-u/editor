@@ -536,7 +536,9 @@ au BufWinEnter *.* sil cal ConsumeCmd()|cal SignMarks()
 "   Yank History
 let [g:yankHistory, g:YankHistorySave] = [[], '[]']
 au TextYankPost * cal AddYankHist(getreg('"'))
+let g:syncClip = 0
 fu! AddYankHist(toAdd)
+    if g:syncClip == 1 | cal setreg('+', a:toAdd) | en
     let [tmpl, sha] = [[], sha256(a:toAdd)]
     for item in g:yankHistory
         if sha256(item) != sha | cal add(tmpl, item) | en
