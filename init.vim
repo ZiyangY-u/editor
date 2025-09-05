@@ -1383,7 +1383,6 @@ com! -nargs=0 CHeadBlank :%s/^\s\+//
 com! -nargs=0 CBlank :exe (IsDyBuf() ? printf("!sed -i '/^$/d' %s", b:dy_file) : printf("%%!awk '{$1=$1};1'"))
 com! -nargs=0 CEmptyLine :exe printf("%%!awk '\\!/^%s$/ {print}'", (&ff == 'dos' ? "\\r" : ""))
 com! -nargs=0 Ztool :e ~/desktop/tool.ztool
-com! -nargs=0 Zawk :e ~/desktop/my-awk.awk
 
 fu AutoSetWindowWidth()
     norm mzH
