@@ -169,6 +169,11 @@ fu AttachColor(pattern, color, border, saveFlag)
         let g:ColorAttachs = string(_ca)
     en
 endf
+fu! AttachTerm(pattern, border, term)
+    let pat = a:border ? '/\<'.a:pattern.'\>/' : '/'.a:pattern.'/'
+    exe printf('syntax match pat_%s %s%s', sha256(a:pattern), pat, (&ft==''?'':' containedin=ALL'))
+    exe printf('hi pat_%s cterm=%s', sha256(a:pattern), a:term)
+endf
 fu RecoverGAttach()
     exe 'let _ca = ' . g:ColorAttachs
     for [sha, pcb] in items(_ca)
@@ -193,6 +198,8 @@ for color in keys(MColors)
     exe printf('com! -bang -range -nargs=0 GAttach%s : cal AttachColor(Selected(), %d, <bang>0, 1)', color, MColors[color])
     exe printf('com! -nargs=0 BAttach%s :let g:BufColors[bufnr()]=%d', color, MColors[color])
 endfor
+com! -bang -range -nargs=0 AttachUnderline :cal AttachTerm(Selected(), <bang>0, 'underline')
+com! -bang -range -nargs=0 AttachBold :cal AttachTerm(Selected(), <bang>0, 'bold')
 com! -nargs=0 DEMarks :cal DelLineExtMark(g:extmk, [line('.')-1,0], [line('.')-1,0])
 com! -range -nargs=0 DAttach :exe printf('syntax clear pat_%s', sha256(Selected()))
 com! -range -nargs=0 GDAttach :cal GDelAttach(Selected())
