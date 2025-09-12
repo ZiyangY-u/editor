@@ -597,7 +597,7 @@ fu! AwkOp(type)
 endf
 nn <silent> ,a :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=AwkOp<cr>g@
 " openpyxl misc
-com! -nargs=0 EditXl tabe | e ~/.config/nvim/xl-script.py
+com! -nargs=0 EdXl tabe | e ~/.config/nvim/xl-script.py
 ca xl !python3 ~/.config/nvim/xl-script.py <C-R>=expand('%:p')<cr>
 ca xlrb !python3 ~/.config/nvim/xl-rollback.py <C-R>=expand('%:p')<cr>
 " QuickFix Reflection
@@ -1659,8 +1659,8 @@ com! -nargs=0 WSLview exe 'sil !wslview %'
 " com! -nargs=0 Notepad exe 'sil !subl.exe -a '.WinPath(expand('%')).':'.line('.')
 com! -nargs=0 Notepad exe 'sil !powershell.exe -Command "Start-Process notepad -WindowStyle Maximized '.WinPath(expand('%')).'"'
 com! -nargs=0 Directory exe 'sil !explorer.exe /select,' . substitute(WinPath(expand('%:p')), '/', '\\\\', 'g')
-com! -nargs=0 EditComplete e ~/.config/nvim/complete_service.py
-com! -nargs=0 EditAnon tabe | e ~/.config/nvim/anon_expand.c
+com! -nargs=0 EdComplete e ~/.config/nvim/complete_service.py
+com! -nargs=0 EdAnon tabe | e ~/.config/nvim/anon_expand.c
 ca emk AsyncRun -cwd=~/.config/nvim ./compile.sh
 
 vn <silent><leader>y <esc>:cal VisYankToWinClipboard()<cr>
@@ -1685,6 +1685,8 @@ fu! GetPdfLoc()
 endf
 com! -nargs=0 Pdf exe 'sil !SumatraPDF.exe -reuse-instance -page ' . GetPdfLoc() . ' ' . WinPath(substitute(expand('%:p'), '.tex$', '.pdf', ''))
 com! -nargs=0 PdfLoc exe 'sil !SumatraPDF.exe -reuse-instance -page ' . g:PdfLoc . ' ' . WinPath(substitute(expand('%:p'), '.tex$', '.pdf', ''))
+com! -nargs=0 EdTexMacros tabe | e ~/.config/nvim/tex/zzmakros.sty
+au BufWritePost zzmakros.sty cal system('cp ~/.config/nvim/tex/zzmakros.sty ~/texmf/tex/xelatex/')
 " ------------------- Async Misc -----------------------
 let g:texCompilePending = 0
 "  qfSearchCmd { qfEntry : [jobId list] }

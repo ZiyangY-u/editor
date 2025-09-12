@@ -28,7 +28,6 @@ snippet doc "document" w
   \\setbox9=\\hbox{#1}%
   \\ooalign{\\resizebox{\\wd9}{\\height}{\\texttoptiebar{\\phantom{A}}}\\cr#1}}}
 % arc symbol end
-\\newcommand{\sq}{\sqrt}
 \\title{document at `date +%Y/%m/%d`}
 \\author{余子杨}
 \\date{`date +%Y/%m/%d`}
@@ -43,8 +42,7 @@ snippet pack "usepackage" w
 endsnippet
 
 snippet begin "begin end" 
-\\begin{$1}
-$0
+\\begin{$1} $0
 \\end{$1}
 endsnippet
 snippet group "begin group" w
@@ -293,4 +291,12 @@ endsnippet
 
 snippet ac "align-center" w
 align=center
+endsnippet
+
+snippet font "set fontsize" w
+\fontsize{$0}{}\selectfont
+endsnippet
+snippet fbox "fcolorbox" w
+\fcolorbox {black} {white} {
+}
 endsnippet
