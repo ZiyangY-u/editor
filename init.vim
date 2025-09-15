@@ -414,6 +414,8 @@ fu! PairHint()
     endif
 endf
 au CursorHold * if &ft!='xxd' | cal PairHint() | en
+" log highlight
+com! -nargs=0 LogHl :so ~/.config/nvim/syntax/log.vim
 " }}}
 " => Automatic -------------------- {{{
 " au InsertLeave * :execute 'sil! .s/\s\+$//'
