@@ -305,6 +305,9 @@ void text_expand(char* word) {
     }
 }
 
+void tex_expand(char* word) {
+}
+
 void xl_expand(char* word) {
     if (w0 == 'c' && w1 == 'i')
         printf("f'{c}{i}'");
@@ -321,6 +324,8 @@ void xl_expand(char* word) {
 void python_expand(char* word) {
     if (matchn(word, "t", 1) && strlen(word) >= 2)
         python_crawler_target(word);
+    if (is_all_digit(word))
+        printf("for i in range(1, %s):", word);
 }
 
 /* argv[1]: word, argv[2]: filetype */
@@ -352,6 +357,8 @@ int main(int argc, char *argv[])
         python_expand(argv[1]);
     if (match("text", argv[2]))
         text_expand(argv[1]);
+    if (match("tex", argv[2]))
+        tex_expand(argv[1]);
 
     return 0;
 }

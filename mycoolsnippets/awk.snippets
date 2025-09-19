@@ -88,10 +88,10 @@ print \$0
 endsnippet
 
 snippet join "merge rows" w
-printf "%s", (NR == 1 ? "" : "$0") trim(\$0) # join rows
+printf "%s", (NR == 1 ? "" : "$0") "" trim(\$0) "" # join rows
 endsnippet
 snippet joinc "join by comma" w
-printf "%s", (NR == 1 ? "" : ",") trim(\$0) # join rows
+printf "%s", (NR == 1 ? "" : ",") "" trim(\$0) "" # join rows
 endsnippet
 snippet split "split row" w
 for (i = 1; i <= NF; i++) { printf "%s\n", \$i } # split row

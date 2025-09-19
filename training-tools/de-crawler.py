@@ -489,7 +489,7 @@ def parse_txt_article(aid):
                 total_word_len += _word_len
                 hist_word_len += _hist_word_len
         if hit_flag and url not in target.hit_urls:
-            print(f'hit {target.get_kw()} of purity {hist_word_len}/{total_word_len}' + (' ' * 100))
+            # print(f'hit {target.get_kw()} of purity {hist_word_len}/{total_word_len}' + (' ' * 100))
             process_hit(target, aid, url, a_content, hit_paragraph_nos, purity=(float(hist_word_len)/float(total_word_len)))
     article_ids[aid] = 1 # marked as searched
     progress_bar(targets)
@@ -771,7 +771,7 @@ def sampling_aids():
     return aids
 
 @timeit
-def crawl(targets, delete_tmp=True, least_run_circle=15):
+def crawl(targets, delete_tmp=True, least_run_circle=25):
     global results, history_words
     recruit_from_home()
     if delete_tmp:
@@ -791,7 +791,7 @@ def crawl(targets, delete_tmp=True, least_run_circle=15):
         for aid in done_aids:
             article_ids[aid] = 1
         atm2 = time.perf_counter()
-        print(f'ascyn run used {atm2-atm1:.2f} sec for {len(done_aids)} articles' + ' ' * 100)
+        print(f'async run used {atm2-atm1:.2f} sec for {len(done_aids)} articles' + ' ' * 100)
 
         progress_bar(targets)
 
@@ -809,6 +809,11 @@ def crawl(targets, delete_tmp=True, least_run_circle=15):
             print(t.get_kw(), 'not completed', end='\n')
     zip_up_rst()
     # delete_tmp_articles()
+
+    # set articles to unsearched
+    for k, v in article_ids.items():
+        if v == 1:
+            article_ids[k] = 0
 
 @timeit
 def load_history_and_summary():

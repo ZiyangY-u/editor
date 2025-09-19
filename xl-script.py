@@ -85,43 +85,39 @@ def not_formula(formula):
         return f'=not{formula[1:]}'
     return f'=not{formula}'
 
-# ############################## ↓↓↓ script here ↓↓↓ ##############################
+# ############################## ↓↓↓ script-here ↓↓↓ ##############################
 
 def process_sheet(ws):
+    # gray_font = Font(color="A2A8A3")
+    for i in range(1, 9):
+        ws[f'E{i+1}'] = f'No{i}'
+        sl(ws, f'E{i+1}', f'No{i}', 'A1')
 
-    clear_conditional_format(ws)
-    date_formula = '=AND(NOT(ISBLANK(O8)), NOT(AND(ISNUMBER(DATEVALUE(TEXT(O8,"0000-00-00"))),LEN(O8)=8)))'
-    for i in range(5, 3000):
-        print(f'processing row {i}...\r', end='')
 
-        # check box
-        for c in ['F','G','H','I','J','K','L','Q','BP','BQ','BS']:
-            scf(ws, f'{c}{i}', f'=AND(NOT(ISBLANK(B{i})), ISBLANK({c}{i}))', fill=RedFill)
-            scf(ws, f'{c}{i}', limit_input_formula(f'{c}{i}', [0, 1]), fill=RedFill)
 
-        # yyyyMMdd
-        for c in ['O', 'P', 'AT']:
-            scf(ws, f'{c}{i}', rf(date_formula, 'O8', f'{c}{i}'), fill=RedFill)
 
-        c = 'AH'; scf(ws, f'{c}{i}', limit_input_formula(f'{c}{i}', [1, 2]), fill=RedFill)
-        c = next_col(c); scf(ws, f'{c}{i}', limit_input_formula(f'{c}{i}', [1, 2]), fill=RedFill)
-        c = 'AK'; scf(ws, f'{c}{i}', limit_input_formula(f'{c}{i}', [1011]), fill=RedFill)
-        c = next_col(c); scf(ws, f'{c}{i}', limit_input_formula(f'{c}{i}', [1, 2, 3, 4, 5, 6, 7, 8, 99]), fill=RedFill)
-        c = next_col(c); scf(ws, f'{c}{i}', limit_input_formula(f'{c}{i}', [1, 2, 3]), fill=RedFill)
-        c = next_col(c); scf(ws, f'{c}{i}', limit_input_formula(f'{c}{i}', [1, 2, 3, 4, 5]), fill=RedFill)
-        scf(ws, f'AO{i}', f'=and(not(exact(AN{i}, "5")), ISBLANK(AO{i}))'.upper(), fill=RedFill)
-        c = 'AT'; scf(ws, f'{c}{i}', limit_input_formula(f'{c}{i}', [1012]), fill=RedFill)
-        c = next_col(c); scf(ws, f'{c}{i}', limit_input_formula(f'{c}{i}', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14]), fill=RedFill)
-        c = next_col(c); scf(ws, f'{c}{i}', limit_input_formula(f'{c}{i}', [1, 2, 3]), fill=RedFill)
-        c = 'AX'; scf(ws, f'{c}{i}', limit_input_formula(f'{c}{i}', [1, 2, 3, 4, 5]), fill=RedFill)
+
+
 
 
 def process(fp):
     wb = openpyxl.load_workbook(fp) # load workbook
-    print(wb.sheetnames)
-    ws = wb['取引先情報'] # active worksheet
+    # print(wb.sheetnames)
 
+    ##################### examples #####################
+
+    # wb.create_sheet(f'No{i}') # create sheet
+
+    ##################### examples #####################
+
+    # for i in range(1, 8):
+        # ws = wb[f'No{i}'] # active worksheet
+        # wb.create_sheet(f'No{i}')
+
+
+    ws = wb['ケース'] # active worksheet
     process_sheet(ws)
+
 
     wb.save(fp) # save workbook
     wb.close()
