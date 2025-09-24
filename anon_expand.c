@@ -325,7 +325,7 @@ void python_expand(char* word) {
     if (matchn(word, "t", 1) && strlen(word) >= 2)
         python_crawler_target(word);
     if (is_all_digit(word))
-        printf("for i in range(1, %s):", word);
+        printf("for i in range(1, %s+1):", word);
 }
 
 /* argv[1]: word, argv[2]: filetype */
