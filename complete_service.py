@@ -644,12 +644,23 @@ def query_all_dict(word:str, use_en:bool, use_de:bool):
         rst = result.stdout.decode('utf8').split('\n')
         for dict_word in filter(lambda x : x != '', rst):
             rst_list.append(CompletionItem(dict_word, '󰺄 dict[Eng]', len(dict_word)))
+        return sorted(rst_list, key=lambda i : i.freq)
     if use_de:
-        result = subprocess.run(['rg', exp, '-I', '/usr/share/dict/ngerman'], stdout=subprocess.PIPE)
+        DE_ESCAPE = {
+                'a' : '[aäAÄ]',
+                'i' : '[iïIÏ]',
+                'u' : '[uüUÜ]',
+                'e' : '[eéëEË]',
+                'o' : '[oöOÖ]',
+                's' : '[sSß]',
+                }
+        exp = '^' + '.*'.join([DE_ESCAPE[ch] if ch in DE_ESCAPE else '['+ch+ch.upper()+']' for ch in word])
+        cmd = f'rg {exp} -I /usr/share/dict/ngerman' + " | awk '{ print length($0), $0; }' | sort -n | cut -d' ' -f2-"
+        result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
         rst = result.stdout.decode('utf8').split('\n')
         for dict_word in filter(lambda x : x != '', rst):
-            rst_list.append(CompletionItem(dict_word, '󰺄 dict[Deu]', len(dict_word)))
-    return sorted(rst_list, key=lambda i : i.freq)
+            print(dict_word + ' 󰺄 dict[Deu]')
+        exit(0)
 
 if __name__ == '__main__':
     rst_list = []

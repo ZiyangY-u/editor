@@ -37,7 +37,7 @@ endsnippet
 snippet { "{}" "not re.match('\}', vim.eval('getline(\'.\')[col(\'.\')-1]')) and not re.match('1', vim.eval('g:jpIme'))" ie
 {${VISUAL}$0}
 endsnippet
-snippet ' "quotation" "not re.match('\'', vim.eval('getline(\'.\')[col(\'.\')-1]'))" ie
+snippet ' "quotation" "not re.match('\'', vim.eval('getline(\'.\')[col(\'.\')-1]')) and not re.match('de', vim.eval('g:pLang'))" ie
 '${VISUAL}$0'
 endsnippet
 snippet " "quotation" "not re.match('\u0022', vim.eval('getline(\'.\')[col(\'.\')-1]'))" ie
@@ -85,6 +85,9 @@ snippet : "cn-ime 冒号" "re.match('1', vim.eval('g:cnIme'))" ie
 endsnippet
 snippet ' "cn-ime 单引号" "re.match('1', vim.eval('g:cnIme'))" ie
 ‘${VISUAL}$0’
+endsnippet
+snippet ' "de quote" "re.match('de', vim.eval('g:pLang'))" ie
+„${VISUAL}$0“
 endsnippet
 snippet " "cn-ime 双引号" "re.match('1', vim.eval('g:cnIme'))" ie
 “${VISUAL}$0”
