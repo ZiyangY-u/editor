@@ -656,7 +656,7 @@ def query_all_dict(word:str, use_en:bool, use_de:bool):
                 }
         exp1 = '^' + '.*'.join(ch for ch in word)
         exp2 = '^' + '.*'.join([DE_ESCAPE[ch] if ch in DE_ESCAPE else '['+ch+ch.upper()+']' for ch in word])
-        cmd = f'rg {exp1} -sI /usr/share/dict/ngerman-search' + f" | cut -d' ' -f2- | rg {exp2}" + " | awk '{ print length($0), $0; }' | sort -n | cut -d' ' -f2-"
+        cmd = f'rg {exp1} -sI /usr/share/dict/ngerman-search-{word[0]}' + f" | cut -d' ' -f2- | rg {exp2}" + " | awk '{ print length($0), $0; }' | sort -n | cut -d' ' -f2-"
         result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
         rst = result.stdout.decode('utf8').split('\n')
         for dict_word in filter(lambda x : x != '', rst):

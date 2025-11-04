@@ -49,14 +49,20 @@ def set_text(cell):
     cell.number_format = '@'
 st = set_text
 
-def set_link(worksheet, pos, linksheet, linkpos):
+def set_link(workbook, worksheet, pos, linksheet, linkpos, back_char=''):
+    if worksheet[pos].value is None:
+        return
     hyperlink = Font(underline='single', color='0563C1')
     worksheet[pos].font = hyperlink
     if linksheet:
         worksheet[pos].hyperlink = f'#{linksheet}!{linkpos}'
     else:
         worksheet[pos].hyperlink = f'#{worksheet.title}!{linkpos}'
-sl = set_link
+    if back_char: # set back link
+        _ws = workbook[linksheet] if linksheet else worksheet
+        _ws[linkpos] = back_char
+        _ws[linkpos].font = hyperlink
+        _ws[linkpos].hyperlink = f'#{worksheet.title}!{pos}'
 
 def set_conditional_format(worksheet, cell_range, formula, font=DEFAULT_FONT, border=None, fill=None):
     kwargs = {'font' : font}
@@ -87,13 +93,16 @@ def not_formula(formula):
 
 # ############################## ↓↓↓ script-here ↓↓↓ ##############################
 
-def process_sheet(ws):
-    # gray_font = Font(color="A2A8A3")
-    for i in range(1, 9):
-        ws[f'E{i+1}'] = f'No{i}'
-        sl(ws, f'E{i+1}', f'No{i}', 'A1')
+def process_sheet(wb, ws):
+    ##################### examples #####################
 
+    # row = i + 2
+    # col = 'F'
+    # ws[f'{col}{row}'] = f'content' # set content
+    # set_link(wb, ws, f'{col}{row}', f'No{i}', 'A1') # set link
 
+    ##################### examples #####################
+    pass
 
 
 
@@ -110,13 +119,11 @@ def process(fp):
 
     ##################### examples #####################
 
-    # for i in range(1, 8):
-        # ws = wb[f'No{i}'] # active worksheet
-        # wb.create_sheet(f'No{i}')
+    ws = wb['Sheet1'] # active worksheet
+    process_sheet(wb, ws)
 
 
-    ws = wb['ケース'] # active worksheet
-    process_sheet(ws)
+
 
 
     wb.save(fp) # save workbook
