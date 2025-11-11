@@ -665,8 +665,10 @@ def query_all_dict(word:str, use_en:bool, use_de:bool):
         cmd = cmd + f" | cut -d' ' -f2- | rg {exp2}" + " | awk '{ print length($0), $0; }' | sort -n | cut -d' ' -f2-"
         result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
         rst = result.stdout.decode('utf8').split('\n')
-        for dict_word in filter(lambda x : x != '', rst):
+        for i, dict_word in enumerate(filter(lambda x : x != '', rst)):
             print(dict_word + ' 󰺄 dict[Deu]')
+            if i == 0 and dict_word[0].islower():
+                print(dict_word.capitalize() + ' 󰺄 dict[Deu]')
         exit(0)
 
 if __name__ == '__main__':
