@@ -461,7 +461,7 @@ fu! s:GotCandidates(jobId, data, event)
             catch | endtry
         endif
         cal extend(b:c_items, map(candidates, function('RenderCandidate')))
-        if count(split(getline('.')[:col('.')-1], ' ')[-1], '/') >= 2
+        if col('.') >= 2 && count(split(getline('.')[:col('.')-1], ' ')[-1], '/') >= 2
             sil cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false)
         else
             let b:c_page = 1
@@ -489,7 +489,7 @@ let g:candidatesOrderMode = 0
 ino <m-i> <c-\><c-o>:let g:candidatesOrderMode+=1 \| cal RefreshCandidates()<cr>
 fu! RefreshCandidates()
     let cw = InsertingWord()
-    if len(cw) < 1 | retu | en
+    if len(cw) < 1 || complete_info(['mode'])['mode'] == 'files' | retu | en
     let query = g:jpIme ? '-query_jp' : g:cnIme ? '-query_cn' : '-query'.(g:pLang == '' ? '' : '_'.g:pLang)
     let g:completingId = jobstart(SendService(query, printf("\"%s\" \"%s\" %d", cw, expand('%p'), g:candidatesOrderMode)), {'stdout_buffered':v:true, 'on_stdout':function('s:GotCandidates')})
 endf
