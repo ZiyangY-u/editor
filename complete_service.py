@@ -201,6 +201,7 @@ def add_word(word:str, path:str) -> None:
     :param word: word to add
     :param path: word source path
     """
+    if '/' in word: return # not add words like path
     con_completion = sqlite3.connect(COMPLETE_BUF_DB_PATH)
     cur = con_completion.cursor()
     cur.execute(f"select count(1) from words where word = '{word}'")
@@ -251,7 +252,7 @@ def add_words(path:str, enc:str) -> None:
                 tmp = set(re.findall(WORD_PAT, f.read()))
         con_completion = sqlite3.connect(COMPLETE_BUF_DB_PATH)
         cur = con_completion.cursor()
-        for w in tmp:
+        for w in (w for w in tmp if '/' not in w): # not add words like path
             if not w.isascii():
                 continue
             cur.execute(f"select count(1) from words where word = '{w}'")
