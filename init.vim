@@ -502,7 +502,7 @@ endfunction
 au BufReadPost,BufWritePost,BufEnter * if filereadable(bufname(bufnr())) && !has_key(g:serviceBlackList, bufname(bufnr()))
             \| let g:pathQueue[expand('%:p').':'.getbufvar(bufnr(), "&fenc")] = 1 | en
 cal timer_start(1500, 'RefreshService', {'repeat': -1})
-au CursorMovedI,CursorHoldI * sil redraw! | cal RefreshCandidates() | cal ClearVirtualTxt()
+au CursorMovedI,CursorHoldI,TextChangedP * sil redraw! | cal RefreshCandidates() | cal ClearVirtualTxt()
 au CompleteChanged * cal PumRenderVerticalScope(virtcol('.')-len(InsertingWord())-3)
 " au CursorMovedI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
 fu! PostComplete()
