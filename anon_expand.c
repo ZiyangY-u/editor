@@ -167,6 +167,7 @@ void awk_decode_wildcard(char c) {
         case 'q': printf("'"); break;
         case 'Q': printf("\\\""); break;
         case 'c': printf(","); break;
+        case ';': printf(";"); break;
         default: break;
     }
 }
@@ -248,6 +249,21 @@ void awk_expand(char *word) {
         return;
     if (w0 == 'p' && isdigit(w1) && strlen(word) == 2) // p3 -> print $3
         printf("print \\$%d", todigit(w1));
+    else if (matchn(word, "join", 4) && strlen(word) > 4) // join rows by wildcard
+    {
+        printf("# join rows<CR>");
+        printf("printf \"%%s\", (NR == 1 ? \"\" : \"");
+        awk_decode_wildcard(word[4]);
+        printf("$0\") trim(\\$0)");
+    }
+    else if (matchn(word, "split", 5) && strlen(word) > 5) // split line by wildcard
+    {
+        printf("# split rows<CR>");
+        printf("split(\\$0, __arr, \"");
+        awk_decode_wildcard(word[5]);
+        printf("\"); ");
+        printf("for (__i = 0; __i < length(__arr); __i++) printf \"%%s\\n\", __arr[__i]");
+    }
     else if (strlen(word) == 1 && isdigit(w0)) // 3 -> $3
         printf("\\$%d", todigit(w0));
     else if (w0 == 'p') // printf
