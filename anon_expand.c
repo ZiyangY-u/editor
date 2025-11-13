@@ -171,14 +171,25 @@ void awk_decode_wildcard(char c) {
     }
 }
 
+/* format: p\w+\d*, \w for wildcard */
 void awk_printf(char* word) {
     int slen = strlen(word);
     printf("printf \"");
     for (int i = 1 ; i < slen ; i++) {
         awk_decode_wildcard(word[i]);
     }
-    if (word[slen-1] != 'x')
-        printf("\", ");
+    if (word[slen-1] != 'x') {
+        int reverse_idx = slen-1;
+        while (isdigit(word[reverse_idx--]));
+        printf("\"");
+        if (reverse_idx == slen-2)
+            printf(", ");
+        else {
+            reverse_idx++;
+            while (++reverse_idx < slen)
+                printf(", \\$%d", todigit(word[reverse_idx]));
+        }
+    }
     else
         printf("\"");
 }
@@ -267,33 +278,6 @@ void awk_expand(char *word) {
         printf("xls_c2n(\"%s\")", word);
 }
 
-void python_crawler_target(char* word) {
-    bool bl = false, br = false, cs = false;
-    if (strlen(word) > 2 && strstr(word+2, "l")) bl = true;
-    if (strlen(word) > 2 && strstr(word+2, "r")) br = true;
-    if (strlen(word) > 2 && strstr(word+2, "c")) cs = true;
-
-    if (w1 == 'c' || w1 == 's') // compound noun and separatable verb
-        printf("Target(prefix='$1', word='$2'");
-    else if (w1 == 'p' || w1 == 'P') // phrase
-        printf("Target(prefix='$1', word='$2', suffix='$3'");
-    else
-        printf("Target(word='$0'");
-
-    if (bl) printf(", lb=True");
-    if (br) printf(", rb=True");
-    if (w1 == 'v' || w1 == 's' || cs) printf(", cs=True");
-
-    if (w1 == 'n') printf(", mode=NOUN_MODE),\n");
-    if (w1 == 's') printf(", mode=SEP_VERB_MODE, target_cnt=7),\n");
-    if (w1 == 'v') printf(", mode=VERB_MODE),\n");
-    if (w1 == 'p') printf(", mode=PHRASE_MODE),\n");
-    if (w1 == 'P') printf(", mode=VERB_PHRASE_MODE),\n");
-    if (w1 == 'c') printf(", mode=COMPOUND_NOUN_MODE),\n");
-    if (w1 == 'a') printf(", mode=ADJECTIVE_MODE),\n");
-
-}
-
 void text_expand(char* word) {
     if (w0 == 't') {
         printf("$0 %c", toupper(w1));
@@ -322,8 +306,6 @@ void xl_expand(char* word) {
 }
 
 void python_expand(char* word) {
-    if (matchn(word, "t", 1) && strlen(word) >= 2)
-        python_crawler_target(word);
     if (is_all_digit(word))
         printf("for i in range(1, %s+1):", word);
 }
