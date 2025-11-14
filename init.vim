@@ -464,9 +464,10 @@ endf
 fu! RenderCandidate(_, word)
     let seq = split(a:word, ' ')
     let menu = len(seq) == 1 ? g:completeKinds[1] : join(seq[1:], ' ')
-    retu {'word':seq[0], 'menu':menu}
+    retu {'word':seq[0].b:candidateSupply, 'menu':menu}
 endf
 fu! s:GotCandidates(jobId, data, event)
+    let b:candidateSupply = (g:pLang == 'de' ? ' ' : '')
     if a:jobId == g:completingId && mode() == 'i'
         let [candidates, b:c_items, g:inserted] = [filter(a:data, {_,item -> item != ''}), [], InsertingWord()]
         if &omnifunc != '' && !g:jpIme && !g:cnIme && !has_key(g:omniExclude, &ft) " blocking request
