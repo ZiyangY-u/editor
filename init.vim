@@ -346,6 +346,23 @@ fu! GoMark(flag) " 0 for prev; 1 for next
 endf
 let g:refresh = timer_start(1000, 'RefreshRoadMap', {'repeat': -1})
 
+" file system movement
+fu! InitFileMoveMap()
+    let [g:fileMoveMap, _files] = [{}, split(system('find '.expand('%:p:h').' -maxdepth 1 -not -type d '), '\n')]
+    if len(_files) == 1
+        let g:fileMoveMap[_files[0]] = {'prev':'', 'next':''}
+        return
+    endif
+
+    for idx in range(len(_files))
+        let [_prev, _next] = [_files[idx], _files[idx]]
+        if idx != 0 | let _prev = _files[idx-1] | endif
+        if idx != len(_files) - 1 | let _next = _files[idx+1] | endif
+        let g:fileMoveMap[_files[idx]] = {'prev' : _prev, 'next' : _next}
+    endfor
+endf
+au BufEnter * if filereadable(expand('%:p')) && g:jumpMode=='F' | cal InitFileMoveMap() | en
+
 " Quick Comment
 
 " Diff
@@ -719,12 +736,13 @@ fu! ModWinResize()
 endf
 nn <a-o> :cal BufJumpBack()<cr>
 let g:jumpMode = 'n'
-let g:jumpModeNames = {'n':'Normal','m':'Mark','f':'Fold','s':'Scroll','q':'Quickfix','d':'Diff','w':'Window','c':'Conflict', 'r':'Roadmap'}
+let g:jumpModeNames = {'n':'Normal','m':'Mark','F':'Fold','s':'Scroll','q':'Quickfix','d':'Diff','w':'Window','c':'Conflict', 'r':'Roadmap', 'f':'FileSystem'}
 fu! OmniJumpBoot(backNormFlag)
     let jumpMoves = {'nj':'j','nk':'k',
                 \'mj':"]'", 'mk':"['",
                 \'qj':':cn<cr>','qk':':cp<cr>',
-                \'fj':'zj','fk':'zk','fh':':setl fdl-=1<CR>','fl':':setl fdl+=1<CR>',
+                \'Fj':'zj','Fk':'zk','Fh':':setl fdl-=1<CR>','Fl':':setl fdl+=1<CR>',
+                \'fj':":sil cal MEdit(g:fileMoveMap[expand('%:p')]['next'])<cr>", 'fk':":sil cal MEdit(g:fileMoveMap[expand('%:p')]['prev'])<cr>",
                 \'wj':'<c-w>-','wk':'<c-w>+','wh':'<c-w>>','wl':'<c-w><',
                 \'sj':'<c-d>','sk':'<c-u>','sh':'60h','sl':'60l',
                 \'rj':':sil cal GoMark(v:true)<cr>', 'rk':':sil cal GoMark(v:false)<cr>',
@@ -737,11 +755,8 @@ fu! OmniJumpBoot(backNormFlag)
         let modeChar = nr2char(getchar()) " wait for a mode char
     en
     if modeChar == 'r' | cal ToggleRoadmap() | en " open road map
-    if modeChar == 'c' " Conflict
-        hi CursorLine cterm=NONE ctermbg=167
-    el
-        hi CursorLine cterm=NONE ctermbg=DarkGray
-    en
+    if modeChar == 'F' | cal InitFileMoveMap() | en
+    exe printf("hi CursorLine cterm=NONE ctermbg=%s", (modeChar == 'c' ? '167' : 'DarkGray'))
     let g:jumpMode = has_key(g:jumpModeNames, modeChar) ? modeChar : 'n'
     exe printf('hi JumpModColor cterm=bold ctermfg=%d ctermbg=%d', char2nr(g:jumpMode), ((char2nr(g:jumpMode) + 16) % 256))
     for direct in split('hjkl', '\zs')
@@ -1322,15 +1337,15 @@ let g:undotree_ShortIndicators=1
 let g:undotree_SetFocusWhenToggle=1
 let g:undotree_HelpLine=0
 fu g:Undotree_CustomMap()
-    nmap <buffer> k <plug>UndotreeNextState
-    nmap <buffer> j <plug>UndotreePreviousState
-    nmap <buffer> K <plug>UndotreeNextSavedState
-    nmap <buffer> J <plug>UndotreePreviousSavedState
+    nmap <buffer> k     <plug>UndotreeNextState
+    nmap <buffer> j     <plug>UndotreePreviousState
+    nmap <buffer> K     <plug>UndotreeNextSavedState
+    nmap <buffer> J     <plug>UndotreePreviousSavedState
     nmap <buffer> <c-k> <plug>UndotreeRedo
     nmap <buffer> <c-j> <plug>UndotreeUndo
 
-    nmap <buffer> h <plug>UndotreeTimestampToggle
-    nmap <buffer> l <plug>UndotreeFocusTarget
+    nmap <buffer> h     <plug>UndotreeTimestampToggle
+    nmap <buffer> l     <plug>UndotreeFocusTarget
 endf
 nn <leader>u :UndotreeToggle<cr>
 " devicons
