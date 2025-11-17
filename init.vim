@@ -1657,6 +1657,14 @@ nn <silent> ,<tab>g :let g:TransMode='Greek'<CR>
 ino <silent> jj <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:jpIme == 1 ? [0,0] : [1,0])\|do User ImeChanged\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
 ino <silent> jc <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:cnIme == 1 ? [0,0] : [0,1])\|do User ImeChanged\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
 im <silent><expr> <cr> (g:jpIme && complete_info().selected == -1) ? "<c-l>" : "<cr>"
+fu! DeMarkAutoReplace()
+    let currTwo = getline('.')[col('.')-3:col('.')-2]
+    if currTwo == ' .' | cal nvim_feedkeys("\<BS>\<BS>.\<space>", "i", 1) | en
+    if currTwo == ' ,' | cal nvim_feedkeys("\<BS>\<BS>,\<space>", "i", 1) | en
+    if currTwo == ' ?' | cal nvim_feedkeys("\<BS>\<BS>?\<space>", "i", 1) | en
+    if currTwo == ' !' | cal nvim_feedkeys("\<BS>\<BS>!\<space>", "i", 1) | en
+endf
+au TextChangedI * if g:pLang == 'de' | cal DeMarkAutoReplace() | en
 " -------------------- Calc Misc -----------------------
 fu! NumTrans(fmt, num)
     let fmtMap = {'x': '0x%X', 'b': '0b%08b', 'd': '%d'}
