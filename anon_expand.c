@@ -66,7 +66,7 @@ void sql_expand(char *word) {
         int n = atoi(word+2);
         for (int i = 0 ; i < n ; i++) printf(", c%d text", i+1);
         printf(");");
-    } else if (match("s", word) || (matchn("s", word, 1) && is_all_digit(word+1))) { // select [top n] * from
+    } else if (matchn("s", word, 1) && is_all_digit(word+1)) { // select top n * from
         int tn = strlen(word) > 1 ? atoi(word+1) : 0;
         printf("SELECT ");
         if (tn > 0) printf("TOP %d ", tn);
