@@ -469,7 +469,9 @@ endf
 fu! s:GotCandidates(jobId, data, event)
     let b:candidateSupply = (g:pLang == 'de' ? ' ' : '')
     if a:jobId == g:completingId && mode() == 'i'
-        let [candidates, b:c_items, g:inserted] = [filter(a:data, {_,item -> item != ''}), [], InsertingWord()]
+        let _data = filter(a:data, {_,item -> item != ''})
+        if len(_data) >= 2 && _data[0] != split(_data[1], ' ')[0] | let g:hint_word = _data[0] | en " got hint for recovery
+        let [candidates, b:c_items, g:inserted] = [_data[1:], [], InsertingWord()]
         if &omnifunc != '' && !g:jpIme && !g:cnIme && !has_key(g:omniExclude, &ft) " blocking request
             let luacmd = "vim.lsp.buf_request_sync(".bufnr().",'textDocument/completion', vim.lsp.util.make_position_params(), 500)"
             try
@@ -534,6 +536,7 @@ au CompleteDonePre * if complete_info(['mode'])['mode'] == 'files' && !empty(com
 au CompleteDone * redraw! | cal PostComplete()
 au CompleteDone * if (g:jpIme || g:cnIme) && v:completed_item != {} | cal nvim_feedkeys("\<esc>a", 'i', v:false) | en
 au User ImeChanged if (g:jpIme || g:cnIme) | exe "ino <silent> <BS> <BS><esc>a" | else | exe "sil! iu <BS>" | en
+ino <c-u> <c-w><c-r>=g:hint_word<cr>
 "   <tab> for select candidate, j+n for quick selection
 im <silent><expr> <tab> pumvisible() ? "\<down>" : (UltiSnips#CanExpandSnippet() ? "\<c-l>" : "\<tab>")
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
@@ -684,7 +687,7 @@ fu! s:putSqlLintRst(jobId, data, event) abort
     if empty(bufnr) | return | en
 
     for info in filter(copy(a:data), '!empty(v:val)')
-        let _info = split(info, '|') 
+        let _info = split(info, '|')
         let [ln, txt] = [str2nr(_info[0]), printf('■ %s|%s', _info[1], _info[2])]
         cal nvim_buf_set_extmark(bufnr[0], g:sqlLintMk, ln-1, 0, { "virt_text":[[txt, 'SnipMark']], "hl_mode":"combine" })
     endfor

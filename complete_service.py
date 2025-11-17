@@ -666,6 +666,7 @@ def query_all_dict(word:str, use_en:bool, use_de:bool):
         cmd = cmd + f" | cut -d' ' -f2- | rg {exp2}" + " | awk '{ print length($0), $0; }' | sort -n | cut -d' ' -f2-"
         result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
         rst = result.stdout.decode('utf8').split('\n')
+        print(word)
         for i, dict_word in enumerate(filter(lambda x : x != '', rst)):
             print(dict_word + ' 󰺄 dict[Deu]')
             if i == 0 and dict_word[0].islower():
@@ -729,6 +730,7 @@ if __name__ == '__main__':
         word = sys.argv[2]
         rst_list = query_all_dict(word, use_en=True, use_de=True)
 
+    print(sys.argv[2])
     for it in rst_list:
         print(it)
 
