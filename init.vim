@@ -470,7 +470,14 @@ fu! s:GotCandidates(jobId, data, event)
     let b:candidateSupply = (g:pLang == 'de' ? ' ' : '')
     if a:jobId == g:completingId && mode() == 'i'
         let _data = filter(a:data, {_,item -> item != ''})
-        if len(_data) >= 2 && _data[0] != split(_data[1], ' ')[0] | let g:hint_word = _data[0] | en " got hint for recovery
+        if len(_data) >= 2
+            if trim(_data[0]) != split(_data[1], ' ')[0] || g:pLang != ''
+                let g:hint_word = _data[0] " got hint for recovery
+            endif
+            if _data[0] ==# split(_data[1], ' ')[0]
+                let _data = _data[1:] " remove first candidate that exactly match the inserting word
+            endif
+        endif
         let [candidates, b:c_items, g:inserted] = [_data[1:], [], InsertingWord()]
         if &omnifunc != '' && !g:jpIme && !g:cnIme && !has_key(g:omniExclude, &ft) " blocking request
             let luacmd = "vim.lsp.buf_request_sync(".bufnr().",'textDocument/completion', vim.lsp.util.make_position_params(), 500)"
