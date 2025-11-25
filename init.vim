@@ -1366,19 +1366,10 @@ let g:highlightedyank_highlight_duration = 150
 hi HighlightedyankRegion ctermbg=191
 " asyncrun.vim
 let g:asyncrun_open=8
-fu! AsyncRunPost()
-    if g:asyncrun_status == 'failure' | copen | wincmd w | en
-    if g:texCompilePending == 1
-        exe printf('AsyncRun xelatex --jobname=%s.tmp %s', expand('%:r'), expand('%:p'))
-        let g:texCompilePending = 0
-    endif
-    if match(g:asyncrun_info, '^xelatex') >= 0 && g:asyncrun_status == 'success' " set tmp.pdf to real pdf
-        let target_path = split(g:asyncrun_info)[2]
-        exe printf('!mv %s.tmp.pdf %s.pdf', fnamemodify(target_path, ':p:r'), fnamemodify(target_path, ':p:r'))
-    en
-    redrawt
+fu! s:TexCompilePost(jobId, data, event)
+    let target_path = fnamemodify(expand('%:p:r'), ':p:r')
+    sil exe printf('!mv %s.tmp.pdf %s.pdf', target_path, target_path)
 endf
-au User AsyncRunStop :cal AsyncRunPost()
 " vim-floaterm
 tmap ,q jk:quit<cr>
 tmap <F3> jk:FloatermNext<cr>
@@ -1454,12 +1445,18 @@ fu! GetDefault(v, default)
     el | retu a:v
     en
 endf
-fu! CompileTex()
-    if g:asyncrun_status != 'running'
-        exe printf('AsyncRun xelatex --jobname=%s.tmp %s', expand('%:r'), expand('%:p'))
-    else
-        let g:texCompilePending = 1 | en
+fu! s:TexInfoLog(jobId, data, event)
+    cal appendbufline(g:texInfoBuf, 0, a:data)
 endf
+fu! CompileTex()
+    if exists('g:texInfoBuf') && bufexists(g:texInfoBuf) | sil exe 'bd!'.g:texInfoBuf | en
+    let g:texInfoBuf = bufadd('') | call bufload(g:texInfoBuf)
+
+    let cmd = printf('xelatex --jobname=%s.tmp %s', expand('%:r'), expand('%:p'))
+    let opts = {'detach':v:true, 'on_exit' : function('s:TexCompilePost'), 'on_stdout': function('s:TexInfoLog'), 'on_stderr': function('s:TexInfoLog')}
+    cal jobstart(cmd, opts)
+endf
+com! -nargs=0 TexLog :exe 'tabe | b'.g:texInfoBuf
 fu! QuickRun()
     if &ft == 'vim' | so %
     elseif &ft == 'tex' | cal CompileTex()
@@ -1703,7 +1700,7 @@ endf
 com! -nargs=0 WSLview exe 'sil !wslview %'
 " com! -nargs=0 Notepad exe 'sil !subl.exe -a '.WinPath(expand('%')).':'.line('.')
 com! -nargs=0 Notepad exe 'sil !powershell.exe -Command "Start-Process notepad -WindowStyle Maximized '.WinPath(expand('%')).'"'
-com! -nargs=0 Directory exe 'sil !explorer.exe /select,' . substitute(WinPath(expand('%:p')), '/', '\\\\', 'g')
+com! -nargs=0 WinLocate exe 'sil !explorer.exe /select,' . substitute(WinPath(expand('%:p')), '/', '\\\\', 'g')
 com! -nargs=0 EdComplete e ~/.config/nvim/complete_service.py
 com! -nargs=0 EdAnon tabe | e ~/.config/nvim/anon_expand.c
 ca emk AsyncRun -cwd=~/.config/nvim ./compile.sh
@@ -1733,7 +1730,6 @@ com! -nargs=0 PdfLoc exe 'sil !SumatraPDF.exe -reuse-instance -page ' . g:PdfLoc
 com! -nargs=0 EdTexMacros tabe | e ~/.config/nvim/tex/zzmakros.sty
 au BufWritePost zzmakros.sty cal system('cp ~/.config/nvim/tex/zzmakros.sty ~/texmf/tex/xelatex/')
 " ------------------- Async Misc -----------------------
-let g:texCompilePending = 0
 "  qfSearchCmd { qfEntry : [jobId list] }
 "  qfListTobe { jobId : [qfResult] }
 "  let one qfEntry in qfSearchCmd hold multiple jobId
