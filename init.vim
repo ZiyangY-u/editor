@@ -1663,6 +1663,7 @@ nn <silent> ,<tab>l :let g:TransMode='Latin'<CR>
 nn <silent> ,<tab>g :let g:TransMode='Greek'<CR>
 ino <silent> jj <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:jpIme == 1 ? [0,0] : [1,0])\|do User ImeChanged\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
 ino <silent> jc <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:cnIme == 1 ? [0,0] : [0,1])\|do User ImeChanged\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
+ino <silent> jd <c-\><c-o>:let g:pLang = (g:pLang == 'de' ? '' : 'de')<cr>
 im <silent><expr> <cr> (g:jpIme && complete_info().selected == -1) ? "<c-l>" : "<cr>"
 fu! DeMarkAutoReplace()
     let currTwo = getline('.')[col('.')-3:col('.')-2]
