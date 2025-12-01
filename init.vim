@@ -1445,18 +1445,17 @@ fu! GetDefault(v, default)
     el | retu a:v
     en
 endf
-fu! s:TexInfoLog(jobId, data, event)
-    cal appendbufline(g:texInfoBuf, 0, a:data)
-endf
 fu! CompileTex()
-    if exists('g:texInfoBuf') && bufexists(g:texInfoBuf) | sil exe 'bd!'.g:texInfoBuf | en
-    let g:texInfoBuf = bufadd('') | call bufload(g:texInfoBuf)
+    if !exists('g:texInfoBuf') || !bufexists(g:texInfoBuf)
+        let g:texInfoBuf = bufadd(tempname())
+        cal setbufvar(g:texInfoBuf, '&autoread', 1)
+    endif
 
-    let cmd = printf('xelatex --jobname=%s.tmp %s', expand('%:r'), expand('%:p'))
-    let opts = {'detach':v:true, 'on_exit' : function('s:TexCompilePost'), 'on_stdout': function('s:TexInfoLog'), 'on_stderr': function('s:TexInfoLog')}
+    let cmd = printf('xelatex --jobname=%s.tmp %s > %s', expand('%:r'), expand('%:p'), bufname(g:texInfoBuf))
+    let opts = {'detach':v:true, 'on_exit' : function('s:TexCompilePost')}
     cal jobstart(cmd, opts)
 endf
-com! -nargs=0 TexLog :exe 'tabe | b'.g:texInfoBuf
+com! -nargs=0 TexLog :exe 'tabe | e +$;norm\ zz '.bufname(g:texInfoBuf)
 fu! QuickRun()
     if &ft == 'vim' | so %
     elseif &ft == 'tex' | cal CompileTex()
