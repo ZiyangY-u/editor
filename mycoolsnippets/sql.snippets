@@ -296,3 +296,21 @@ endsnippet
 snippet bt "ばつ" w
 '×'
 endsnippet
+
+snippet cursor "cursor" w
+DECLARE $1 CURSOR FOR
+`!v getreg('"')`
+
+OPEN $1
+FETCH NEXT FROM ACT_CURSOR INTO @ -- variable here
+WHILE @@FETCH_STATUS = 0
+    BEGIN
+    -- process here ↓↓↓
+
+    -- process here ↑↑↑
+
+    FETCH NEXT FROM ACT_CURSOR INTO @ -- variable here as well
+    END
+CLOSE $1
+DEALLOCATE $1
+endsnippet

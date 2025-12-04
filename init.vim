@@ -488,7 +488,7 @@ fu! s:GotCandidates(jobId, data, event)
             catch | endtry
         endif
         cal extend(b:c_items, map(candidates, function('RenderCandidate')))
-        if col('.') >= 2 && count(split(getline('.')[:col('.')-1], ' ')[-1], '/') >= 2
+        if col('.') >= 2 && count(split(getline('.')[:col('.')-1], ' ')[-1], '/') >= 2 && mode()[0] == 'i'
             sil cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false)
         else
             let b:c_page = 1
