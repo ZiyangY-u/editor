@@ -1670,6 +1670,7 @@ fu! DeMarkAutoReplace()
     if currTwo == ' ,' | cal nvim_feedkeys("\<BS>\<BS>,\<space>", "i", 1) | en
     if currTwo == ' ?' | cal nvim_feedkeys("\<BS>\<BS>?\<space>", "i", 1) | en
     if currTwo == ' !' | cal nvim_feedkeys("\<BS>\<BS>!\<space>", "i", 1) | en
+    if currTwo == ' :' | cal nvim_feedkeys("\<BS>\<BS>:\<space>", "i", 1) | en
 endf
 au TextChangedI * if g:pLang == 'de' | cal DeMarkAutoReplace() | en
 " -------------------- Calc Misc -----------------------
