@@ -989,6 +989,7 @@ fu! ActTal()
     endfor
     let tal .= "%#TabLine#%="
     " running indicators
+    if g:texCompilePending == 1 || g:texCompileStatus == 1 | let tal .= "%#texPage#  %{g:texCompilePending == 1 ? 'P ' : 'R '}" | en
     let tal .= "%#error#%{g:asyncCnt > 0 ? '  '.g:asyncCnt.' ':''}".(g:asyncrun_status!='success'?g:asyncrun_red[g:asyncrun_status]:'')
     let tal .= "%{gutentags#statusline() == '' ? '' : ' 󱈢 '}"
     if g:refreshFlag == 1 | let tal .= "%#CSInfo#%{'[󱦟'.(empty(g:pathQueue) ? ']' : ' '.len(g:pathQueue).']')}" | en
@@ -1445,17 +1446,6 @@ fu! GetDefault(v, default)
     el | retu a:v
     en
 endf
-fu! CompileTex()
-    if !exists('g:texInfoBuf') || !bufexists(g:texInfoBuf)
-        let g:texInfoBuf = bufadd(tempname())
-        cal setbufvar(g:texInfoBuf, '&autoread', 1)
-    endif
-
-    let cmd = printf('xelatex --jobname=%s.tmp %s > %s', expand('%:r'), expand('%:p'), bufname(g:texInfoBuf))
-    let opts = {'detach':v:true, 'on_exit' : function('s:TexCompilePost')}
-    cal jobstart(cmd, opts)
-endf
-com! -nargs=0 TexLog :exe 'tabe | e +$;norm\ zz '.bufname(g:texInfoBuf)
 fu! QuickRun()
     if &ft == 'vim' | so %
     elseif &ft == 'tex' | cal CompileTex()
@@ -1730,6 +1720,40 @@ com! -nargs=0 Pdf exe 'sil !SumatraPDF.exe -reuse-instance -page ' . GetPdfLoc()
 com! -nargs=0 PdfLoc exe 'sil !SumatraPDF.exe -reuse-instance -page ' . g:PdfLoc . ' ' . WinPath(substitute(expand('%:p'), '.tex$', '.pdf', ''))
 com! -nargs=0 EdTexMacros tabe | e ~/.config/nvim/tex/zzmakros.sty
 au BufWritePost zzmakros.sty cal system('cp ~/.config/nvim/tex/zzmakros.sty ~/texmf/tex/xelatex/')
+" tex compile 
+let g:texCompileStatus = 0 " 0 : stop; 1 : running
+let g:texCompilePending = 0
+fu! CheckTexCompiling(timer)
+    if !exists('g:texCompilePID') | let g:texCompileStatus = 0 | en
+    let checkRst = trim(system(printf('[ -d "/proc/%d" ] && echo "yes" || echo "no"', g:texCompilePID)))
+    if checkRst == 'yes'
+        let g:texCompileStatus = 1
+    else
+        let g:texCompileStatus = 0
+        cal timer_pause(g:checkTexCompilingTimer, 1)
+        if g:texCompilePending == 1 | let g:texCompilePending = 0 | cal CompileTex() | en
+    endif
+    redrawtabline
+endfu
+" init tex log buffer
+au BufWinEnter *.tex if !exists('g:texInfoBuf') || !bufexists(g:texInfoBuf) | let g:texInfoBuf = bufadd(tempname()) | endif
+fu! CompileTex()
+    if !exists('g:checkTexCompilingTimer')
+        let g:checkTexCompilingTimer = timer_start(100, 'CheckTexCompiling', {'repeat': -1})
+    else
+        cal timer_pause(g:checkTexCompilingTimer, 0)
+    endif
+
+    if g:texCompileStatus == 1 " set pending
+        let g:texCompilePending = 1
+        return
+    endif
+
+    let cmd = printf('xelatex --halt-on-error --jobname=%s.tmp %s > %s', expand('%:r'), expand('%:p'), bufname(g:texInfoBuf))
+    let opts = {'detach':v:true, 'on_exit' : function('s:TexCompilePost')}
+    let g:texCompilePID = jobpid(jobstart(cmd, opts))
+endfu
+com! -nargs=0 TexLog :exe 'tabe | e +$;norm\ zz '.bufname(g:texInfoBuf)
 " ------------------- Async Misc -----------------------
 "  qfSearchCmd { qfEntry : [jobId list] }
 "  qfListTobe { jobId : [qfResult] }
