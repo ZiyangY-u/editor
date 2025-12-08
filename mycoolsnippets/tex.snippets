@@ -40,10 +40,31 @@ endsnippet
 
 snippet ldoc "" w
 \\documentclass[10pt]{ctexart}
-% fairly common package
+% \\usepackage{showframe}
 
 \\begin{document}
 \\end{document}
+endsnippet
+snippet cpkg "common packages" w
+% fairly common package
+\\usepackage[dvipsnames]{xcolor} % text colors
+\\usepackage{setspace} % begin{spacing}
+\\usepackage{framed} % begin{framed}
+endsnippet
+snippet layout "layout" w
+\\usepackage[landscape
+, left=0.05\\paperwidth
+, right=0.15\\paperwidth % expand right if not need right margin-note
+, top = 0.07\\paperheight
+, headheight=0.05\\paperheight
+, marginparwidth=0.12\\paperwidth
+, bottom = 0.08\\paperheight
+, marginparsep=0.01\\paperheight
+, headsep=0.01\\paperheight
+, footskip=0.01\\paperheight
+]{geometry}
+\\usepackage[grid, gridunit=pt, gridcolor=blue!15, subgridcolor=blue!5]{eso-pic}
+\\usepackage{showframe}
 endsnippet
 
 snippet up "usepackage" w
@@ -92,7 +113,7 @@ snippet emph "emphasize" w
 \\emph{${VISUAL}$0}
 endsnippet
 snippet tc "text color" w
-\\textcolor{$1}{${VISUAL}$0}
+\\textcolor{$0}{${VISUAL}}
 endsnippet
 snippet t "text in formula" w
 \\text{${VISUAL}$0}
