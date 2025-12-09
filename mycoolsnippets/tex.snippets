@@ -40,16 +40,27 @@ endsnippet
 
 snippet ldoc "" w
 \\documentclass[10pt]{ctexart}
-% \\usepackage{showframe}
+\\usepackage{fancyhdr}
 
 \\begin{document}
+% header and footer [L]eft-[C]enter-[R]ight + {[E]ven-[O]dd}
+\\pagestyle{fancy}
+\\fancyhead{} % clear all header fields
+\\fancyfoot{} % clear all footer fields
+\\renewcommand{\\headrulewidth}{0pt}
+\\renewcommand{\\footrulewidth}{0pt}
+\\fancyhead[]{}
+\\fancyfoot[L]{\\thepage} % page number
+
+% content start here
+
 \\end{document}
 endsnippet
 snippet cpkg "common packages" w
 % fairly common package
 \\usepackage[dvipsnames]{xcolor} % text colors
-\\usepackage{setspace} % begin{spacing}
-\\usepackage{framed} % begin{framed}
+\\usepackage{setspace}           % begin{spacing}
+\\usepackage{framed}             % begin{framed}
 endsnippet
 snippet layout "layout" w
 \\usepackage[landscape
@@ -123,6 +134,11 @@ snippet hs "空白" w
 endsnippet
 snippet fn "footnote" w
 \\footnote{$0}
+endsnippet
+
+snippet vh "" w
+\vfill
+\hfill
 endsnippet
 
 # images
@@ -332,3 +348,42 @@ snippet fbox "fcolorbox" w
 }
 endsnippet
 
+snippet ngeo "newgeometry" w
+\\afterpage{
+  \\noindent
+  \\newgeometry{
+    left=0.05\\paperwidth
+    , right=0.05\\paperwidth % expand right if not need right margin-note
+    , top = 0.07\\paperheight
+    , headheight=0.05\\paperheight
+    , marginparwidth=0.12\\paperwidth
+    , bottom = 0.08\\paperheight
+    , marginparsep=0.01\\paperheight
+    , headsep=0.01\\paperheight
+    , footskip=0.01\\paperheight
+  }
+  % content here
+
+  % content end
+  \\clearpage
+  \\restoregeometry
+}
+endsnippet
+
+snippet box "box" w
+\\fbox[lrtb, boxrule=0.1pt % \\usepackage{fbox}
+, lcolor=black
+, rcolor=black
+, tcolor=black
+, bcolor=black]{
+  \\parbox[t][3.5\\height][t]{0.1\\textwidth}{
+    content % content here
+  }
+}
+endsnippet
+
+snippet ncnt "new count" w
+\\newcounter{$1} % use \\the$1
+\\setcounter{$1}{1}
+% \\stepcounter{$1}
+endsnippet
