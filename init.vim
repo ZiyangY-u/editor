@@ -990,10 +990,10 @@ fu! ActTal()
     let tal .= "%#TabLine#%="
     " running indicators
     if g:texCompilePending == 1 || g:texCompileStatus == 1 | let tal .= "%#texPage#  %{g:texCompilePending == 1 ? 'P ' : 'R '}" | en
-    let tal .= "%#error#%{g:asyncCnt > 0 ? '  '.g:asyncCnt.' ':''}".(g:asyncrun_status!='success'?g:asyncrun_red[g:asyncrun_status]:'').(g:texCompileSuccess==-1?'  ':'')
+    let tal .= "%#error#%{g:asyncCnt > 0 ? '  '.g:asyncCnt.' ':''}".(g:asyncrun_status!='success'?g:asyncrun_red[g:asyncrun_status]:'').(g:texCompileResult==-1?'  ':'')
     let tal .= "%{gutentags#statusline() == '' ? '' : ' 󱈢 '}"
     if g:refreshFlag == 1 | let tal .= "%#CSInfo#%{'[󱦟'.(empty(g:pathQueue) ? ']' : ' '.len(g:pathQueue).']')}" | en
-    let tal .= "%#CSInfo#".(g:asyncrun_status=='success' ? '  ':'').(g:texCompileSuccess==1 ? '  ' : '')
+    let tal .= "%#CSInfo#".(g:asyncrun_status=='success' ? '  ':'').(g:texCompileResult==1 ? '  ' : '')
     let tal .= "%#Git#%{FugitiveStatusline()}"
     let tal .= "%#Trans#%{g:TransMode}%{g:jpIme||g:cnIme ? '  󰗊 ' : ''}"
     let tal .= "%#PreferLang#%{g:pLang}"
