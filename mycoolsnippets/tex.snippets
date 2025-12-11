@@ -63,6 +63,7 @@ snippet cpkg "common packages" w
 \\usepackage{framed}             % begin{framed}
 endsnippet
 snippet layout "layout" w
+% ↓↓↓ layout ↓↓↓
 \\usepackage[landscape
 , left=0.05\\paperwidth
 , right=0.15\\paperwidth % expand right if not need right margin-note
@@ -74,8 +75,9 @@ snippet layout "layout" w
 , headsep=0.01\\paperheight
 , footskip=0.01\\paperheight
 ]{geometry}
-\\usepackage[grid, gridunit=pt, gridcolor=blue!15, subgridcolor=blue!5]{eso-pic}
-\\usepackage{showframe}
+% \\usepackage[texcoord, grid, gridBG, gridunit=pt, gridcolor=red!25, subgridcolor=blue!15]{eso-pic}
+% \\usepackage{showframe}
+% ↑↑↑ layout ↑↑↑
 endsnippet
 
 snippet up "usepackage" w
@@ -386,4 +388,17 @@ snippet ncnt "new count" w
 \\newcounter{$1} % use \\the$1
 \\setcounter{$1}{1}
 % \\stepcounter{$1}
+endsnippet
+
+snippet cfs "choose font size" w
+\\tiny
+\\scriptsize
+\\footnotesize
+\\small
+\\normalsize
+\\large
+\\Large
+\\LARGE
+\\huge
+\\Huge
 endsnippet

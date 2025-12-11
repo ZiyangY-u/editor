@@ -16,10 +16,16 @@ au BufWinEnter *.tex if !exists('g:texInfoBuf') || !bufexists(g:texInfoBuf) | le
 " tex compile 
 let g:texCompileStatus = 0 " 0 : stop; 1 : running
 let g:texCompilePending = 0
+let g:texCompileSuccess = 0 " -1 : failure; 0 : running; 1 : success
 
 fu! s:TexCompilePost(jobId, data, event)
-    let target_path = fnamemodify(expand('%:p:r'), ':p:r')
-    sil exe printf('!mv %s.tmp.pdf %s.pdf', target_path, target_path)
+    if a:data == 0
+        let g:texCompileSuccess = 1
+        let target_path = fnamemodify(expand('%:p:r'), ':p:r')
+        sil exe printf('!mv %s.tmp.pdf %s.pdf', target_path, target_path)
+    else
+        let g:texCompileSuccess = -1
+    endif
 endf
 
 fu! CheckTexCompiling(timer)
@@ -51,6 +57,7 @@ fu! CompileTex()
         let g:texCompilePending = 1
         return
     endif
+    let g:texCompileSuccess = 0 " running
 
     let cmd = printf('xelatex --halt-on-error --jobname=%s.tmp %s > %s', expand('%:r'), expand('%:p'), bufname(g:texInfoBuf))
     let opts = {'detach':v:true, 'on_exit' : function('s:TexCompilePost')}
