@@ -47,6 +47,7 @@ from os import access, R_OK
 from os.path import isfile
 from jpn_ime_service import HIRAKANA
 from anon_expand import ESCAPE
+from unidecode import unidecode
 
 COMPLETE_BUF_DB_PATH = '/root/.config/nvim/completion_buf.db'
 JP_DICT_DB_PATH = '/root/.config/nvim/jp/completion.db'
@@ -637,6 +638,71 @@ def add_cn_chosen_cnt(word:str, cursor):
     elif len(chosen_cnt) == 0: # create new one
         insert_new_cn_word(word, cursor)
 
+def rebuild_de_dict():
+    print('rebuilding de-dict...')
+    with open('/usr/share/dict/ngerman', 'r') as file_read, open('/usr/share/dict/ngerman-search', 'w') as file_write:
+        for line in file_read.readlines():
+            content = line.strip('\n')
+            file_write.write(unidecode(content).lower() + ' ' + content + '\n')
+
+    fa = open('/usr/share/dict/ngerman-search-a', 'w')
+    fb = open('/usr/share/dict/ngerman-search-b', 'w')
+    fc = open('/usr/share/dict/ngerman-search-c', 'w')
+    fd = open('/usr/share/dict/ngerman-search-d', 'w')
+    fe = open('/usr/share/dict/ngerman-search-e', 'w')
+    ff = open('/usr/share/dict/ngerman-search-f', 'w')
+    fg = open('/usr/share/dict/ngerman-search-g', 'w')
+    fh = open('/usr/share/dict/ngerman-search-h', 'w')
+    fi = open('/usr/share/dict/ngerman-search-i', 'w')
+    fj = open('/usr/share/dict/ngerman-search-j', 'w')
+    fk = open('/usr/share/dict/ngerman-search-k', 'w')
+    fl = open('/usr/share/dict/ngerman-search-l', 'w')
+    fm = open('/usr/share/dict/ngerman-search-m', 'w')
+    fn = open('/usr/share/dict/ngerman-search-n', 'w')
+    fo = open('/usr/share/dict/ngerman-search-o', 'w')
+    fp = open('/usr/share/dict/ngerman-search-p', 'w')
+    fq = open('/usr/share/dict/ngerman-search-q', 'w')
+    fr = open('/usr/share/dict/ngerman-search-r', 'w')
+    fs = open('/usr/share/dict/ngerman-search-s', 'w')
+    ft = open('/usr/share/dict/ngerman-search-t', 'w')
+    fu = open('/usr/share/dict/ngerman-search-u', 'w')
+    fv = open('/usr/share/dict/ngerman-search-v', 'w')
+    fw = open('/usr/share/dict/ngerman-search-w', 'w')
+    fx = open('/usr/share/dict/ngerman-search-x', 'w')
+    fy = open('/usr/share/dict/ngerman-search-y', 'w')
+    fz = open('/usr/share/dict/ngerman-search-z', 'w')
+
+    with open('/usr/share/dict/ngerman-search', 'r') as f:
+        for line in f.readlines():
+            if line.startswith('a'): fa.write(line)
+            if line.startswith('b'): fb.write(line)
+            if line.startswith('c'): fc.write(line)
+            if line.startswith('d'): fd.write(line)
+            if line.startswith('e'): fe.write(line)
+            if line.startswith('f'): ff.write(line)
+            if line.startswith('g'): fg.write(line)
+            if line.startswith('h'): fh.write(line)
+            if line.startswith('i'): fi.write(line)
+            if line.startswith('j'): fj.write(line)
+            if line.startswith('k'): fk.write(line)
+            if line.startswith('l'): fl.write(line)
+            if line.startswith('m'): fm.write(line)
+            if line.startswith('n'): fn.write(line)
+            if line.startswith('o'): fo.write(line)
+            if line.startswith('p'): fp.write(line)
+            if line.startswith('q'): fq.write(line)
+            if line.startswith('r'): fr.write(line)
+            if line.startswith('s'): fs.write(line)
+            if line.startswith('t'): ft.write(line)
+            if line.startswith('u'): fu.write(line)
+            if line.startswith('v'): fv.write(line)
+            if line.startswith('w'): fw.write(line)
+            if line.startswith('x'): fx.write(line)
+            if line.startswith('y'): fy.write(line)
+            if line.startswith('z'): fz.write(line)
+
+    fa.close();fb.close();fc.close();fd.close();fe.close();ff.close();fg.close();fh.close();fi.close();fj.close();fk.close();fl.close();fm.close();fn.close();fo.close();fp.close();fq.close();fr.close();fs.close();ft.close();fu.close();fv.close();fw.close();fx.close();fy.close();fz.close()
+
 def query_all_dict(word:str, use_en:bool, use_de:bool):
     rst_list = []
     exp = '^' + '.*'.join([ESCAPE[ch] if ch in ESCAPE else '['+ch+ch.upper()+']' for ch in word])
@@ -729,6 +795,10 @@ if __name__ == '__main__':
     if sys.argv[1] == '-query_all':
         word = sys.argv[2]
         rst_list = query_all_dict(word, use_en=True, use_de=True)
+
+    if sys.argv[1] == '-rebuild_de_dict':
+        rebuild_de_dict()
+        exit(0)
 
     print(sys.argv[2])
     for it in rst_list:
