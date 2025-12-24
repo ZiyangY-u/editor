@@ -531,14 +531,13 @@ au BufReadPost,BufWritePost,BufEnter * if filereadable(bufname(bufnr())) && !has
 cal timer_start(1500, 'RefreshService', {'repeat': -1})
 au CursorMovedI,CursorHoldI,TextChangedP * sil redraw! | cal RefreshCandidates() | cal ClearVirtualTxt()
 au CompleteChanged * cal PumRenderVerticalScope(virtcol('.')-len(InsertingWord())-3)
-" au CursorMovedI * if complete_info()['mode'] == 'function' | cal nvim_feedkeys("\<C-x>\<C-u>", "i", 1) | en
 fu! PostComplete()
     if exists("v:completed_item['word']")
         cal jobstart(SendService((g:jpIme ? '-chosen_jp' : (g:cnIme ? '-chosen_cn' : '-chosen')), v:completed_item['word'].' '.g:inserted), {'detach':v:true})
         let g:exAnonExpand = ''
     en
 endf
-au CompleteDonePre * if complete_info(['mode'])['mode'] == 'files' && !empty(complete_info(['items']).items)
+au CompleteDonePre * if complete_info(['mode'])['mode'] == 'files' && !empty(complete_info(['items']).items) && complete_info(['selected'])['selected'] != -1
             \| sil cal nvim_feedkeys("\<c-x>\<c-f>", 'i', v:false) | en
 au CompleteDone * redraw! | cal PostComplete()
 au CompleteDone * if (g:jpIme || g:cnIme) && v:completed_item != {} | cal nvim_feedkeys("\<esc>a", 'i', v:false) | en

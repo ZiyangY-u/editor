@@ -268,7 +268,7 @@ printf "CREATE INDEX IDX_%s_%s ON %s(%s);\n", \$1, \$2, \$1, \$2
 endsnippet
 
 snippet excel_import_csv "excel_import_csv" w
-gsub("Int64.Type", "type text", $0);
-gsub("type datetime", "type text", $0);
-print $0
+gsub("Int64.Type", "type text", \$0);
+gsub("type datetime", "type text", \$0);
+print \$0
 endsnippet
