@@ -137,7 +137,7 @@ fu! SignMarks()
 endf
 com! -nargs=* DMarks :sil exe len(<q-args>)==0?'delm a-z':':delm '.expand(<f-args>)|cal SignMarks()
 au WinEnter,BufReadPost <buffer> cal SignMarks()
-hi Conceal ctermbg=none ctermfg=46
+hi Conceal ctermbg=none ctermfg=244
 fu! HideText(pattern, border)
     let pat = a:border ? '/\<'.a:pattern.'\>/' : '/'.a:pattern.'/'
     exe printf('syntax match pat_%s %s conceal cchar= %s', sha256(a:pattern), pat, (&ft==''?'':' containedin=ALL'))
@@ -1098,7 +1098,15 @@ fu! ToggleAll()
     echoh MoreMsg | echo '[C]ontext [B]lankChar auto[I]ndent [H]orizonCursor [A]wkShadow [R]ainbowBacket' | echoh None
     let ch = nr2char(getchar())
     if ch == 'c' | sil exe ':cal SignMarks()|ContextToggle'| en
-    if ch == 'b' | exe ':setl '.(&list == 1 ? 'nolist' : 'list') | en
+    if ch == 'b'
+        if &list == 1
+            setl nolist
+            syntax clear ideographic_space
+        else
+            setl list conceallevel=1
+            syntax match ideographic_space /　/ conceal cchar=〇 containedin=ALL
+        endif
+    endif
     if ch == 'h' | exe (&cuc == 1 ? 'setl nocuc' : 'setl cuc') | en
     if ch == 'r' | exe 'RainbowToggle' | en
     if ch == 'i'
