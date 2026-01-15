@@ -611,16 +611,23 @@ ca aa %!awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
 ca af !awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
 ca ar AwkRange
 ca raf r !awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
-ca an cal AwkToTemp()<cr>
+ca an cal AwkToTemp(v:false)<cr>
+ca anr cal AwkToTemp(v:true)<cr>
 ca ae tabe \| e +/main/;norm\ ztjj <c-r>=g:awk_file<cr>
 ca aef tabe \| e <c-r>=g:awk_func<cr>
 ca ase bo vsplit \| e +/main/;norm\ ztjj <c-r>=g:awk_file<cr>
 ca asef bo vsplit \| e <c-r>=g:awk_func<cr>
-fu! AwkToTemp() " direct awk result to a new temporary file
-    let target_file = expand('%:p')
+fu! AwkToTemp(dyOpenFlg) " direct awk result to a new temporary file
+    let [target_file, rstfile] = [expand('%:p'), tempname()]
     if IsDyBuf() | let target_file = b:dy_file | endif
-    cal execute(printf('tabe | e %s | r !awk -f %s %s', tempname(), g:awk_file, target_file))
-    exe "norm ggdd:w\n"
+    if a:dyOpenFlg
+        echo 'awk processing...'
+        cal system(printf('awk -f %s %s > %s', g:awk_file, target_file, rstfile))
+        cal DynamicOpen(rstfile)
+    else
+        cal execute(printf('tabe | e %s | r !awk -f %s %s', rstfile, g:awk_file, target_file))
+        exe "norm ggdd:w\n"
+    endif
 endf
 fu! AwkRange(n)
     exec printf('.r !for run in {1..%d} ; do echo ; done', a:n)

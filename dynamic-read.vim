@@ -24,8 +24,8 @@ fu! s:OnDyOpened(bn, jobId, data, event)
 endf
 
 fu! DynamicOpen(file)
-    echom 'Openining...'
-    let [tempname, file] = [tempname(), trim(system('realpath '.split(a:file, '|')[1]))]
+    echom 'Opening...'
+    let [tempname, file] = [tempname(), trim(system('realpath '.a:file))]
     let bn = bufnr(tempname, 1)
     cal setbufvar(bn, 'dy_file', file)
     cal setbufvar(bn, 'is_dy_buf', 1)
@@ -44,7 +44,7 @@ fu! DynamicOpen(file)
     setl nonu
 endf
 
-com! -nargs=1 MDyOpen :cal DynamicOpen(<f-args>) " the first column is size
+com! -nargs=1 MDyOpen :cal DynamicOpen(split(<f-args>, '|')[1]) " the first column is size
 com! -nargs=0 DyOpen :cal HiraishinOpen('', 'MDyOpen', 1)
 com! -nargs=1 DyLocate :cal DyRelocate(<f-args>)
 

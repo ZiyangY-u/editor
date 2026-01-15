@@ -302,14 +302,14 @@ DECLARE $1 CURSOR FOR
 `!v getreg('"')`
 
 OPEN $1
-FETCH NEXT FROM ACT_CURSOR INTO @ -- variable here
+FETCH NEXT FROM $1 INTO @ -- variable here
 WHILE @@FETCH_STATUS = 0
     BEGIN
     -- process here ↓↓↓
 
     -- process here ↑↑↑
 
-    FETCH NEXT FROM ACT_CURSOR INTO @ -- variable here as well
+    FETCH NEXT FROM $1 INTO @ -- variable here as well
     END
 CLOSE $1
 DEALLOCATE $1

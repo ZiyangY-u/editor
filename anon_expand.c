@@ -83,6 +83,7 @@ void _java_variabe(char c) {
         case 'v': printf("void"); break;
         case 'b': printf("boolean"); break;
         case 'B': printf("BigDecimal"); break;
+        case 'c': printf("class"); break;
         default:
         break;
     }

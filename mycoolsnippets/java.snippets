@@ -3,7 +3,7 @@ public static void main(String[] args){
 $0
 }
 endsnippet
-snippet systemprint "System.out.println" w
+snippet sysp "System.out.println" w
 System.out.println($0);
 endsnippet
 snippet { "{ bracket" w
@@ -114,9 +114,6 @@ endsnippet
 
 snippet / "doc" w
 /** $0 */
-endsnippet
-snippet rt "return" w
-return $0
 endsnippet
 snippet inf "log.info" w
 log.info("$0");
@@ -259,4 +256,12 @@ endsnippet
 snippet ds "" w
 import com.baomidou.dynamic.datasource.annotation.DS;
 @DS("BI")
+endsnippet
+
+snippet try "try-catch-finally" w
+try {
+	$0
+} catch () {
+} finally {
+}
 endsnippet
