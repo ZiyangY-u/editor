@@ -49,20 +49,22 @@ def set_text(cell):
     cell.number_format = '@'
 st = set_text
 
-def set_link(workbook, worksheet, pos, linksheet, linkpos, back_char=''):
+def set_link(workbook, worksheet, pos, destsheet, destpos, back_str='', back_linkpos = ''):
     if worksheet[pos].value is None:
         return
     hyperlink = Font(underline='single', color='0563C1')
     worksheet[pos].font = hyperlink
-    if linksheet:
-        worksheet[pos].hyperlink = f'#{linksheet}!{linkpos}'
+    if destsheet:
+        worksheet[pos].hyperlink = f'#{destsheet}!{destpos}'
     else:
-        worksheet[pos].hyperlink = f'#{worksheet.title}!{linkpos}'
-    if back_char: # set back link
-        _ws = workbook[linksheet] if linksheet else worksheet
-        _ws[linkpos] = back_char
-        _ws[linkpos].font = hyperlink
-        _ws[linkpos].hyperlink = f'#{worksheet.title}!{pos}'
+        worksheet[pos].hyperlink = f'#{worksheet.title}!{destpos}'
+    if back_str: # set back link
+        if back_linkpos == '':
+            back_linkpos = destpos
+        _ws = workbook[destsheet] if destsheet else worksheet
+        _ws[back_linkpos] = back_str
+        _ws[back_linkpos].font = hyperlink
+        _ws[back_linkpos].hyperlink = f'#{worksheet.title}!{pos}'
 
 def set_conditional_format(worksheet, cell_range, formula, font=DEFAULT_FONT, border=None, fill=None):
     kwargs = {'font' : font}
@@ -103,9 +105,6 @@ def process_sheet(wb, ws):
 
     ##################### examples #####################
     pass
-
-
-
 
 
 
