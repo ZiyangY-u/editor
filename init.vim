@@ -608,15 +608,13 @@ ino <expr> <c-p> fzf#vim#complete(extend(FzfFloatWin(), {'source':reverse(filter
 " awk misc
 let [g:awk_file, g:awk_shadow, g:awk_func] = ['~/.config/nvim/awk-template.awk', 0, '~/.config/nvim/awk-lib/functions.awk']
 ca aa %!awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
-ca af !awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
 ca ar AwkRange
-ca raf r !awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
 ca an cal AwkToTemp(v:false)<cr>
 ca anr cal AwkToTemp(v:true)<cr>
-ca ae tabe \| e +/main/;norm\ ztjj <c-r>=g:awk_file<cr>
-ca aef tabe \| e <c-r>=g:awk_func<cr>
-ca ase bo vsplit \| e +/main/;norm\ ztjj <c-r>=g:awk_file<cr>
-ca asef bo vsplit \| e <c-r>=g:awk_func<cr>
+ca ae tabe \| e +/main/;norm\ ztjj <c-r>=g:awk_file<cr>       " edit awk-file
+ca aef tabe \| e <c-r>=g:awk_func<cr>                         " edit awk function file
+ca ase bo vsplit \| e +/main/;norm\ ztjj <c-r>=g:awk_file<cr> " split edit awk-file
+ca asef bo vsplit \| e <c-r>=g:awk_func<cr>                   " split edit awk function file
 fu! AwkToTemp(dyOpenFlg) " direct awk result to a new temporary file
     let [target_file, rstfile] = [expand('%:p'), tempname()]
     if IsDyBuf() | let target_file = b:dy_file | endif
@@ -644,7 +642,7 @@ nn <silent> ,a :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=AwkOp
 " openpyxl misc
 com! -nargs=0 EdXl tabe | e +/script-here/;norm\ ztjj ~/.config/nvim/xl-script.py
 ca xl !python3 ~/.config/nvim/xl-script.py <C-R>=expand('%:p')<cr>
-ca xlrb !python3 ~/.config/nvim/xl-rollback.py <C-R>=expand('%:p')<cr>
+ca xlrb !python3 ~/.config/nvim/xl-rollback.py <C-R>=expand('%:p')<cr> " rollback
 " QuickFix Reflection
 fu! OpenQfBuf()
     let [g:qfbufnr, idx] = [bufadd('QuickFix-Reflection'), 1]
@@ -1031,7 +1029,7 @@ nn <expr> <a-i> (line('$') == line('.') \|\| line('.') == 1) ? 'ddP' : 'ddkP'
 nn ,q @=((expand('%')=='')?':quit!':((&mod==0)?':quit':':echo"Not Saved"'))<CR><CR>
 nn ,Q :quita!<CR>
 nn ,w @=(&ft == 'qfedit' ? ':cal ReflectAll()' : ':update')<CR><CR>
-ca qa sil cal ClearTmpBuf() \| qall
+ca qa sil cal ClearTmpBuf() \| qall " quit all
 "   surround operations ('s' for surround, 'S' for remove surround)
 nn s :set opfunc=SurroundOp<cr>g@
 vn s :<c-u>cal SurroundOp(visualmode())<cr>
