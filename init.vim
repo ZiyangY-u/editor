@@ -1173,7 +1173,7 @@ cal plug#begin('~/.vim/plugged')
     Plug 'andymass/vim-matchup'
     Plug 'ap/vim-css-color'
     Plug 'gelguy/wilder.nvim', { 'do': ':UpdateRemotePlugins' }
-    Plug 'ggandor/leap.nvim'
+    Plug 'https://codeberg.org/andyg/leap.nvim.git'
     Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
     Plug 'junegunn/fzf.vim'
     Plug 'junegunn/vim-easy-align'

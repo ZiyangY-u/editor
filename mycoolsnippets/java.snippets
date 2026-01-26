@@ -51,7 +51,7 @@ Map<String, String> $1 = new HashMap<>();
 endsnippet
 snippet listp "new List"
 ArrayList<`!v getreg('"')`> `!v
-substitute(getreg('"'), '\<.', '\l&', '')`List = new ArrayList<>();
+substitute(getreg('"'), '\<.', '\l&', '')`List = new ArrayList<`!v getreg('"')`>();
 endsnippet
 snippet new "new object from class"
 `!v getreg('"')` `!v substitute(getreg('"'), '\<.', '\l&', '')` = new `!v getreg('"')`();

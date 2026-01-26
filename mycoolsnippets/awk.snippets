@@ -262,6 +262,13 @@ endsnippet
 snippet wQ "wrap Quote" w
 \$0 = "\\"" \$0 "\\""
 endsnippet
+snippet wjoin "wrap join" w
+if (typeof(cnt) ~ /^un(typed|assigned)$/) cnt=8$0
+if (cnt == 0) {
+    printf "\n"
+    cnt=8
+} else cnt = cnt - 1
+endsnippet
 
 snippet db_idx "database create index" w
 printf "CREATE INDEX IDX_%s_%s ON %s(%s);\n", \$1, \$2, \$1, \$2
