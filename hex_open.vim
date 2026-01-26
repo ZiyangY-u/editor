@@ -1,6 +1,6 @@
 " xxd reading
 fu! HexOpen(file)
-    echom 'Openining...'
+    echom 'Opening...'
     let [tempname, file] = [tempname(), trim(system('realpath '.a:file))]
     exe 'tabe '.tempname
     exe 'r !xxd '.a:file
