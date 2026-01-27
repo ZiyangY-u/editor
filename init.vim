@@ -467,7 +467,7 @@ fu! RenderCandidate(_, word)
     retu {'word':seq[0].b:candidateSupply, 'menu':menu}
 endf
 fu! s:GotCandidates(jobId, data, event)
-    let b:candidateSupply = (g:pLang == 'de' ? ' ' : '')
+    let b:candidateSupply = (g:pLang == 'de' || g:pLang == 'en' ? ' ' : '')
     if a:jobId == g:completingId && mode() == 'i'
         let _data = filter(a:data, {_,item -> item != ''})
         if len(_data) >= 2
@@ -1660,7 +1660,8 @@ nn <silent> ,<tab>l :let g:TransMode='Latin'<CR>
 nn <silent> ,<tab>g :let g:TransMode='Greek'<CR>
 ino <silent> jj <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:jpIme == 1 ? [0,0] : [1,0])\|do User ImeChanged\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
 ino <silent> jc <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:cnIme == 1 ? [0,0] : [0,1])\|do User ImeChanged\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
-ino <silent> jd <c-\><c-o>:let g:pLang = (g:pLang == 'de' ? '' : 'de')<cr>
+ino <silent> jD <c-\><c-o>:let g:pLang = (g:pLang == 'de' ? '' : 'de')<cr>
+ino <silent> jE <c-\><c-o>:let g:pLang = (g:pLang == 'en' ? '' : 'en')<cr>
 im <silent><expr> <cr> (g:jpIme && complete_info().selected == -1) ? "<c-l>" : "<cr>"
 fu! DeMarkAutoReplace()
     let currTwo = getline('.')[col('.')-3:col('.')-2]

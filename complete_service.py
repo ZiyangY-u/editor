@@ -711,7 +711,12 @@ def query_all_dict(word:str, use_en:bool, use_de:bool):
         rst = result.stdout.decode('utf8').split('\n')
         for dict_word in filter(lambda x : x != '', rst):
             rst_list.append(CompletionItem(dict_word, '󰺄 dict[Eng]', len(dict_word)))
-        return sorted(rst_list, key=lambda i : i.freq)
+        print(word)
+        for i, it in enumerate(sorted(rst_list, key=lambda i : i.freq)):
+            print(it)
+            if i == 0 and str(it)[0].islower():
+                print(str(it).capitalize())
+        exit(0)
     if use_de:
         DE_ESCAPE = {
                 'a' : '[aäAÄ]',
@@ -788,7 +793,8 @@ if __name__ == '__main__':
 
     if sys.argv[1] == '-query_en':
         word = sys.argv[2]
-        rst_list = query_all_dict(word, use_en=True, use_de=False)
+        query_all_dict(word, use_en=True, use_de=False)
+
     if sys.argv[1] == '-query_de':
         word = sys.argv[2]
         rst_list = query_all_dict(word, use_en=False, use_de=True)

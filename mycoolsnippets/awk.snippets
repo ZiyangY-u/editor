@@ -263,10 +263,11 @@ snippet wQ "wrap Quote" w
 \$0 = "\\"" \$0 "\\""
 endsnippet
 snippet wjoin "wrap join" w
-if (typeof(cnt) ~ /^un(typed|assigned)$/) cnt=8$0
+_wjoinLEN=8$0
+if (typeof(cnt) ~ /^un(typed|assigned)$/) cnt=_wjoinLEN
 if (cnt == 0) {
     printf "\n"
-    cnt=8
+    cnt=_wjoinLEN
 } else cnt = cnt - 1
 endsnippet
 
