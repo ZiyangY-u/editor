@@ -525,7 +525,7 @@ def query_cn_wrap(sql_pinyin, sql_init, word):
     :param sql_init: query word by 声母
     """
     initials_pat = re.compile('^[qwrtypsdfghjklzxcvbnm]*$')
-    if initials_pat.match(word):
+    if initials_pat.match(word.replace('h', '', 1)[:2]):
         return sql_init.format(word)
     else:
         return sql_pinyin.format(word)
@@ -597,6 +597,11 @@ def insert_new_cn_word(word, cursor):
     init = p.get_initials(word)
     init_without_half = init.replace('-', '').lower()
     cursor.execute(f'insert into initials values ("{word}", "{init_without_half}");')
+    if init_without_half[-1] == 'j':
+        for pin in p.get_pinyins(word):
+            inits = p.get_initials(word).split('-')[:-1]
+            new_initials = ''.join(inits + pin.split('-')[-1:]).lower()
+            cursor.execute(f'insert into initials values ("{word}", "{new_initials}");')
 
 def choose_cn_dict(word:str, inserting:str):
     con_cn_dict = sqlite3.connect(CN_DICT_DB_PATH)
