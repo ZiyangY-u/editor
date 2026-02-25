@@ -714,11 +714,11 @@ endf
 com! -nargs=0 SQLint :let b:sqlJobId = jobstart(SqlLintCmd(), {'stdout_buffered':v:true, 'on_stdout':function('s:putSqlLintRst')})
 " automatic clear some cmd from cmd-history
 fu! ClearCmdHist()
-    for k in ['awk', 'Git', '^AsyncRun', "'<,'>", '^qa\?']
+    for k in ['awk', 'Git', '^AsyncRun', "'<,'>", '^qa\?', 'copen']
         cal histdel(':', k)
     endfor
 endf
-au CmdlineLeave,CmdwinEnter,CmdwinLeave * cal ClearCmdHist()
+au VimLeavePre * cal ClearCmdHist()
 " }}}
 " => Handle -------------------- {{{
 " :h key-notation to get more key combination patterns or Ctrl-V to hard-coding
