@@ -603,6 +603,18 @@ def insert_new_cn_word(word, cursor):
             new_initials = ''.join(inits + pin.split('-')[-1:]).lower()
             cursor.execute(f'insert into initials values ("{word}", "{new_initials}");')
 
+def remove_cn_word(word:str, pinyin):
+    con_cn_dict = sqlite3.connect(CN_DICT_DB_PATH)
+    cur = con_cn_dict.cursor()
+    if pinyin is None:
+        cur.execute(f'delete from cn_dict where word = "{word}"')
+        cur.execute(f'delete from pinyin_plain where word = "{word}"')
+        cur.execute(f'delete from pinyin_mark where word = "{word}"')
+        cur.execute(f'delete from initials where word = "{word}"')
+    else:
+        cur.execute(f'delete from pinyin_plain where word = "{word}"')
+    con_cn_dict.commit()
+
 def choose_cn_dict(word:str, inserting:str):
     con_cn_dict = sqlite3.connect(CN_DICT_DB_PATH)
     cur = con_cn_dict.cursor()
@@ -795,6 +807,12 @@ if __name__ == '__main__':
     if sys.argv[1] == '-chosen_cn':
         chosen_word, inserting = sys.argv[2:4]
         choose_cn_dict(chosen_word, inserting.replace(DELIMITATOR, ''))
+
+    if sys.argv[1] == '-remove_cn':
+        if len(sys.argv) == 3:
+            remove_cn_word(sys.argv[2], None)
+        elif len(sys.argv) == 4:
+            remove_cn_word(sys.argv[2], sys.argv[3])
 
     if sys.argv[1] == '-query_en':
         word = sys.argv[2]

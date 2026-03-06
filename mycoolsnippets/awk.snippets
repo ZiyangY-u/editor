@@ -47,7 +47,7 @@ snippet 0nl "$0 not like" w
 \$0 !~ /$0/
 endsnippet
 snippet n1 "if NR == 1" w
-if (NR == 1)
+if (NR == 1) {}
 else
 endsnippet
 
@@ -284,3 +284,4 @@ gsub("Int64.Type", "type text", \$0);
 gsub("type datetime", "type text", \$0);
 print \$0
 endsnippet
+

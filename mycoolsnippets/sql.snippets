@@ -278,7 +278,7 @@ ORIGINAL_KBN = 'R'
 endsnippet
 
 snippet prod "prod" w
-本番データを取ってください
+-- 本番データを取ってください
 endsnippet
 
 snippet nl "newline" w
@@ -287,6 +287,10 @@ endsnippet
 
 snippet replace "replace" w
 REPLACE(${VISUAL}$0, '', '')
+endsnippet
+
+snippet rcr "remove cr" w
+REPLACE(REPLACE(`!v getreg('"')`, char(10), ''), char(13), '')
 endsnippet
 
 snippet mr "まる" w
