@@ -36,6 +36,8 @@ set title titlestring=%<%F titlelen=0
 set ph=10 pw=20
 
 " Statusline
+hi Statusline cterm=bold ctermfg=white
+
 hi mod cterm=bold ctermfg=Black ctermbg=DarkRed
 hi totalL cterm=bold ctermfg=White ctermbg=Blue
 hi fileType cterm=bold ctermfg=Red ctermbg=Blue
@@ -450,7 +452,7 @@ set cot=menu,menuone,noselect,preview ssop+=globals
 "   auto completion
 let [g:completingId, g:jpIme, g:cnIme, g:inserted, g:refreshFlag, g:pathQueue, g:omniExclude, g:serviceBlackList] = [0, 0, 0, '', 0, {}, {}, {}]
 fu! SendService(arg1, arg2)
-    let cmd = ['~/.config/nvim/complete_service.py', a:arg1, a:arg2]
+    let cmd = ['python3 ~/.config/nvim/complete_service.py', a:arg1, a:arg2]
     retu join(cmd, ' ')
 endf
 let g:completeKinds = {1:' Text',2:' Method',3:'󰊕 Function',4:' Constructor',5:' Field',6:'󰫧 Variable',7:' Class',8:' Interface',9:'󰕳 Module',10:' Property',11:'Unit',12:'Value',13:'Enum',14:' Keyword',15:' Snippet',16:'Color',17:'File',18:'Reference',19:'Folder',20:'EnumMember',21:' Constant',22:'Struct',23:'Event',24:' Operator',25:'TypeParameter',}
@@ -480,7 +482,7 @@ fu! s:GotCandidates(jobId, data, event)
         endif
         let [candidates, b:c_items, g:inserted] = [_data[1:], [], InsertingWord()]
         if &omnifunc != '' && !g:jpIme && !g:cnIme && !has_key(g:omniExclude, &ft) " blocking request
-            let luacmd = "vim.lsp.buf_request_sync(".bufnr().",'textDocument/completion', vim.lsp.util.make_position_params(), 500)"
+            let luacmd = "vim.lsp.buf_request_sync(".bufnr().",'textDocument/completion', vim.lsp.util.make_position_params(nil, 'utf-8'), 500)"
             try
                 let _clientId = luaeval("next(".luacmd.")")
                 let fromlsp = luaeval(luacmd."["._clientId."]")
@@ -946,13 +948,14 @@ endfor
 " Tab (ngt to go go n-th tab)
 com! -bang -nargs=0 SetAnchor :let b:anchorLn=(<bang>0 ? 0 : line('.'))
 set stal=2
-hi TabLine cterm=none ctermfg=black ctermbg=247
+hi TabLine cterm=none ctermbg=black ctermfg=247
 hi Title cterm=bold ctermfg=red
-hi Git ctermfg=Black ctermbg=185
-hi Trans ctermfg=227 ctermbg=31
-hi Obss ctermfg=Black ctermbg=118
-hi CSInfo cterm=bold ctermfg=white ctermbg=blue
-hi PreferLang ctermfg=black ctermbg=135
+hi Git ctermbg=Black ctermfg=185
+hi Trans ctermbg=227 ctermfg=31
+hi Obss ctermbg=Black ctermfg=118
+hi CSInfo cterm=bold ctermbg=white ctermfg=blue
+hi PreferLang ctermbg=black ctermfg=135
+hi error ctermfg=red ctermbg=white
 nn ,t :cal SplitOp('tabe \|', '')<CR>
 vn ,t :cal SplitOp('tabe \|', Selected())<CR>
 nn ,T :cal SplitOp('-tabe \|', '')<CR>
@@ -984,7 +987,7 @@ endf
 let g:asyncrun_red = {'':"", 'running':"  ", 'failure':"  "}
 fu! ActTal()
     let [tal, curr] = ['', tabpagenr()]
-    hi cc ctermfg=black ctermbg=lightgreen
+    hi cc ctermbg=black ctermfg=lightgreen
     for tn in range(1, tabpagenr('$'))
         let [fg, bg] = ['white', 244-(tn % 6)]
         let winIds = gettabinfo(tn)[0]['windows']
@@ -993,8 +996,8 @@ fu! ActTal()
             if has_key(g:BufColors, bn) | let fg = string(g:BufColors[bn]) | en
         endfor
         let fname = map(bufnrs, {_,bn -> Shortf(Bufname(bn))})
-        exe printf('hi c%s ctermfg=%s ctermbg=%s', bg, fg, bg)
-        exe printf('hi ct%s ctermfg=lightred ctermbg=%s', bg, bg)
+        exe printf('hi c%s ctermbg=%s ctermfg=%s', bg, fg, bg)
+        exe printf('hi ct%s ctermbg=lightred ctermfg=%s', bg, bg)
         let tal .= (tn==curr?'':'%#ct'.bg.'#%  '.tn).'%#c'.(tn==curr?'c':bg).'#%  '.join(fname,'|').' '
     endfor
     let tal .= "%#TabLine#%="
@@ -1208,7 +1211,8 @@ cal plug#begin('~/.vim/plugged')
     Plug 'unblevable/quick-scope'
     Plug 'wellle/context.vim'
     Plug 'wellle/targets.vim'
-    Plug 'williamboman/nvim-lsp-installer'
+    Plug 'mason-org/mason.nvim'
+    Plug 'mason-org/mason-lspconfig.nvim'
     Plug 'yuezk/vim-js'
     Plug 'luochen1990/rainbow'
 
@@ -1244,6 +1248,7 @@ hi Purple ctermfg=135 ctermbg=none
 let g:fzf_colors = {'hl':['fg', 'Purple'], 'hl+':['fg', 'Purple']}
 let g:MfzfOpts = ['-1', '-m', '-i', '--reverse',]
 " ultisnips
+let g:python3_host_prog = '/root/.venv/nvim-311/bin/python3'
 fu! UltiExpand(fromVisual)
     let [snips, query] = [UltiSnips#SnippetsInCurrentScope(1), '']
     if a:fromVisual == 1
@@ -1356,6 +1361,7 @@ let g:easy_align_delimiters = {
             \ '/': { 'pattern': '//\+\|/\*\|\*/', 'delimiter_align': 'l', 'ignore_groups':   ['!Comment'] },
             \}
 " wilder.nvim
+let g:loaded_wilder=1
 call wilder#setup({'modes': [':', '/']})
 call wilder#set_option('renderer', wilder#popupmenu_renderer({ 'highlighter': wilder#basic_highlighter(), }))
 " Gutentags
@@ -1802,14 +1808,8 @@ exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/dynamic-read.vim'
 
 " => LSP -------------------- {{{
 lua << EOF
-require("nvim-lsp-installer").setup {}
-local lspconfig = require('lspconfig')
-lspconfig.pyright.setup{}
-lspconfig.html.setup{}
-lspconfig.cssls.setup{}
-lspconfig.vimls.setup{}
-lspconfig.clangd.setup{}
-lspconfig.texlab.setup{}
-lspconfig.awk_ls.setup{}
+require("mason").setup()
+require("mason-lspconfig").setup({
+})
 EOF
 " }}}
