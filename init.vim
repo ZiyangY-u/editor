@@ -955,7 +955,7 @@ hi Trans ctermbg=227 ctermfg=31
 hi Obss ctermbg=Black ctermfg=118
 hi CSInfo cterm=bold ctermbg=white ctermfg=blue
 hi PreferLang ctermbg=black ctermfg=135
-hi error ctermfg=red ctermbg=white
+hi error ctermbg=red ctermfg=white
 nn ,t :cal SplitOp('tabe \|', '')<CR>
 vn ,t :cal SplitOp('tabe \|', Selected())<CR>
 nn ,T :cal SplitOp('-tabe \|', '')<CR>

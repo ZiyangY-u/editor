@@ -79,6 +79,8 @@ ch_df = pd.read_excel('./CharFreq-Combined.xls')
 
 for i, row in track(ch_df.iterrows(), description='import 漢字'):
     word, freq, pinyin = row
+    if freq <= 900:
+        continue
     sqls = insert_character_sql(word, freq, pinyin)
     for sql in sqls:
         cur.execute(sql)
@@ -111,6 +113,8 @@ import_file('./weibo_wordfreq.release_UTF-8.txt')
 
 print(f'{len(words_to_import)} to import ...')
 for word, freq in track(words_to_import.items(), description='import words'):
+    if freq <= 900:
+        continue
     src = words_src[word] if word in words_to_import else ''
     sqls = insert_word_sql(word, freq, src)
     for sql in sqls:
@@ -131,5 +135,11 @@ index_sqls = [
         ]
 for idx_sql in track(index_sqls, description='creating indices...'):
     cur.execute(idx_sql)
+
+# remove words with very low frequency
+cur.execute('delete from pinyin_plain where word in (select word from cn_dict where frequency <= 900);')
+cur.execute('delete from pinyin_mark where word in (select word from cn_dict where frequency <= 900);')
+cur.execute('delete from initials where word in (select word from cn_dict where frequency <= 900);')
+cur.execute('delete from cn_dict where frequency <= 900;')
 
 con.commit()
