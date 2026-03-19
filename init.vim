@@ -425,11 +425,11 @@ fu! PairHint()
     if virtcol('.') > virtcol('$')-1 | retu | en
     let cchar_nr = strgetchar(getline('.')[col('.') - 1:], 0)
     if !empty(getline('.')) && mode() == 'n' && cchar_nr >= 0
-        let ch_width = system("hexdump -v -e '/1 \"%02x\"' | /root/.config/nvim/char_width", nr2char(cchar_nr))
+        let ch_width = system("hexdump -v -e '/1 \"%02x\"' | ".VimrcPath()."char_width", nr2char(cchar_nr))
         let ccol = virtcol('.') - (ch_width-1)
         let bs = system("hexdump -v -e '/1 \"%02x\"'", getline('.'))
-        let b:phJid = jobstart('echo ' . bs .' | '. join(['/root/.config/nvim/pair_hint', ccol, &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
-        let b:qhJid = jobstart('echo ' . bs . ' | '. join(['/root/.config/nvim/quote_hint', ccol, &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
+        let b:phJid = jobstart('echo ' . bs .' | '. join([VimrcPath().'pair_hint', ccol, &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
+        let b:qhJid = jobstart('echo ' . bs . ' | '. join([VimrcPath().'quote_hint', ccol, &tabstop], ' '), {'stdout_buffered':v:true, 'on_stdout':function('s:MarkRst')})
     endif
 endf
 au CursorHold * if &ft!='xxd' | cal PairHint() | en
@@ -1514,6 +1514,9 @@ fu! GetAllExmarks()
         endfor
     endfor
     retu marks
+endf
+fu! VimrcPath()
+    retu fnamemodify($MYVIMRC, ':h') . '/'
 endf
 
 " ----------------- Operator Functions -----------------
