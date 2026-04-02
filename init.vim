@@ -452,7 +452,7 @@ set cot=menu,menuone,noselect,preview ssop+=globals
 "   auto completion
 let [g:completingId, g:jpIme, g:cnIme, g:inserted, g:refreshFlag, g:pathQueue, g:omniExclude, g:serviceBlackList] = [0, 0, 0, '', 0, {}, {}, {}]
 fu! SendService(arg1, arg2)
-    let cmd = ['python3 ~/.config/nvim/complete_service.py', a:arg1, a:arg2]
+    let cmd = ['python3.11 ~/.config/nvim/complete_service.py', a:arg1, a:arg2]
     retu join(cmd, ' ')
 endf
 let g:completeKinds = {1:' Text',2:' Method',3:'󰊕 Function',4:' Constructor',5:' Field',6:'󰫧 Variable',7:' Class',8:' Interface',9:'󰕳 Module',10:' Property',11:'Unit',12:'Value',13:'Enum',14:' Keyword',15:' Snippet',16:'Color',17:'File',18:'Reference',19:'Folder',20:'EnumMember',21:' Constant',22:'Struct',23:'Event',24:' Operator',25:'TypeParameter',}
@@ -607,40 +607,6 @@ fu! FzfFloatWin()
 endf
 nn <c-p> :cal fzf#run(extend({'sinklist': function('PutYankHist')}, FzfFloatWin()))<cr>
 ino <expr> <c-p> fzf#vim#complete(extend(FzfFloatWin(), {'source':reverse(filter(copy(g:yankHistory), {_,his -> stridx(his, "\n") == -1}))}))
-" awk misc
-let [g:awk_file, g:awk_shadow, g:awk_func] = ['~/.config/nvim/awk-template.awk', 0, '~/.config/nvim/awk-lib/functions.awk']
-ca aa %!awk -f <c-r>=g:awk_file<cr> FILE_NAME=<C-R>=expand('%:p')<CR>
-ca ar AwkRange
-ca an cal AwkToTemp(v:false)<cr>
-ca anr cal AwkToTemp(v:true)<cr>
-ca ae tabe \| e +/main/;norm\ ztjj <c-r>=g:awk_file<cr>       " edit awk-file
-ca aef tabe \| e <c-r>=g:awk_func<cr>                         " edit awk function file
-ca ase bo vsplit \| e +/main/;norm\ ztjj <c-r>=g:awk_file<cr> " split edit awk-file
-ca asef bo vsplit \| e <c-r>=g:awk_func<cr>                   " split edit awk function file
-fu! AwkToTemp(dyOpenFlg) " direct awk result to a new temporary file
-    let [target_file, rstfile] = [expand('%:p'), tempname()]
-    if IsDyBuf() | let target_file = b:dy_file | endif
-    if a:dyOpenFlg
-        echo 'awk processing...'
-        cal system(printf('awk -f %s %s > %s', g:awk_file, target_file, rstfile))
-        cal DynamicOpen(rstfile)
-    else
-        cal execute(printf('tabe | e %s | r !awk -f %s %s', rstfile, g:awk_file, target_file))
-        exe "norm ggdd:w\n"
-    endif
-endf
-fu! AwkRange(n)
-    exec printf('.r !for run in {1..%d} ; do echo ; done', a:n)
-    exec printf('norm %dk', a:n-1)
-    sil exec printf('.,.+%d !awk -f %s FILE_NAME=%s', a:n-1, g:awk_file, expand('%:p'))
-endf
-com! -nargs=1 AwkRange :cal AwkRange(<f-args>)
-fu! AwkOp(type)
-    let range = (a:type ==# 'line' ? "'[,']" : ".")
-    exe printf("%s!awk -f %s FILE_NAME=%s", range, g:awk_file, expand('%:p'))
-    if g:autoIndentFlg == 1 | exe 'norm! `]j=`[' | en " auto indent after Op
-endf
-nn <silent> ,a :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=AwkOp<cr>g@
 " openpyxl misc
 com! -nargs=0 EdXl tabe | e +/script-here/;norm\ ztjj ~/.config/nvim/xl-script.py
 ca xl !python3 ~/.config/nvim/xl-script.py <C-R>=expand('%:p')<cr>
@@ -1248,7 +1214,7 @@ hi Purple ctermfg=135 ctermbg=none
 let g:fzf_colors = {'hl':['fg', 'Purple'], 'hl+':['fg', 'Purple']}
 let g:MfzfOpts = ['-1', '-m', '-i', '--reverse',]
 " ultisnips
-let g:python3_host_prog = '/root/.venv/nvim-311/bin/python3'
+let g:python3_host_prog = '/root/.venv/bin/python3'
 fu! UltiExpand(fromVisual)
     let [snips, query] = [UltiSnips#SnippetsInCurrentScope(1), '']
     if a:fromVisual == 1
@@ -1803,11 +1769,12 @@ fu! Xearch(...) " bang, target, opts...
     en
 endf
 " }}}
-exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/hex_open.vim'
-exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/properties_open.vim'
-exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/rename_files.vim'
-exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/embed-sql.vim'
-exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/dynamic-read.vim'
+exec 'so '.VimrcPath().'/hex_open.vim'
+exec 'so '.VimrcPath().'/properties_open.vim'
+exec 'so '.VimrcPath().'/rename_files.vim'
+exec 'so '.VimrcPath().'/embed-sql.vim'
+exec 'so '.VimrcPath().'/dynamic-read.vim'
+exec 'so '.VimrcPath().'./awk-misc.vim'
 
 " => LSP -------------------- {{{
 lua << EOF
