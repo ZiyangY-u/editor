@@ -921,7 +921,7 @@ hi Trans ctermbg=227 ctermfg=31
 hi Obss ctermbg=Black ctermfg=118
 hi CSInfo cterm=bold ctermbg=white ctermfg=blue
 hi PreferLang ctermbg=black ctermfg=135
-hi error ctermbg=red ctermfg=white
+hi AsyncRunInfo ctermbg=red ctermfg=white
 nn ,t :cal SplitOp('tabe \|', '')<CR>
 vn ,t :cal SplitOp('tabe \|', Selected())<CR>
 nn ,T :cal SplitOp('-tabe \|', '')<CR>
@@ -969,7 +969,7 @@ fu! ActTal()
     let tal .= "%#TabLine#%="
     " running indicators
     if g:texCompilePending == 1 || g:texCompileStatus == 1 | let tal .= "%#texPage#  %{g:texCompilePending == 1 ? 'P ' : 'R '}" | en
-    let tal .= "%#error#%{g:asyncCnt > 0 ? '  '.g:asyncCnt.' ':''}".(g:asyncrun_status!='success'?g:asyncrun_red[g:asyncrun_status]:'').(g:texCompileResult==-1?'  ':'')
+    let tal .= "%#AsyncRunInfo#%{g:asyncCnt > 0 ? '  '.g:asyncCnt.' ':''}".(g:asyncrun_status!='success'?g:asyncrun_red[g:asyncrun_status]:'').(g:texCompileResult==-1?'  ':'')
     let tal .= "%{gutentags#statusline() == '' ? '' : ' 󱈢 '}"
     if g:refreshFlag == 1 | let tal .= "%#CSInfo#%{'[󱦟'.(empty(g:pathQueue) ? ']' : ' '.len(g:pathQueue).']')}" | en
     let tal .= "%#CSInfo#".(g:asyncrun_status=='success' ? '  ':'').(g:texCompileResult==1 ? '  ' : '')
@@ -1317,8 +1317,8 @@ ca gco cal fzf#run({'source':'git branch', 'dir':expand('%:p:h'), 'sink':{gb -> 
 ca gch Git checkout
 ca gm Git merge
 ca gcmt Git blame --date=format-local:'%Y/%m/%d %H:%M:%S'
-ca gpl AsyncRun -cwd=<C-R>=expand('%:p:h')<CR> git pull origin <c-r>=fugitive#Head(0,FugitiveGitDir())<CR>
-ca gps AsyncRun -cwd=<C-R>=expand('%:p:h')<CR> git push origin <c-r>=fugitive#Head(0,FugitiveGitDir())<CR>
+ca gpl AsyncRun -mode=term -focus=0 -rows=10 -cwd=<C-R>=expand('%:p:h')<CR> git pull origin <c-r>=fugitive#Head(0,FugitiveGitDir())<CR>
+ca gps AsyncRun -mode=term -focus=0 -rows=10 -cwd=<C-R>=expand('%:p:h')<CR> git push origin <c-r>=fugitive#Head(0,FugitiveGitDir())<CR>
 " vim-easy-align
 xn g= <Plug>(EasyAlign)
 nn g= :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)<cr><Plug>(EasyAlign)
@@ -1330,6 +1330,10 @@ let g:easy_align_delimiters = {
 let g:loaded_wilder=1
 call wilder#setup({'modes': [':', '/']})
 call wilder#set_option('renderer', wilder#popupmenu_renderer({ 'highlighter': wilder#basic_highlighter(), }))
+" vim-signify
+hi SignifySignAdd ctermfg=black ctermbg=122
+hi SignifySignDelete ctermfg=black ctermbg=122
+hi SignifySignChange ctermfg=black ctermbg=122
 " Gutentags
 let g:gutentags_ctags_extra_args = ['-n']
 " Undotree
