@@ -776,7 +776,7 @@ nn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen("", "MEdit", 0)':':Fil
 vn <silent> <leader>o @=(g:HRSmode==1?':cal HiraishinOpen(Selected(), "MEdit", 0)':':Files')<CR><CR>
 vn <silent> <leader>O @=(g:HRSmode==1?':cal HiraishinOpen(".".Selected(), "MEdit", 0)':':Files')<CR><CR>
 let g:openExclude = ['"*.class"']
-let g:openExcludePath = ['"*/target/*"', '"*/.git/*"']
+let g:openExcludePath = ['"*/target/*"', '"*/.git/*"', '"*/node_modules/*"']
 fu! OpenByFile(fn)
     let [paths, e] = ['', empty(g:openExclude) ? '' : ' -not -name '.join(g:openExclude, ' -not -name ')]
     let e .= empty(g:openExcludePath) ? '' : ' -not -ipath '.join(g:openExcludePath, ' -not -ipath ')
