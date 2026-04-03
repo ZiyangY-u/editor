@@ -553,7 +553,7 @@ for i in range(2, 9)
     exe printf("im J%d %s<cr>", i, repeat("<s-tab>", i))
 endfor
 exe printf("im j%d %s<cr>", 0, repeat("<tab>", 10))
-exe printf("im j<space> %s<cr>", "<tab>")
+im <silent><expr> <space> g:cnIme ? "\<tab>\<cr>" : "\<space>"
 "   snip expand
 im <silent><expr> <c-l> (g:canSnipExpand \|\| UltiSnips#CanExpandSnippet()) ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'i', '', {})<cr>" :
