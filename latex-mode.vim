@@ -51,4 +51,12 @@ fu! CompileTex()
     let opts = {'detach':v:true, 'on_exit' : function('s:TexCompilePost')}
     let g:texCompileJID = jobstart(cmd, opts)
 endfu
-com! -nargs=0 TexLog :exe 'tabe | e +$;norm\ zz '.fnamemodify(expand('%:p:r'), ':p:r').'.tmp.log'
+
+fu! ShowLog()
+    let tmpfile = tempname()
+    let cmd = 'texlogsieve '.fnamemodify(expand('%:p:r'), ':p:r').'.log > ' . tmpfile
+    cal system(cmd)
+
+    retu tmpfile
+endf
+com! -nargs=0 TexLog :exe 'tabe | e +$;norm\ zz '.ShowLog()
