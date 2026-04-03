@@ -211,6 +211,7 @@ com! -nargs=0 DBAttach :unlet g:BufColors[bufnr()]
 let g:vertLineMark = nvim_create_namespace('vertLineMark')
 const [g:DOWN, g:UP] = [0, 1]
 fu! PumRenderVerticalScope(col)
+    echom "PumRenderVerticalScope on ".a:col
     cal ClearVirtualTxt()
     let ppos = pum_getpos()
     if !has_key(ppos, 'height') | retu | en " exit when pum not showing
@@ -533,6 +534,7 @@ au BufReadPost,BufWritePost,BufEnter * if filereadable(bufname(bufnr())) && !has
 cal timer_start(1500, 'RefreshService', {'repeat': -1})
 au CursorMovedI,CursorHoldI,TextChangedP * sil redraw! | cal RefreshCandidates() | cal ClearVirtualTxt()
 au CompleteChanged * cal PumRenderVerticalScope(virtcol('.')-len(InsertingWord())-3)
+au CompleteChanged * if g:cnIme && pumvisible() | cal PumRenderVerticalScope(virtcol('.')-len(InsertingWord())-4) | endif
 fu! PostComplete()
     if exists("v:completed_item['word']")
         cal jobstart(SendService((g:jpIme ? '-chosen_jp' : (g:cnIme ? '-chosen_cn' : '-chosen')), v:completed_item['word'].' '.g:inserted), {'detach':v:true})
@@ -549,11 +551,18 @@ ino <m-u> <c-w><c-r>=g:hint_word<cr>
 im <silent><expr> <tab> pumvisible() ? "\<down>" : (UltiSnips#CanExpandSnippet() ? "\<c-l>" : "\<tab>")
 ino <silent><expr> <s-tab> pumvisible() ? "\<up>" : "\<tab>"
 for i in range(2, 9)
-    exe printf("im j%d %s<cr>", i, repeat("<tab>", i))
-    exe printf("im J%d %s<cr>", i, repeat("<s-tab>", i))
+    " normal mode
+    exe printf("im j%d %s<cr>", i, repeat("<tab>", i)) 
+    " cnIme mode
+    exe printf('im <silent><expr> %d g:cnIme && pumvisible() ? "%s\<cr>" : %d', i, repeat('\<tab>', i), i)
 endfor
+"   normal mode for j<space> (first candidate) and 0 (10th candidate)
+exe printf("im j<space> %s<cr>", "<tab>")
 exe printf("im j%d %s<cr>", 0, repeat("<tab>", 10))
-im <silent><expr> <space> g:cnIme ? "\<tab>\<cr>" : "\<space>"
+"   cnIme mode for <space> (first candidate) and 0 (10th candidate)
+im <silent><expr> <space> g:cnIme && pumvisible() ? "\<tab>\<cr>" : "\<space>"
+exe printf('im <silent><expr> 0 g:cnIme && pumvisible() ? "%s\<cr>" : 0', repeat('\<tab>', 10))
+
 "   snip expand
 im <silent><expr> <c-l> (g:canSnipExpand \|\| UltiSnips#CanExpandSnippet()) ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'i', '', {})<cr>" :
