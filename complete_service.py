@@ -603,6 +603,12 @@ def insert_new_cn_word(word, cursor):
             new_initials = ''.join(inits + pin.split('-')[-1:]).lower()
             cursor.execute(f'insert into initials values ("{word}", "{new_initials}");')
 
+def clear_cn_tmp():
+    con_cn_dict = sqlite3.connect(CN_DICT_DB_PATH)
+    cur = con_cn_dict.cursor()
+    cur.execute('delete from cn_create_tmp')
+    con_cn_dict.commit()
+
 def remove_cn_word(word:str, pinyin):
     con_cn_dict = sqlite3.connect(CN_DICT_DB_PATH)
     cur = con_cn_dict.cursor()
@@ -813,6 +819,8 @@ if __name__ == '__main__':
             remove_cn_word(sys.argv[2], None)
         elif len(sys.argv) == 4:
             remove_cn_word(sys.argv[2], sys.argv[3])
+    if sys.argv[1] == '-clear_cn_tmp':
+        clear_cn_tmp()
 
     if sys.argv[1] == '-query_en':
         word = sys.argv[2]
