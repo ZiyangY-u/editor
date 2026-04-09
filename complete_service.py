@@ -44,14 +44,14 @@ import logging
 import copy
 import subprocess
 from os import access, R_OK
-from os.path import isfile
+from os.path import isfile, expanduser
 from jpn_ime_service import HIRAKANA
 from anon_expand import ESCAPE
 from unidecode import unidecode
 
-COMPLETE_BUF_DB_PATH = '/root/.config/nvim/completion_buf.db'
-JP_DICT_DB_PATH = '/root/.config/nvim/jp/completion.db'
-CN_DICT_DB_PATH = '/root/.config/nvim/cn/completion.db'
+COMPLETE_BUF_DB_PATH = expanduser('~/.config/nvim/completion_buf.db')
+JP_DICT_DB_PATH = expanduser('~/.config/nvim/jp/completion.db')
+CN_DICT_DB_PATH = expanduser('~/.config/nvim/cn/completion.db')
 WORD_PAT = re.compile('(?u)([\w]{3,})')
 VOWELS = 'aeiou'
 DELIMITATOR = '/'
@@ -450,9 +450,9 @@ def query_jp_dict(word:str):
         rst_list.append(CompletionItem(''.join(DIGITS[d] for d in [*"{:,}".format(int(word))]), 'digit'))
 
     # katakana
-    result = subprocess.run(['/root/.config/nvim/romaji_hirakana', word], stdout=subprocess.PIPE)
+    result = subprocess.run([expanduser('~/.config/nvim/romaji_hirakana'), word], stdout=subprocess.PIPE)
     hirakana = result.stdout.decode('utf8').rstrip()
-    result = subprocess.run(['/root/.config/nvim/hirakana_to_katakana', hirakana], stdout=subprocess.PIPE)
+    result = subprocess.run([expanduser('~/.config/nvim/hirakana_to_katakana'), hirakana], stdout=subprocess.PIPE)
     rst_list.append(CompletionItem(result.stdout.decode('utf8').rstrip(), 'カタカナ'))
     # かな
     rst_list.insert(1, CompletionItem(hirakana, '平仮名')) # one candidate for quick select kana

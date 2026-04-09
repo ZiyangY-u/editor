@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd /root/.config/nvim
+cd ~/.config/nvim
 cc anon_expand.c -o anon_expand
 echo "anon_expand compiled!"
 

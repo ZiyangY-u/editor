@@ -1223,7 +1223,7 @@ hi Purple ctermfg=135 ctermbg=none
 let g:fzf_colors = {'hl':['fg', 'Purple'], 'hl+':['fg', 'Purple']}
 let g:MfzfOpts = ['-1', '-m', '-i', '--reverse',]
 " ultisnips
-let g:python3_host_prog = '/root/.venv/bin/python3'
+let g:python3_host_prog = '~/.venv/bin/python3'
 fu! UltiExpand(fromVisual)
     let [snips, query] = [UltiSnips#SnippetsInCurrentScope(1), '']
     if a:fromVisual == 1
@@ -1653,7 +1653,7 @@ nn <silent> ,<tab>o o<esc>:cal TranslitMode()<CR>
 nn <silent> ,<tab>l :let g:TransMode='Latin'<CR>
 nn <silent> ,<tab>g :let g:TransMode='Greek'<CR>
 ino <silent> jJ <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:jpIme == 1 ? [0,0] : [1,0])\|do User ImeChanged\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
-ino <silent> jC <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:cnIme == 1 ? [0,0] : [0,1])\|do User ImeChanged\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
+ino <silent> jc <c-\><c-o>:let [g:jpIme,g:cnIme] = (g:cnIme == 1 ? [0,0] : [0,1])\|do User ImeChanged\|cal HlInsertRow()\|cal RefreshCandidates()<CR>
 ino <silent> jD <c-\><c-o>:let g:pLang = (g:pLang == 'de' ? '' : 'de')<cr>
 ino <silent> jE <c-\><c-o>:let g:pLang = (g:pLang == 'en' ? '' : 'en')<cr>
 im <silent><expr> <cr> (g:jpIme && complete_info().selected == -1) ? "<c-l>" : "<cr>"

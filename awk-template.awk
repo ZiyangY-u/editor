@@ -1,5 +1,3 @@
-@include "/root/.config/nvim/awk-lib/functions.awk"
-
 BEGIN {
     # IGNORECASE = 1
 
