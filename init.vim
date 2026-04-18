@@ -1667,6 +1667,13 @@ fu! DeMarkAutoReplace()
     if currTwo == ' :' | cal nvim_feedkeys("\<BS>\<BS>:\<space>", "i", 1) | en
 endf
 au TextChangedI * if g:pLang == 'de' | cal DeMarkAutoReplace() | en
+" -------------------- Chinese Misc ----------------------
+fu! ChineseFZF()
+    let reload_cmd = printf('python3.11 ~/.config/nvim/cn/cn-locator.py %s %s || true', '{q}', expand('%'))
+    let spec = {'options': ['--phony', '--bind', 'change:reload:'.reload_cmd]}
+    cal fzf#vim#grep('echo "type to search"', 1, spec, 1)
+endf
+nn ,,l :cal ChineseFZF()<CR>
 " -------------------- Calc Misc -----------------------
 fu! NumTrans(fmt, num)
     let fmtMap = {'x': '0x%X', 'b': '0b%08b', 'd': '%d'}
