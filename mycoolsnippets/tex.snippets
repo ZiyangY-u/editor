@@ -188,7 +188,7 @@ snippet ^ "上标" i
 ^{$0}
 endsnippet
 snippet / "frac 分之" i
-\\frac{$1}{$2}
+\\frac{$0}{}
 endsnippet
 snippet frac1 "包围分母" w
 \\frac{$0}{${VISUAL}}
@@ -409,4 +409,21 @@ snippet cfs "choose font size" w
 \\LARGE
 \\huge
 \\Huge
+endsnippet
+
+snippet soe "system of equation 方程组" w
+\\left\\{
+  \\begin{aligned} % &= 用于对齐的等号
+  $0
+  \\end{aligned}
+\\right.
+endsnippet
+
+snippet matrix "矩阵" w
+\\begin{bmatrix} $0 \\end{bmatrix}
+endsnippet
+
+snippet qf "quick formal 快速公式" w
+\$\\$0}\$
+
 endsnippet

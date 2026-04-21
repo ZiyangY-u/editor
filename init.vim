@@ -1674,6 +1674,8 @@ fu! ChineseFZF()
     cal fzf#vim#grep('echo "type to search"', 1, spec, 1)
 endf
 nn ,,l :cal ChineseFZF()<CR>
+au BufWinEnter,WinEnter cli.txt let g:cnIme = 1
+au WinLeave cli.txt let g:cnIme = 0
 " -------------------- Calc Misc -----------------------
 fu! NumTrans(fmt, num)
     let fmtMap = {'x': '0x%X', 'b': '0b%08b', 'd': '%d'}
