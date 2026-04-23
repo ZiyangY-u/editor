@@ -211,7 +211,7 @@ com! -nargs=0 DBAttach :unlet g:BufColors[bufnr()]
 let g:vertLineMark = nvim_create_namespace('vertLineMark')
 const [g:DOWN, g:UP] = [0, 1]
 fu! PumRenderVerticalScope(col)
-    echom "PumRenderVerticalScope on ".a:col
+    " echom "PumRenderVerticalScope on ".a:col
     cal ClearVirtualTxt()
     let ppos = pum_getpos()
     if !has_key(ppos, 'height') | retu | en " exit when pum not showing
@@ -568,7 +568,7 @@ exe printf('im <silent><expr> 0 g:cnIme && pumvisible() ? "%s\<cr>" : 0', repeat
 im <silent><expr> <c-l> (g:canSnipExpand \|\| UltiSnips#CanExpandSnippet()) ? "\<c-r>=UltiSnips#ExpandSnippet()\<cr>" :
             \ AnonExpand() != '' ? "\<c-r>=UltiSnips#Anon(AnonExpand(), InsertingWord(), '', 'i', '', {})<cr>" :
             \ UltiSnips#CanJumpForwards() ? "\<c-k>" :
-            \ "\<esc>A"
+            \ "\<end>"
 "   FZF integration
 ino <expr> <c-x><c-k> fzf#vim#complete(extend(FzfFloatWin(), {'source':'cat /usr/share/dict/en /usr/share/dict/esp /usr/share/dict/ngerman'}))
 ino <expr> <c-x><c-l> fzf#vim#complete#line({}, 1)
@@ -1689,8 +1689,21 @@ nn <silent> ,e :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=EvalO
 nn <silent> ,,e :cal RenderVerticalScope(1,1,-1,virtcol('.')-1)\|set opfunc=EvalFeedOp<cr>g@
 vn <silent> ,e <esc>gvc<c-r>=py3eval(substitute(getreg('"'), '\n', ' ', 'g'))<CR><esc><c-l>
 fu! EvalOp(type)
-    exec printf("norm! `]$v`[0d")
-    cal setbufline(bufnr(), line('.'), [py3eval(substitute(getreg('"'), '\n', ' ', 'g'))])
+    " using register p for input ant output
+    if a:type ==# 'line'
+        exec printf("norm! `]$v`[0\"pd")
+        cal setreg('p', py3eval(getreg('"')))
+        " cal setbufline(bufnr(), line('.'), [py3eval(substitute(getreg('"'), '\n', ' ', 'g'))])
+        exec printf("norm! \"pP")
+    elseif a:type ==# 'char'
+        exec printf('norm! `[v`]"py')
+        cal setreg('p', py3eval(getreg('"')))
+        exec printf("norm! `[v`]\"_c\<c-r>p")
+    elseif a:type ==# 'v'
+        exec printf('norm! `<v`>"py')
+        cal setreg('p', py3eval(getreg('"')))
+        exec printf("norm! `<v`>\"_c\<c-r>p")
+    endif
 endf
 fu! EvalFeedOp(type) " feed variables
     exec printf("norm! `]$v`[0y")
