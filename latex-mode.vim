@@ -66,3 +66,7 @@ fu! ShowLog()
     retu tmpfile
 endf
 com! -nargs=0 TexLog :exe 'tabe | e +$;norm\ zz '.ShowLog()
+
+" below is calculation module in latex
+let src_path = VimrcPath().'latex-calc.py'
+py3file `=src_path`

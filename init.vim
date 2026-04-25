@@ -546,7 +546,7 @@ au CompleteDonePre * if complete_info(['mode'])['mode'] == 'files' && !empty(com
 au CompleteDone * redraw! | cal PostComplete()
 au CompleteDone * if (g:jpIme || g:cnIme) && v:completed_item != {} | cal nvim_feedkeys("\<esc>a", 'i', v:false) | en
 au User ImeChanged if (g:jpIme || g:cnIme) | exe "ino <silent> <BS> <BS><esc>a" | else | exe "sil! iu <BS>" | en
-au User ImeChanged cal SendService('-clear_cn_tmp', '')
+au User ImeChanged cal jobstart(SendService('-clear_cn_tmp', ''), {'detach':v:true})
 ino <m-u> <c-w><c-r>=g:hint_word<cr>
 "   <tab> for select candidate, j+n for quick selection
 im <silent><expr> <tab> pumvisible() ? "\<down>" : (UltiSnips#CanExpandSnippet() ? "\<c-l>" : "\<tab>")
