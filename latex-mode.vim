@@ -1,14 +1,21 @@
 " pdf page indicator
 let g:PdfLoc = 1
 fu! GetPdfLoc()
-    let cmd = 'sed -n "1,'.line('.').'{/newpage/p}" '.expand('%:p')
-    let rst = split(system(cmd), '\n')
-    retu 1 + len(rst)
+    let cmd = printf('synctex view -i %d:1:%s.tex -o %s.tmp.pdf|rg "Page"|sort -u', line('.'), Tex_path(), Tex_path())
+    let _rst = split(trim(system(cmd)), '\n')
+    if len(_rst) != 1 | retu 'x' | en
+    let rst = substitute(_rst[0],'Page:','','')
+    retu rst
 endf
-com! -nargs=0 Pdf exe 'sil !SumatraPDF.exe -reuse-instance -page ' . GetPdfLoc() . ' ' . WinPath(substitute(expand('%:p'), '.tex$', '.pdf', ''))
+com! -nargs=0 Pdf exe 'sil !SumatraPDF.exe -reuse-instance -page ' . g:PdfLoc . ' ' . WinPath(substitute(expand('%:p'), '.tex$', '.pdf', ''))
 com! -nargs=0 PdfLoc exe 'sil !SumatraPDF.exe -reuse-instance -page ' . g:PdfLoc . ' ' . WinPath(substitute(expand('%:p'), '.tex$', '.pdf', ''))
 com! -nargs=0 EdTexMacros tabe | e ~/.config/nvim/tex/zzmakros.sty
+au CursorHold *.tex let g:PdfLoc = GetPdfLoc()
 au BufWritePost zzmakros.sty cal system('cp ~/.config/nvim/tex/zzmakros.sty ~/texmf/tex/xelatex/')
+
+fu! Tex_path()
+    retu substitute(expand('%:p:r'), 'tex$', '', '')
+endf
 
 " tex compile
 let g:texCompilePending = 0
@@ -19,8 +26,7 @@ fu! s:TexCompilePost(jobId, data, event)
     let g:texCompileStatus = 0
     if a:data == 0
         let g:texCompileResult = 1
-        let target_path = fnamemodify(expand('%:p:r'), ':p:r')
-        sil exe printf('!mv %s.tmp.pdf %s.pdf', target_path, target_path)
+        sil exe printf('!cp %s.tmp.pdf %s.pdf', Tex_path(), Tex_path())
     else
         let g:texCompileResult = -1
     endif
@@ -47,14 +53,14 @@ fu! CompileTex()
     endif
     let g:texCompileStatus = 1 " running
 
-    let cmd = printf('xelatex --halt-on-error --jobname=%s.tmp --output-directory=%s %s', expand('%:t:r'), expand('%:p:h'), expand('%:p'))
+    let cmd = printf('xelatex -synctex=1 --halt-on-error --jobname=%s.tmp --output-directory=%s %s', expand('%:t:r'), expand('%:p:h'), expand('%:p'))
     let opts = {'detach':v:true, 'on_exit' : function('s:TexCompilePost')}
     let g:texCompileJID = jobstart(cmd, opts)
 endfu
 
 fu! ShowLog()
     let tmpfile = tempname()
-    let cmd = 'texlogsieve '.fnamemodify(expand('%:p:r'), ':p:r').'.log > ' . tmpfile
+    let cmd = 'texlogsieve '.Tex_path().'.tmp.log > ' . tmpfile
     cal system(cmd)
 
     retu tmpfile

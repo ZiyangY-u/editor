@@ -821,6 +821,7 @@ if __name__ == '__main__':
             remove_cn_word(sys.argv[2], sys.argv[3])
     if sys.argv[1] == '-clear_cn_tmp':
         clear_cn_tmp()
+        exit(0)
 
     if sys.argv[1] == '-query_en':
         word = sys.argv[2]

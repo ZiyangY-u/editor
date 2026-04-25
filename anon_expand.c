@@ -307,14 +307,26 @@ void text_expand(char* word) {
 }
 
 void tex_expand(char* word) {
-    if (strlen(word) == 2 && isalpha(w0) && isdigit(w1)) // a1 -> a_1
+    if (strlen(word) == 2 && islower(w0) && isdigit(w1)) // a1 -> a_1
         printf("%c_%c", w0, w1);
-    if (strlen(word) == 3 && w0 == 'm' && is_all_digit(word+1)) {
+    if (strlen(word) == 3 && w0 == 'm' && is_all_digit(word+1)) // matrix
+    {
         int row = w1 - '0' , col = w2 - '0';
         printf("\\begin{bmatrix}<cr>");
         for (int r = 0 ; r < row ; r++) {
             for (int c = 0 ; c < col ; c++) 
                 printf(" %s 1", (c == 0 ? "" : "&"));
+            printf(" \\\\\\\\<cr>");
+        }
+        printf("\\end{bmatrix}<cr>");
+    }
+    if (strlen(word) == 2 && w0 == 'I' && isdigit(w1)) // identity matrix
+    {
+        int row = w1 - '0' , col = w1 - '0';
+        printf("\\begin{bmatrix}<cr>");
+        for (int r = 0 ; r < row ; r++) {
+            for (int c = 0 ; c < col ; c++) 
+                printf(" %s %d", (c == 0 ? "" : "&"), (r == c ? 1 : 0));
             printf(" \\\\\\\\<cr>");
         }
         printf("\\end{bmatrix}<cr>");
