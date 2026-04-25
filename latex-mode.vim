@@ -68,5 +68,5 @@ endf
 com! -nargs=0 TexLog :exe 'tabe | e +$;norm\ zz '.ShowLog()
 
 " below is calculation module in latex
-let src_path = VimrcPath().'latex-calc.py'
+let src_path = VimrcPath().'python/latex_calc.py'
 py3file `=src_path`

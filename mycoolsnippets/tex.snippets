@@ -1,3 +1,14 @@
+global !p
+import sys, os, vim, numpy as np
+sys.path.insert(0, '/root/.config/nvim/python')
+import latex_calc as lc
+endglobal
+
+snippet test "test import"
+`!p snip.rv = lc.__file__`
+endsnippet
+
+
 snippet doc "document" w
 \\documentclass[letterpaper, utf8]{ctexart}
 % preamble start
@@ -87,7 +98,7 @@ snippet up "usepackage" w
 \\usepackage{$0}
 endsnippet
 
-snippet begin "begin end" 
+snippet begin "begin end"
 \\begin{$1}
 ${VISUAL}$0
 \\end{$1}
@@ -248,10 +259,10 @@ snippet pl "平行 parallel" w
 endsnippet
 # math logic
 snippet bc "因为" w
-\\because 
+\\because
 endsnippet
 snippet so "所以" w
-\\therefore 
+\\therefore
 endsnippet
 # math equation
 snippet fs "方程组 formula set" w
@@ -420,7 +431,7 @@ snippet soe "system of equation 方程组" w
 endsnippet
 
 snippet matrix "矩阵" w
-\\begin{bmatrix} 
+\\begin{bmatrix}
 1 & 1 \\\\
 1 & 1 \\\\
 \\end{bmatrix}
@@ -436,4 +447,25 @@ endsnippet
 
 snippet tln "tikz line" w
 \\draw[black][-] (0,0) -- (0,0) node[pos=.99, above] {$ comment $};
+endsnippet
+
+snippet mm "矩阵乘法" w
+`!p
+import vim
+snip.rv = str(lc.matrix_to_latex(lc.latex_matmul_to_numpy(vim.eval("getreg('\"')"))))
+`
+endsnippet
+
+snippet minv "求逆矩阵" w
+`!p
+import vim
+snip.rv = str(lc.matrix_to_latex(np.linalg.inv(lc.latex_matmul_to_numpy(vim.eval("getreg('\"')")))))
+`
+endsnippet
+
+snippet mrank "求矩阵的秩" w
+`!p
+import vim
+snip.rv = str(np.linalg.matrix_rank(lc.latex_matmul_to_numpy(vim.eval("getreg('\"')"))))
+`
 endsnippet
