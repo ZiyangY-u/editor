@@ -1,4 +1,5 @@
 import numpy as np
+import sympy as sp
 import re
 
 def array_to_str(arr):
@@ -77,5 +78,65 @@ def latex_matmul_to_numpy(latex_str: str):
         else:
             result = result @ mat
 
+    return result
+
+# -------------------- sympy --------------------
+
+def sympy_matrix_to_latex(mat):
+    """
+    将 SymPy Matrix 转换为 LaTeX bmatrix
+    """
+    if not isinstance(mat, sp.Matrix):
+        raise TypeError("mat 必须是 sympy.Matrix")
+
+    lstr =  sp.latex(mat, mat_delim="", mat_str="bmatrix").replace(r'\\', r'\\'+'\n')
+    return lstr.replace(r'bmatrix}', r'bmatrix}'+'\n').replace(r'\end', '\n' + r'\end')
+
+def latex_to_sympy_matrices(latex_str: str):
+    """
+    将 latex字符串转为matrix对象
+    """
+    matrices = re.findall(
+            r"\\begin\{bmatrix\}(.*?)\\end\{bmatrix\}",
+            latex_str,
+            flags=re.S
+            )
+
+    if not matrices:
+        raise ValueError("没有找到 bmatrix 环境")
+    results = []
+    for mat_str in matrices:
+        rows = []
+
+        for row in mat_str.strip().split(r"\\"):
+            if not row.strip():
+                continue
+
+            # 使用 SymPy 解析每个元素（支持 -1/2, a, x+y 等）
+            row_exprs = [ sp.sympify(cell.strip()) for cell in row.split("&") ]
+            rows.append(row_exprs)
+
+        mat = sp.Matrix(rows)
+        results.append(mat)
+    return results
+
+def latex_mat_power(latex_str: str, p:int):
+    matrices = latex_to_sympy_matrices(latex_str)
+    if len(matrices) == 1:
+        return matrices[0] ** p
+
+def latex_matmul_to_sympy(latex_str: str):
+    """
+    将 LaTeX 中的多个 bmatrix 矩阵连乘
+    使用 SymPy 进行符号矩阵乘法
+    """
+
+    matrices = latex_to_sympy_matrices(latex_str)
+    result = None
+    for mat in matrices:
+        if result is None:
+            result = mat
+        else:
+            result = result * mat  # SymPy 矩阵乘法
     return result
 

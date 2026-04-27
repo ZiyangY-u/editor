@@ -452,7 +452,8 @@ endsnippet
 snippet mm "矩阵乘法" w
 `!p
 import vim
-snip.rv = str(lc.matrix_to_latex(lc.latex_matmul_to_numpy(vim.eval("getreg('\"')"))))
+# snip.rv = str(lc.matrix_to_latex(lc.latex_matmul_to_numpy(vim.eval("getreg('\"')"))))
+snip.rv = str(lc.sympy_matrix_to_latex(lc.latex_matmul_to_sympy(vim.eval("getreg('\"')"))))
 `
 endsnippet
 
@@ -468,4 +469,18 @@ snippet mrank "求矩阵的秩" w
 import vim
 snip.rv = str(np.linalg.matrix_rank(lc.latex_matmul_to_numpy(vim.eval("getreg('\"')"))))
 `
+endsnippet
+
+snippet mpower "matrix power" w
+`!p
+import vim
+snip.rv = str(lc.sympy_matrix_to_latex(lc.latex_mat_power(vim.eval("getreg('\"')"), 6)))
+`
+endsnippet
+
+snippet inv "逆 inverse" i
+^{-1}
+endsnippet
+snippet T "转置 transpose" i
+^T
 endsnippet

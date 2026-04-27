@@ -1,13 +1,23 @@
 " pdf page indicator
 let g:PdfLoc = 1
 fu! GetPdfLoc()
-    let cmd = printf('synctex view -i %d:1:%s.tex -o %s.tmp.pdf|rg "Page"|sort -u', line('.'), Tex_path(), Tex_path())
+    let cmd = printf('synctex view -i %d:%d:%s.tex -o %s.tmp.pdf|rg "Page"|sort -u', line('.'), col('.'), Tex_path(), Tex_path())
     let _rst = split(trim(system(cmd)), '\n')
     if len(_rst) != 1 | retu 'x' | en
     let rst = substitute(_rst[0],'Page:','','')
     retu rst
 endf
-com! -nargs=0 Pdf exe 'sil !SumatraPDF.exe -reuse-instance -page ' . g:PdfLoc . ' ' . WinPath(substitute(expand('%:p'), '.tex$', '.pdf', ''))
+fu! GetPdfScroll()
+    let cmd = printf('synctex view -i %d:%d:%s.tex -o %s.tmp.pdf|rg "y:"', line('.'), col('.'), Tex_path(), Tex_path())
+    let _rst = split(system(cmd), '\n')
+    cal map(_rst, {_, v -> str2float(split(v, ':')[1])})
+    let loc = reduce(_rst, {a, v -> a + v}, 0.0) / len(_rst)
+    if type(loc) == v:t_float || type(loc) == v:t_number
+        retu ' -scroll 0,' . float2nr(loc)
+    endif
+    retu ''
+endf
+com! -nargs=0 Pdf exe 'sil !SumatraPDF.exe -reuse-instance -page ' . g:PdfLoc . GetPdfScroll() . ' ' . WinPath(substitute(expand('%:p'), '.tex$', '.pdf', ''))
 com! -nargs=0 PdfLoc exe 'sil !SumatraPDF.exe -reuse-instance -page ' . g:PdfLoc . ' ' . WinPath(substitute(expand('%:p'), '.tex$', '.pdf', ''))
 com! -nargs=0 EdTexMacros tabe | e ~/.config/nvim/tex/zzmakros.sty
 au CursorHold *.tex let g:PdfLoc = GetPdfLoc()
