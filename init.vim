@@ -1736,7 +1736,7 @@ nn ,<c-v> "+p
 nn ,,<c-v> "+P
 nmap ,R "+r
 " ------------------- Latex Misc -----------------------
-exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/latex-mode.vim'
+exec 'so '.fnamemodify($MYVIMRC, ":p:h").'/after/ftplugin/tex.vim'
 " ------------------- Async Misc -----------------------
 "  qfSearchCmd { qfEntry : [jobId list] }
 "  qfListTobe { jobId : [qfResult] }

@@ -92,3 +92,21 @@ com! -nargs=0 TexLog :exe 'tabe | e +$;norm\ zz '.ShowLog()
 " below is calculation module in latex
 let src_path = VimrcPath().'python/latex_calc.py'
 py3file `=src_path`
+
+" 只在 tex 文件生效
+if exists('b:did_tex_textobjs')
+  finish
+endif
+let b:did_tex_textobjs = 1
+
+" 定义插件
+call textobj#user#plugin('tex', {
+\   'formula-i': {
+\     'pattern': '\$.*\$',
+\     'select': ['af'],
+\   },
+\   'formula-a': {
+\     'pattern': '\v(\$)@<=.*(\$)@=',
+\     'select': ['if'],
+\   },
+\ })
