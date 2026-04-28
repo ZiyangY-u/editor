@@ -474,7 +474,7 @@ endsnippet
 snippet mpower "matrix power" w
 `!p
 import vim
-snip.rv = str(lc.sympy_matrix_to_latex(lc.latex_mat_power(vim.eval("getreg('\"')"), 6)))
+snip.rv = str(lc.sympy_matrix_to_latex(lc.latex_mat_power(vim.eval("getreg('\"')"), 2)))
 `
 endsnippet
 
@@ -483,4 +483,8 @@ snippet inv "逆 inverse" i
 endsnippet
 snippet T "转置 transpose" i
 ^T
+endsnippet
+
+snippet "R(\d+)" "real number space" r
+\mathbf{R}^`!p snip.rv = match.group(1)`
 endsnippet

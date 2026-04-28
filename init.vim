@@ -1170,7 +1170,6 @@ cal plug#begin('~/.vim/plugged')
     Plug 'maxmellon/vim-jsx-pretty'
     Plug 'mbbill/undotree'
     Plug 'mechatroner/rainbow_csv'
-    Plug 'mfussenegger/nvim-jdtls'
     Plug 'mhinz/vim-signify'
     Plug 'neovim/nvim-lspconfig'
     Plug 'pangloss/vim-javascript'

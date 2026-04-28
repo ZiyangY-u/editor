@@ -23,6 +23,18 @@ com! -nargs=0 EdTexMacros tabe | e ~/.config/nvim/tex/zzmakros.sty
 au CursorHold *.tex let g:PdfLoc = GetPdfLoc()
 au BufWritePost zzmakros.sty cal system('cp ~/.config/nvim/tex/zzmakros.sty ~/texmf/tex/xelatex/')
 
+" automatically insert `{}` after a function(macro) is selected
+fu! IsTexFunctionChosen(cinfo) " if selected item is function, then return true, else return false
+    if !has_key(a:cinfo, 'selected') || a:cinfo['selected'] == -1 || !has_key(a:cinfo, 'items')
+        retu v:false
+    endif
+    let [items, idx] = [a:cinfo['items'], a:cinfo['selected']]
+    let menu = items[idx]['menu']
+    return (stridx(menu, 'Function') != -1 ? v:true : v:false)
+endf
+au CompleteDonePre *.tex let b:autoAddBrackts = IsTexFunctionChosen(complete_info())
+au CompleteDone *.tex if b:autoAddBrackts | cal nvim_feedkeys("{}\<left>", 'i', 1) | en
+
 fu! Tex_path()
     retu substitute(expand('%:p:r'), 'tex$', '', '')
 endf
