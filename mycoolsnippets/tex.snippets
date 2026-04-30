@@ -478,6 +478,13 @@ snip.rv = str(lc.sympy_matrix_to_latex(lc.latex_mat_power(vim.eval("getreg('\"')
 `
 endsnippet
 
+snippet rref "Reduced Row Echelon Form，简化行阶梯形矩阵" w
+`!p
+import vim
+snip.rv = str(lc.sympy_matrix_to_latex(lc.latex_mat_rref(vim.eval("getreg('\"')"))))
+`
+endsnippet
+
 snippet inv "逆 inverse" i
 ^{-1}
 endsnippet

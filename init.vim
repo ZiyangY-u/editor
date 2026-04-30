@@ -1710,6 +1710,16 @@ fu! EvalFeedOp(type) " feed variables
     let code = "py3 \n" . getreg('"')
     exec code
 endf
+fu! LineOperate(op, factor) " operation on all numbers in one line
+    let line = getline('.')
+    let pattern = '[-+]\?\d\+\(\.\d\+\)\?'
+    let new_line = substitute(line, pattern, '\=submatch(0)' . a:op . ' a:factor', 'g')
+    call setline('.', new_line)
+endf
+let opMap = { ",\<c-a>":'+', ",\<c-x>":'-', ",\<c-m>":'*', ",\<c-d>":'*1.0/' }
+for op in keys(opMap)
+    exe printf("nn <silent> %s :\<c-u>cal LineOperate('%s', v:count1)\<cr>", op, opMap[op])
+endfor
 " ------------------- Windows Misc -----------------------
 fu WinPath(mntPath) " convert wsl mnt path to windows path
     retu substitute(a:mntPath, '/mnt/\([a-zA-Z]\)', '\1:', '')

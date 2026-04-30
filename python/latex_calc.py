@@ -140,3 +140,11 @@ def latex_matmul_to_sympy(latex_str: str):
             result = result * mat  # SymPy 矩阵乘法
     return result
 
+def latex_mat_rref(latex_str: str):
+    """
+    Reduced Row Echelon Form，简化行阶梯形矩阵
+    """
+    matrices = latex_to_sympy_matrices(latex_str)
+    if len(matrices) == 1:
+        rref_matrix, pivot_columns = matrices[0].rref()
+        return rref_matrix
