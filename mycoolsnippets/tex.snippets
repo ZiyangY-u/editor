@@ -453,7 +453,7 @@ snippet mm "矩阵乘法" w
 `!p
 import vim
 # snip.rv = str(lc.matrix_to_latex(lc.latex_matmul_to_numpy(vim.eval("getreg('\"')"))))
-snip.rv = str(lc.sympy_matrix_to_latex(lc.latex_matmul_to_sympy(vim.eval("getreg('\"')"))))
+snip.rv = str(lc.mtl(lc.latex_matmul_to_sympy(vim.eval("getreg('\"')"))))
 `
 endsnippet
 
@@ -474,14 +474,21 @@ endsnippet
 snippet mpower "matrix power" w
 `!p
 import vim
-snip.rv = str(lc.sympy_matrix_to_latex(lc.latex_mat_power(vim.eval("getreg('\"')"), 2)))
+snip.rv = str(lc.mtl(lc.latex_mat_power(vim.eval("getreg('\"')"), 2)))
 `
 endsnippet
 
 snippet rref "Reduced Row Echelon Form，简化行阶梯形矩阵" w
 `!p
 import vim
-snip.rv = str(lc.sympy_matrix_to_latex(lc.latex_mat_rref(vim.eval("getreg('\"')"))))
+snip.rv = str(lc.mtl(lc.latex_mat_rref(vim.eval("getreg('\"')"))))
+`
+endsnippet
+
+snippet mtrans "matrix transpose" w
+`!p
+import vim
+snip.rv = str(lc.mtl(lc.latex_mat_transpose(vim.eval("getreg('\"')"))))
 `
 endsnippet
 

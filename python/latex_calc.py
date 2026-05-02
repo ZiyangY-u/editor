@@ -92,6 +92,8 @@ def sympy_matrix_to_latex(mat):
     lstr =  sp.latex(mat, mat_delim="", mat_str="bmatrix").replace(r'\\', r'\\'+'\n')
     return lstr.replace(r'bmatrix}', r'bmatrix}'+'\n').replace(r'\end', '\n' + r'\end')
 
+mtl = sympy_matrix_to_latex
+
 def latex_to_sympy_matrices(latex_str: str):
     """
     将 latex字符串转为matrix对象
@@ -148,3 +150,12 @@ def latex_mat_rref(latex_str: str):
     if len(matrices) == 1:
         rref_matrix, pivot_columns = matrices[0].rref()
         return rref_matrix
+
+def latex_mat_transpose(latex_str: str):
+    """
+    矩阵转置
+    """
+    matrices = latex_to_sympy_matrices(latex_str)
+    if len(matrices) == 1:
+        rref_matrix, pivot_columns = matrices[0].rref()
+        return matrices[0].T

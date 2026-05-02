@@ -20,8 +20,8 @@ endf
 com! -nargs=0 Pdf exe 'sil !SumatraPDF.exe -reuse-instance -page ' . g:PdfLoc . GetPdfScroll() . ' ' . WinPath(substitute(expand('%:p'), '.tex$', '.pdf', ''))
 com! -nargs=0 PdfLoc exe 'sil !SumatraPDF.exe -reuse-instance -page ' . g:PdfLoc . ' ' . WinPath(substitute(expand('%:p'), '.tex$', '.pdf', ''))
 com! -nargs=0 EdTexMacros tabe | e ~/.config/nvim/tex/zzmakros.sty
-au CursorHold *.tex let g:PdfLoc = GetPdfLoc()
-au BufWritePost zzmakros.sty cal system('cp ~/.config/nvim/tex/zzmakros.sty ~/texmf/tex/xelatex/')
+au! CursorHold *.tex let g:PdfLoc = GetPdfLoc()
+au! BufWritePost zzmakros.sty cal system('cp ~/.config/nvim/tex/zzmakros.sty ~/texmf/tex/xelatex/')
 
 " automatically insert `{}` after a function(macro) is selected
 fu! IsTexFunctionChosen(cinfo) " if selected item is function, then return true, else return false
@@ -32,8 +32,8 @@ fu! IsTexFunctionChosen(cinfo) " if selected item is function, then return true,
     let menu = items[idx]['menu']
     return (stridx(menu, 'Function') != -1 ? v:true : v:false)
 endf
-au CompleteDonePre *.tex let b:autoAddBrackts = IsTexFunctionChosen(complete_info())
-au CompleteDone *.tex if b:autoAddBrackts | cal nvim_feedkeys("{}\<left>", 'i', 1) | en
+au! CompleteDonePre *.tex let b:autoAddBrackts = IsTexFunctionChosen(complete_info())
+au! CompleteDone *.tex if b:autoAddBrackts | cal nvim_feedkeys("{}\<left>", 'i', 1) | en
 
 fu! Tex_path()
     retu substitute(expand('%:p:r'), 'tex$', '', '')
@@ -102,11 +102,11 @@ let b:did_tex_textobjs = 1
 " 定义插件
 call textobj#user#plugin('tex', {
 \   'formula-i': {
-\     'pattern': '\$.*\$',
+\     'pattern': '\$.{-}\$',
 \     'select': ['af'],
 \   },
 \   'formula-a': {
-\     'pattern': '\v(\$)@<=.*(\$)@=',
+\     'pattern': '\v(\$)@<=.{-}(\$)@=',
 \     'select': ['if'],
 \   },
 \ })

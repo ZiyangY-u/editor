@@ -1827,5 +1827,8 @@ lua << EOF
 require("mason").setup()
 require("mason-lspconfig").setup({
 })
+vim.diagnostic.config({
+  signs = false,
+})
 EOF
 " }}}
