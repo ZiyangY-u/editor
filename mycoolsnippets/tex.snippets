@@ -321,7 +321,7 @@ endsnippet
 
 # newline and newpage
 snippet nl "newline" w
-\\newline
+\\\\
 endsnippet
 snippet np "newpage" w
 \\newpage
@@ -452,8 +452,34 @@ endsnippet
 snippet mm "矩阵乘法" w
 `!p
 import vim
-# snip.rv = str(lc.matrix_to_latex(lc.latex_matmul_to_numpy(vim.eval("getreg('\"')"))))
-snip.rv = str(lc.mtl(lc.latex_matmul_to_sympy(vim.eval("getreg('\"')"))))
+snip.rv = str(lc.mtl(lc.matmul(vim.eval("getreg('\"')"))))
+`
+endsnippet
+
+snippet ma "矩阵加法" w
+`!p
+import vim
+snip.rv = str(lc.mtl(lc.matadd(vim.eval("getreg('\"')"))))
+`
+endsnippet
+
+snippet msub "矩阵减法" w
+`!p
+import vim
+snip.rv = str(lc.mtl(lc.matsub(vim.eval("getreg('\"')"))))
+`
+endsnippet
+
+snippet mcc "矩阵拼接 matrix concat" w
+`!p import vim
+snip.rv = str(lc.mtl(lc.matconcat(vim.eval("getreg('\"')"))))
+`
+endsnippet
+
+snippet mdet "行列式" w
+`!p
+import vim
+snip.rv = str(lc.latex_mat_determinant(vim.eval("getreg('\"')")))
 `
 endsnippet
 
@@ -474,7 +500,7 @@ endsnippet
 snippet mpower "matrix power" w
 `!p
 import vim
-snip.rv = str(lc.mtl(lc.latex_mat_power(vim.eval("getreg('\"')"), 2)))
+snip.rv = str(lc.mtl(lc.latex_mat_power(vim.eval("getreg('\"')"), 3)))
 `
 endsnippet
 
@@ -485,7 +511,7 @@ snip.rv = str(lc.mtl(lc.latex_mat_rref(vim.eval("getreg('\"')"))))
 `
 endsnippet
 
-snippet mtrans "matrix transpose" w
+snippet mt "matrix transpose" w
 `!p
 import vim
 snip.rv = str(lc.mtl(lc.latex_mat_transpose(vim.eval("getreg('\"')"))))
@@ -501,4 +527,12 @@ endsnippet
 
 snippet "R(\d+)" "real number space" r
 \mathbf{R}^`!p snip.rv = match.group(1)`
+endsnippet
+
+snippet "^(\d+)" "problem number" r
+\\\\\\\\`!p snip.rv = match.group(1)`.\\\\
+endsnippet
+
+snippet "([lL])" "lambda" r
+\\`!p snip.rv = match.group(1)`ambda
 endsnippet

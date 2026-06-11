@@ -1,6 +1,7 @@
 import numpy as np
 import sympy as sp
 import re
+from sympy.parsing.latex import parse_latex
 
 def array_to_str(arr):
     def fmt(x):
@@ -94,6 +95,14 @@ def sympy_matrix_to_latex(mat):
 
 mtl = sympy_matrix_to_latex
 
+def smart_sympify(s):
+    try:
+        # 先试普通 Python / SymPy 语法
+        return sp.sympify(s)
+    except Exception:
+        # 再试 LaTeX
+        return parse_latex(s)
+
 def latex_to_sympy_matrices(latex_str: str):
     """
     将 latex字符串转为matrix对象
@@ -115,7 +124,7 @@ def latex_to_sympy_matrices(latex_str: str):
                 continue
 
             # 使用 SymPy 解析每个元素（支持 -1/2, a, x+y 等）
-            row_exprs = [ sp.sympify(cell.strip()) for cell in row.split("&") ]
+            row_exprs = [ smart_sympify(cell.strip()) for cell in row.split("&") ]
             rows.append(row_exprs)
 
         mat = sp.Matrix(rows)
@@ -126,21 +135,6 @@ def latex_mat_power(latex_str: str, p:int):
     matrices = latex_to_sympy_matrices(latex_str)
     if len(matrices) == 1:
         return matrices[0] ** p
-
-def latex_matmul_to_sympy(latex_str: str):
-    """
-    将 LaTeX 中的多个 bmatrix 矩阵连乘
-    使用 SymPy 进行符号矩阵乘法
-    """
-
-    matrices = latex_to_sympy_matrices(latex_str)
-    result = None
-    for mat in matrices:
-        if result is None:
-            result = mat
-        else:
-            result = result * mat  # SymPy 矩阵乘法
-    return result
 
 def latex_mat_rref(latex_str: str):
     """
@@ -159,3 +153,26 @@ def latex_mat_transpose(latex_str: str):
     if len(matrices) == 1:
         rref_matrix, pivot_columns = matrices[0].rref()
         return matrices[0].T
+
+def latex_mat_determinant(latex_str: str):
+    matrices = latex_to_sympy_matrices(latex_str)
+    if len(matrices) == 1:
+        rref_matrix, pivot_columns = matrices[0].rref()
+        return matrices[0].det()
+
+def latex_matop(func):
+    def _real_op(latex_str: str):
+        matrices = latex_to_sympy_matrices(latex_str)
+        result = None
+        for mat in matrices:
+            if result is None:
+                result = mat
+            else:
+                result = func(result, mat)  # SymPy 矩阵操作
+        return result
+    return _real_op
+
+matmul = latex_matop(sp.Matrix.__mul__) # SymPy 矩阵乘法
+matadd = latex_matop(sp.Matrix.__add__) # SymPy 矩阵加法
+matsub = latex_matop(sp.Matrix.__sub__) # SymPy 矩阵减法
+matconcat = latex_matop(sp.Matrix.row_join) # SymPy 矩阵拼接
