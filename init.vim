@@ -38,13 +38,13 @@ set ph=10 pw=20
 " Statusline
 hi Statusline cterm=bold ctermfg=white
 
-hi mod cterm=bold ctermfg=Black ctermbg=DarkRed
+hi mod cterm=bold ctermfg=16 ctermbg=DarkRed
 hi totalL cterm=bold ctermfg=White ctermbg=Blue
 hi fileType cterm=bold ctermfg=Red ctermbg=Blue
-hi posBar ctermfg=Black ctermbg=Blue
-hi c1 ctermfg=Black ctermbg=DarkCyan
+hi posBar ctermfg=16 ctermbg=Blue
+hi c1 ctermfg=16 ctermbg=DarkCyan
 hi ModColor cterm=bold ctermfg=white ctermbg=68
-hi sleepWindow ctermbg=DarkGray
+hi sleepWindow ctermbg=16 ctermfg=DarkGray
 hi TexPage ctermbg=128
 hi awkShadow ctermbg=235 ctermfg=252
 hi awkFS cterm=bold ctermfg=196 ctermbg=DarkCyan
