@@ -1731,7 +1731,7 @@ com! -nargs=0 Notepad exe 'sil !powershell.exe -Command "Start-Process notepad -
 com! -nargs=0 WinLocate exe 'sil !explorer.exe /select,' . substitute(WinPath(expand('%:p')), '/', '\\\\', 'g')
 com! -nargs=0 EdComplete e ~/.config/nvim/complete_service.py
 com! -nargs=0 EdAnon tabe | e ~/.config/nvim/anon_expand.c
-ca emk AsyncRun -cwd=~/.config/nvim ./compile.sh
+ca emk AsyncRun -mode=term -focus=0 -rows=10 -cwd=~/.config/nvim ./compile.sh
 
 vn <silent><leader>y <esc>:cal VisYankToWinClipboard()<cr>
 fu! VisYankToWinClipboard()
