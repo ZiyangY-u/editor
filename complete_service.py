@@ -43,6 +43,7 @@ import sqlite3
 import logging
 import copy
 import subprocess
+import jieba
 from os import access, R_OK
 from os.path import isfile, expanduser
 from jpn_ime_service import HIRAKANA
@@ -226,6 +227,12 @@ def has_path_history(path:str, hashcode:str) -> bool:
     cnt = cur.fetchall()[0][0]
     return cnt != 0
 
+def is_all_han(s: str) -> bool:
+    """
+    判断一个字符串是是否都是汉字
+    """
+    return all('\u4e00' <= ch <= '\u9fff' for ch in s)
+
 def add_words(path:str, enc:str) -> None:
     """
     retrieve words from file and add to complition db
@@ -242,8 +249,8 @@ def add_words(path:str, enc:str) -> None:
         return
     result = subprocess.run(['sha1sum', path], stdout=subprocess.PIPE)
     hashcode = result.stdout.decode('utf8').split(' ')[0]
-    if has_path_history(path, hashcode):
-        return
+    # if has_path_history(path, hashcode):
+    #     return
     with open(path, encoding=enc) as f:
         tmp = set()
         try:
@@ -253,7 +260,21 @@ def add_words(path:str, enc:str) -> None:
                 tmp = set(re.findall(WORD_PAT, f.read()))
         con_completion = sqlite3.connect(COMPLETE_BUF_DB_PATH)
         cur = con_completion.cursor()
+        con_cn_dict = sqlite3.connect(CN_DICT_DB_PATH)
+        cn_cur = con_cn_dict.cursor()
         for w in (w for w in tmp if '/' not in w): # not add words like path
+            if is_all_han(w):
+                if len(w) > 4:
+                    _words = list(jieba.cut(w, cut_all=False))
+                    _tmp = ''
+                    for _w in _words:
+                        insert_new_cn_word(_w, cn_cur)
+                        # 如果一句话中分解单词之后前后两个词都是两个字的则组词
+                        if len(_tmp) == 2 and len(_w) == 2:
+                            insert_new_cn_word(_tmp + _w, cn_cur)
+                        _tmp = w
+                else:
+                    insert_new_cn_word(w, cn_cur)
             if not w.isascii():
                 continue
             cur.execute(f"select count(1) from words where word = '{w}'")
@@ -269,6 +290,7 @@ def add_words(path:str, enc:str) -> None:
     cur.execute('delete from words where chosen < 5 and recent_chosen_time < datetime("now", "-7 day")')
     cur.execute('delete from path_history where import_date < datetime("now", "-1 day")')
     con_completion.commit()
+    con_cn_dict.commit()
 
 
 def query_word(word:str, src:str, order_mode:int) -> list:
@@ -581,6 +603,7 @@ def query_cn_dict(word):
     return rst_list
 
 def insert_new_cn_word(word, cursor):
+    # print('inserting:', word)
     cnt = cursor.execute('select count(1) from cn_dict where word = "{}"'.format(word)).fetchall()
     if cnt[0][0] != 0:
         add_cn_chosen_cnt(word, cursor)
