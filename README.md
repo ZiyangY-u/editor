@@ -13,6 +13,7 @@
 | **git** | 版本控制集成 (vim-fugitive) |
 | **ripgrep (rg)** | 快速搜索、Xearch、文件导航 |
 | **fzf** | 模糊查找集成 |
+| **bat** | 文件预览 |
 | **ctags** | 标签生成 (Gutentags) |
 | **sqlfluff** | SQL 语法检查和格式化 |
 | **openpyxl** | Excel 文件处理 (xl-script) |

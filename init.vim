@@ -812,6 +812,7 @@ fu MEdit(path)
     exe cmd
 endf
 com! -nargs=1 MEdit :cal MEdit(<f-args>)
+let g:cat_cmd = (executable('batcat') ? 'batcat --color=always --style=numbers,changes' : 'cat')
 fu! HiraishinOpen(query, sink, showSize) " query.target
     let queries = split(' '.a:query, '[\./@]')
     let q = a:query=='' ? '' : queries[0] " query for file
@@ -825,7 +826,10 @@ fu! HiraishinOpen(query, sink, showSize) " query.target
         let findCmds = OpenByFile(trim(q))   " file name orient
     en
     if a:showSize == 1 | let findCmds.= " -print0 | xargs -0 ls -lhS | awk '{printf \"%5s|%s\\n\", $5, $9}'" | endif
-    cal fzf#run({'source':findCmds, 'sink':a:sink, 'options':extend(copy(g:MfzfOpts), ['--query='.trim(q)])})
+    let _opts = ['--query='.trim(q),
+                \'--preview-window=right:60:border',
+                \'--preview='.g:cat_cmd.' {}']
+    cal fzf#run({'source':findCmds, 'sink':a:sink, 'options':extend(copy(g:MfzfOpts), _opts)})
 endf
 " }}}
 
