@@ -998,8 +998,8 @@ endfu
 set tal=%!ActTal()
 
 " Buffers
-nn ,b :cal ClearNoName()\|cal fzf#vim#buffers({}, 1)<CR>
-vn ,b :cal ClearNoName()\|cal fzf#vim#buffers(Selected(), {}, 1)<CR>
+nn ,b :cal ClearNoName()\|cal fzf#vim#buffers({'options': ['--bind=start:first']}, 1)<CR>
+vn ,b :cal ClearNoName()\|cal fzf#vim#buffers(Selected(), {'options': ['--bind=start:first']}, 1)<CR>
 nn ,db :cal fzf#run({'source': GetBufFilePath(v:false), 'sink': 'bd', 'options':['-m', '--reverse', '--prompt=delete buf > ']})<cr>
 
 " Shortcuts
@@ -1153,7 +1153,7 @@ ca jdos e ++enc=sjis ++ff=dos
 " => plugins --------------------------- {{{
 cal plug#begin('~/.vim/plugged')
 
-    " Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+    Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
     Plug 'SirVer/ultisnips'
     Plug 'preservim/vim-pencil'
     Plug 'itchyny/vim-cursorword'
@@ -1196,6 +1196,10 @@ cal plug#begin('~/.vim/plugged')
     Plug 'mason-org/mason-lspconfig.nvim'
     Plug 'yuezk/vim-js'
     Plug 'luochen1990/rainbow'
+    " codecompanion.nvim 依赖
+    Plug 'nvim-lua/plenary.nvim'
+    Plug 'nvim-treesitter/nvim-treesitter'
+    Plug 'olimorris/codecompanion.nvim'
 
 cal plug#end()
 " }}}
