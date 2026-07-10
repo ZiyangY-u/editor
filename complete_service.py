@@ -40,15 +40,12 @@
 import sys
 import re
 import sqlite3
-import logging
+# import logging
 import copy
-import subprocess
-import jieba
 from os import access, R_OK
 from os.path import isfile, expanduser
 from jpn_ime_service import HIRAKANA
 from anon_expand import ESCAPE
-from unidecode import unidecode
 
 COMPLETE_BUF_DB_PATH = expanduser('~/.config/nvim/completion_buf.db')
 JP_DICT_DB_PATH = expanduser('~/.config/nvim/jp/completion.db')
@@ -244,6 +241,7 @@ def add_words(path:str, enc:str) -> None:
     ==========
     None
     """
+    import subprocess
     global words
     if not isfile(path) or not access(path, R_OK) or path.endswith('.log'):
         return
@@ -265,6 +263,7 @@ def add_words(path:str, enc:str) -> None:
         for w in (w for w in tmp if '/' not in w): # not add words like path
             if is_all_han(w):
                 if len(w) > 4:
+                    import jieba # importing jieba is slow ...
                     _words = list(jieba.cut(w, cut_all=False))
                     _tmp = ''
                     for _w in _words:
@@ -275,7 +274,7 @@ def add_words(path:str, enc:str) -> None:
                         _tmp = w
                 else:
                     insert_new_cn_word(w, cn_cur)
-            if not w.isascii():
+            if not w.isascii() or w.isdigit():
                 continue
             cur.execute(f"select count(1) from words where word = '{w}'")
             cnt = cur.fetchall()[0][0]
@@ -472,6 +471,7 @@ def query_jp_dict(word:str):
         rst_list.append(CompletionItem(''.join(DIGITS[d] for d in [*"{:,}".format(int(word))]), 'digit'))
 
     # katakana
+    import subprocess
     result = subprocess.run([expanduser('~/.config/nvim/romaji_hirakana'), word], stdout=subprocess.PIPE)
     hirakana = result.stdout.decode('utf8').rstrip()
     result = subprocess.run([expanduser('~/.config/nvim/hirakana_to_katakana'), hirakana], stdout=subprocess.PIPE)
@@ -685,6 +685,7 @@ def add_cn_chosen_cnt(word:str, cursor):
         insert_new_cn_word(word, cursor)
 
 def rebuild_de_dict():
+    from unidecode import unidecode
     print('rebuilding de-dict...')
     with open('/usr/share/dict/ngerman', 'r') as file_read, open('/usr/share/dict/ngerman-search', 'w') as file_write:
         for line in file_read.readlines():
@@ -750,6 +751,7 @@ def rebuild_de_dict():
     fa.close();fb.close();fc.close();fd.close();fe.close();ff.close();fg.close();fh.close();fi.close();fj.close();fk.close();fl.close();fm.close();fn.close();fo.close();fp.close();fq.close();fr.close();fs.close();ft.close();fu.close();fv.close();fw.close();fx.close();fy.close();fz.close()
 
 def query_all_dict(word:str, use_en:bool, use_de:bool):
+    import subprocess
     rst_list = []
     exp = '^' + '.*'.join([ESCAPE[ch] if ch in ESCAPE else '['+ch+ch.upper()+']' for ch in word])
     if use_en:

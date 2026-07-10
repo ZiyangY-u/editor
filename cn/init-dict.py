@@ -65,7 +65,7 @@ cur.execute('drop table if exists pinyin_mark;')
 cur.execute('drop table if exists initials;')
 cur.execute('drop table if exists cn_create_tmp;')
 # word table
-cur.execute('create table cn_dict (word text, chosen int, src text, frequency numeric);')
+cur.execute('create table cn_dict (word text primary key, chosen int, src text, frequency numeric);')
 # pinyin tables
 cur.execute('create table pinyin_plain (word text, pinyin text);')
 cur.execute('create table pinyin_mark (word text, pinyin text);')
@@ -126,6 +126,7 @@ index_sqls = [
         'create index pyp_idx on pinyin_plain (word);',
         'create index pym_idx on pinyin_mark (word);',
         'create index init_idx on initials (word);',
+        'create index src_idx on cn_dict (src);',
         'create index pyp_search_idx on pinyin_plain (word, pinyin);',
         'create index pym_search_idx on pinyin_mark (word, pinyin);',
         'create index init_search_idx on initials (word, initial);',
@@ -137,9 +138,9 @@ for idx_sql in track(index_sqls, description='creating indices...'):
     cur.execute(idx_sql)
 
 # remove words with very low frequency
-cur.execute('delete from pinyin_plain where word in (select word from cn_dict where frequency <= 200);')
-cur.execute('delete from pinyin_mark where word in (select word from cn_dict where frequency <= 200);')
-cur.execute('delete from initials where word in (select word from cn_dict where frequency <= 200);')
-cur.execute('delete from cn_dict where frequency <= 200;')
+cur.execute('delete from pinyin_plain where word in (select word from cn_dict where frequency <= 1000);')
+cur.execute('delete from pinyin_mark where word in (select word from cn_dict where frequency <= 1000);')
+cur.execute('delete from initials where word in (select word from cn_dict where frequency <= 1000);')
+cur.execute('delete from cn_dict where frequency <= 1000;')
 
 con.commit()
