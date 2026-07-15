@@ -1196,10 +1196,6 @@ cal plug#begin('~/.vim/plugged')
     Plug 'mason-org/mason-lspconfig.nvim'
     Plug 'yuezk/vim-js'
     Plug 'luochen1990/rainbow'
-    " codecompanion.nvim 依赖
-    Plug 'nvim-lua/plenary.nvim'
-    Plug 'nvim-treesitter/nvim-treesitter'
-    Plug 'olimorris/codecompanion.nvim'
 
 cal plug#end()
 " }}}

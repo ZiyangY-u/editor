@@ -1,3 +1,5 @@
+@include "/home/caviar/.config/nvim/awk-lib/functions.awk"
+
 BEGIN {
     # IGNORECASE = 1
 
@@ -6,6 +8,7 @@ BEGIN {
     # FS = "\t"
     # FS = ","
     # FS = "\\."
+    # FS = "|"
     # FS = ":"
     # FS = "/"
     # FS = "\""
