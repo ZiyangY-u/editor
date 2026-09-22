@@ -452,6 +452,7 @@ set cot=menu,menuone,noselect,preview ssop+=globals
 
 "   auto completion
 let [g:completingId, g:jpIme, g:cnIme, g:inserted, g:refreshFlag, g:pathQueue, g:omniExclude, g:serviceBlackList] = [0, 0, 0, '', 0, {}, {}, {}]
+let g:omniExclude={"sql" : 1}
 fu! SendService(arg1, arg2)
     let cmd = ['python3.11 ~/.config/nvim/complete_service.py', a:arg1, a:arg2]
     retu join(cmd, ' ')
@@ -841,7 +842,7 @@ let g:PreferQuitIme = 0
 ino <silent> jk <esc>:if g:PreferQuitIme==1 \| let [g:jpIme, g:cnIme] = [0, 0] \| do User ImeChanged \|en<cr>
 ino <silent> jK <esc>:if g:PreferQuitIme==0 \| let [g:jpIme, g:cnIme] = [0, 0] \| do User ImeChanged \|en<cr>
 cno <expr> jk getcmdtype() == ':' ? '<c-u><esc>' : 'jk'
-tno jk <c-\><c-n>
+tno <expr> JK &filetype !=# 'fzf' ? "\<C-\><C-n>" : 'jk'
 xn JK <esc>
 
 " Searching
